@@ -1,3 +1,16 @@
-from django import forms 
-from sharespace.models import Item, Neighbourhood
+from django import forms
+from django.forms.widgets import EmailInput 
+from sharespace.models import Item, Neighbourhood, User, UserProfile
 
+class UserForm(forms.ModelForm):
+    password = forms.CharField(widget = forms.PasswordInput())
+    email = forms.EmailField()
+
+    class Meta:
+        fields = ('email', 'password', 'username')
+        model = User
+
+class UserProfileForm(forms.ModelForm):
+    class Meta:
+        fields = ('bio', 'picture', 'user_post_code')
+        model = UserProfile

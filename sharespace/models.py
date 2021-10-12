@@ -1,5 +1,6 @@
 import uuid
 from django.db import models
+from django.db.models.fields import CharField
 from django.db.models.fields.related import OneToOneField
 from django.template.defaultfilters import slugify
 from django.contrib.auth.models import User
@@ -10,7 +11,7 @@ MAX_LENGTH_TEXT = 240
 
 class Neighbourhood(models.Model):
     name = models.CharField(max_length=MAX_LENGTH_TITLES, blank = False)
-    post_code = models.CharField(primary_key=True, max_length=7) #need to devise something to enforce valid postcodes
+    post_code = models.CharField(primary_key=True, max_length=8) #need to devise something to enforce valid postcodes
     description = models.CharField(max_length = MAX_LENGTH_TEXT, blank = True)
     slug = models.SlugField(unique=True)
 
@@ -59,10 +60,12 @@ class UserProfile(models.Model):
     bio = models.CharField(max_length=MAX_LENGTH_TEXT, blank=True)
     picture = models.ImageField(upload_to='profile_images', blank=True) #default='profile_images/default.jpg', blank=True)
     slug = models.SlugField(unique=True)
-    hood = models.ForeignKey(Neighbourhood, on_delete=models.CASCADE)
+    user_post_code = CharField(max_length=8)
+    hood = models.ForeignKey(Neighbourhood, on_delete=models.CASCADE) #will need to manage or prevent situation where a neighbourhood is deleted
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.user.username)
+        self.hood = Neighbourhood.objects.get_or_create(post_code = kwargs['user_post_code'])[0] #need to check this
         super(UserProfile, self).save(*args, **kwargs)
 
     def __str__(self):

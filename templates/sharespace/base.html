@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en"></html>
+
+    <head>
+        <title> ShareSpace - {% block title_block %}{% endblock %}</title>
+    </head>
+
+    <header> 
+        <!-- nav bar here -->
+    </header>
+
+    <h1> {% block welcome_message %} {% endblock %} </h1>
+
+
+    <main>
+        {% block body_block %}
+        {% endblock %}  
+    </main>
