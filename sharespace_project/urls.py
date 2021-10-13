@@ -26,4 +26,5 @@ urlpatterns = [
     path('', views.index, name='index'),
     path('sharespace/', include('sharespace.urls')),
     path('admin/', admin.site.urls),
+    path('accounts/login/', views.login, name = 'login')
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

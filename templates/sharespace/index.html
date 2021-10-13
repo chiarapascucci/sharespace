@@ -1,18 +1,11 @@
-<!DOCTYPE html>
+{% extends 'sharespace/base.html' %}
 {%  load static %}
 
-<html>
-<head>
-<title>ShareSpace</title>
-</head>
-<body>
-<h1>template try</h1>
-<div>
-try try try <br />
-<strong>{{ boldmessage }}</strong><br />
-</div>
-<div>
-<a href="">About</a><br />
-</div>
-</body>
-</html>
+{% block title_block %}
+    Home
+{% endblock %}
+
+{% block body_block %}
+<h1> Home </h1>
+
+{% endblock %}
