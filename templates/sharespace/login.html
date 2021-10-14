@@ -2,10 +2,20 @@
 {%  load static %}
 
 {% block title_block %}
-    About
+    Login
 {% endblock %}
 
 {% block body_block %}
-<h1> About </h1>
+<h1> Login </h1>
+
+
+<form id="login_form" method="post" action="{% url 'login' %}">
+{% csrf_token %}
+Username: <input type="text" name="username" value="" size="50" />
+<br />
+Password: <input type="password" name="password" value="" size="50" />
+<br />
+<input type="submit" value="submit" />
+</form>
 
 {% endblock %}

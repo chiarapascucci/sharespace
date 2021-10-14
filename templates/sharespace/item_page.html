@@ -1,11 +1,34 @@
 {% extends 'sharespace/base.html' %}
 {%  load static %}
 
+
 {% block title_block %}
-    Item
+    {% if item %}
+        {{item.name}}
+    {% endif %}
 {% endblock %}
 
 {% block body_block %}
-<h1> Item </h1>
+    {% if item %}
+    <br>
+    <br>
+    <br>
+    <br>
 
+        <h1> {{ item.name }} </h1>
+        <h2> Item's details: </h2>
+        <p><ul>
+            <li> item price : {{ item.price }}</li>
+            <li> description: {{ item.description }}</li>
+            <li> available : {{ item.available }}</li>
+            <li> gallery: 
+                <section class="photo_gallery">
+                    {% for gallery_image in gallery.all %}
+                        <img src = "{{gallery_image.image.url }}" style="height:300px; width:300px" alt="", title="" />
+                    {% endfor %}
+                </section>
+            </li>
+
+        </ul></p>
+        {% endif %}
 {% endblock %}

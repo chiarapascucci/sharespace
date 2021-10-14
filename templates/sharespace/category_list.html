@@ -6,6 +6,16 @@
 {% endblock %}
 
 {% block body_block %}
+<br>
+<br>
+<br>
+<br>
 <h1> Category List </h1>
+
+    <ul>
+        {% for cat in all_cat.all %}
+        <li> {{cat.name}} </li>
+        {% endfor %}
+    </ul>
 
 {% endblock %}

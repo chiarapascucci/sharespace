@@ -3,17 +3,56 @@
 <html lang="en"></html>
 
     <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta name="description" content="">
+        <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
+        <meta name="generator" content="Jekyll v3.8.5">
         <title> ShareSpace - {% block title_block %}{% endblock %}</title>
+
+            <!-- Bootstrap core CSS -->
+        <link href="https://getbootstrap.com/docs/4.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+    
+            <!-- Custom styles for this template -->
+        <link href="https://getbootstrap.com/docs/4.2/examples/dashboard/dashboard.css" rel="stylesheet">
     </head>
 
     <header> 
-        <!-- nav bar here -->
+        <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark p-0">
+            <a class="navbar-brand p-2" href="{% url 'sharespace:index' %}">Home</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'sharespace:index' %}">Home</a></li>
+                    <li class="nav-item "><a class="nav-link" href="{% url 'sharespace:about' %}">About</a></li>
+                    {% if user.is_authenticated %}
+                   
+                   <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}" >Logout</a></li> 
+                    <li class="nav-item"><a class="nav-link" href="{% url 'sharespace:add_item' %}">Add Item</a></li>
+                    
+                    {% else %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'sharespace:register_profile' %}">Register Here</a></li>
+                    <li class="nav-item "><a class="nav-link" href="{% url 'login' %}">Login</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </nav>
     </header>
 
     <h1> {% block welcome_message %} {% endblock %} </h1>
 
 
-    <main>
+    <body>
         {% block body_block %}
         {% endblock %}  
-    </main>
+    </body>
+
+    <!-- Bootstrap core JavaScript -->
+        <!-- Placed at the end of the document so the pages load faster -->
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+        <script>window.jQuery || document.write('<script src="https://getbootstrap.com/docs/4.2/assets/js/vendor/jquery-slim.min.js"><\/script>')</script><script src="https://getbootstrap.com/docs/4.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-zDnhMsjVZfS3hiP7oCBRmfjkQC4fzxVxFhBx8Hkz2aZX8gEvA/jsP3eXRCvzTofP" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.9.0/feather.min.js"></script>
+        <script src="https://getbootstrap.com/docs/4.2/examples/dashboard/dashboard.js"></script>

@@ -1,9 +1,16 @@
 from django.contrib import admin
-from sharespace.models import Item, Category, Sub_Category, UserProfile, Neighbourhood
+from sharespace.models import Item, Category, Sub_Category, UserProfile, Neighbourhood, Image
+
+class ImageInLIneAdmin (admin.TabularInline):
+    model = Image
 
 class ItemAdmin(admin.ModelAdmin):
     fields = ('name', 'description', 'price', 'main_category', 'sec_category', 'available', 'owner', 'item_slug')
     prepopulated_fields = {'item_slug': ('name',)}
+    inlines = [
+        ImageInLIneAdmin
+    ]
+    model = Item
 
 class NeighbourhoodAdmin(admin.ModelAdmin):
     fields = ('nh_post_code', 'description', 'nh_slug')
@@ -27,6 +34,7 @@ admin.site.register(Neighbourhood, NeighbourhoodAdmin)
 admin.site.register(UserProfile)
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Sub_Category, SubCatAdmin)
+
 
 
 # Register your models here.

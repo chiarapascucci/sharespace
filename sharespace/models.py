@@ -1,10 +1,11 @@
+
 import uuid
 from django.db import models
+from django.db.models.deletion import CASCADE
 from django.db.models.fields import CharField
 from django.db.models.fields.related import OneToOneField
 from django.template.defaultfilters import slugify
 from django.contrib.auth.models import User
-
 
 MAX_LENGTH_TITLES = 55
 MAX_LENGTH_TEXT = 240
@@ -15,9 +16,9 @@ class Neighbourhood(models.Model):
     description = models.CharField(max_length = MAX_LENGTH_TEXT, blank = True)
     nh_slug = models.SlugField()
 
-    def save(self):
+    def save(self, *args, **kwargs):
         self.nh_slug = slugify(self.nh_post_code)
-        super(Neighbourhood, self).save()
+        super(Neighbourhood, self).save( *args, **kwargs)
     
     def __str__(self):
         return self.nh_post_code
@@ -63,10 +64,14 @@ class UserProfile(models.Model):
     user_post_code = CharField(max_length=8)
     hood = models.ForeignKey(Neighbourhood, on_delete=models.CASCADE) #will need to manage or prevent situation where a neighbourhood is deleted
 
-    def save(self, **kwargs):
+    def set_hood(self, user_post_code):
+        self.hood = Neighbourhood.objects.get_or_create(nh_post_code = user_post_code )[0]
+        return self
+
+    def save(self, *args, **kwargs):
         self.user_slug = slugify(self.user.username)
-        self.hood = Neighbourhood.objects.get_or_create(nh_post_code = kwargs['user_post_code'] )[0] #need to check this
-        super(UserProfile, self).save()
+        #self.hood = Neighbourhood.objects.get_or_create(nh_post_code = kwargs['user_post_code'] )[0] #need to check this
+        super(UserProfile, self).save(*args, **kwargs)
 
     def __str__(self):
         return self.user.username
@@ -79,12 +84,20 @@ class Item(models.Model):
     main_category = models.ForeignKey(Category, on_delete=models.CASCADE)
     sec_category = models.ForeignKey(Sub_Category, on_delete=models.SET_NULL, null = True)
     available = models.BooleanField(default=True)
-    owner = models.ManyToManyField(UserProfile, related_name = 'owner')
-    borrowed_by = models.ForeignKey(UserProfile, blank = True, on_delete=models.SET_NULL, null = True, related_name = "borrowed")
+    owner = models.ManyToManyField(UserProfile, related_name = "owned", blank = False)
+    borrowed_by = models.ForeignKey(UserProfile, related_name = "borrowed", blank = True,  on_delete=models.SET_NULL, null = True)
     item_slug = models.SlugField(unique=True)
 
     def save(self, *args, **kwargs):
         self.id = uuid.uuid4()
         self.item_slug = slugify(self.id)
+        print(self.owner)
         super(Item, self).save(*args, **kwargs)
+
+def upload_gallery_image(instance, filename):
+    return f"images/{instance.item.name}/gallery/{filename}"
+
+class Image(models.Model):
+    image = models.ImageField(upload_to = upload_gallery_image)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name = "images")
 

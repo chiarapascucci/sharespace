@@ -2,10 +2,34 @@
 {%  load static %}
 
 {% block title_block %}
-    Category List
+    Add your item
 {% endblock %}
 
 {% block body_block %}
-<h1> Category List </h1>
+<h1> Sharing is Caring... </h1>
+
+<h2>Add your item here to share with your neighbours</h2>
+
+{% if user.is_authenticated %}
+<form id="add_item_form" method="post" action="{% url 'sharespace:add_item' %}" enctype = 'multipart/form-data'>
+    {% csrf_token %}
+
+    {{ add_item_form.as_p }}
+    {{ formset.management_form }}
+    {% for form in formset %}
+    {{ form.as_p }}
+    {% endfor %}
+   
+
+    <input type ="submit" name="submit" value="Add Item"/>
+
+{% else %}
+
+<h3>It looks like you are not logged in </h3>
+<p>login now or register with us today</p>
+<p>login</p>
+<p>register</p>
+
+{% endif %}
 
 {% endblock %}
