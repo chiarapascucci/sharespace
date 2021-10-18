@@ -30,5 +30,8 @@
             </li>
 
         </ul></p>
+        {% if user.is_authenticated %}
+            <a href="{% url 'sharespace:borrow_item' %}">Borrow this item</a></li>
         {% endif %}
+    {% endif %}
 {% endblock %}

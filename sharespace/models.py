@@ -3,9 +3,11 @@ import uuid
 from django.db import models
 from django.db.models.deletion import CASCADE
 from django.db.models.fields import CharField
-from django.db.models.fields.related import OneToOneField
+from django.db.models.fields.related import ForeignKey, OneToOneField
 from django.template.defaultfilters import slugify
 from django.contrib.auth.models import User
+import datetime
+from django.core.validators import MaxValueValidator
 
 MAX_LENGTH_TITLES = 55
 MAX_LENGTH_TEXT = 240
@@ -77,6 +79,12 @@ class UserProfile(models.Model):
         return self.user.username
 
 class Item(models.Model):
+    max_len_of_loan_choices = [
+        (1, '1 week'),
+        (2, '2 weeks'),
+        (3, '3 weeks'),
+        (4, '4 weeks'),
+    ]
     id = models.UUIDField(primary_key=True, default= uuid.uuid4, editable = False)
     name = models.CharField(max_length=MAX_LENGTH_TITLES)
     description = models.CharField(max_length=MAX_LENGTH_TEXT, blank=True)
@@ -87,12 +95,40 @@ class Item(models.Model):
     owner = models.ManyToManyField(UserProfile, related_name = "owned", blank = False)
     borrowed_by = models.ForeignKey(UserProfile, related_name = "borrowed", blank = True,  on_delete=models.SET_NULL, null = True)
     item_slug = models.SlugField(unique=True)
+    
+    max_loan_len = models.PositiveIntegerField(choices=max_len_of_loan_choices, default=1, validators = [MaxValueValidator(4)] )
 
     def save(self, *args, **kwargs):
         self.id = uuid.uuid4()
         self.item_slug = slugify(self.id)
         print(self.owner)
         super(Item, self).save(*args, **kwargs)
+    
+class Loan(models.Model):
+    requestor = models.OneToOneField(UserProfile, blank = False, on_delete=models.CASCADE)
+    item_on_loan = models.OneToOneField(Item, blank = False, on_delete=models.CASCADE)
+    overdue = models.BooleanField(default=False)
+    out_date = models.DateField(null=False)
+    due_date = models.DateField(null=False)
+    len_of_loan = models.PositiveIntegerField(default=1, validators = [MaxValueValidator(4)] )
+    loan_slug = models.SlugField(unique=True)
+
+    def __str__(self):
+        my_str = "{} borrwing {} for {} weeks".format(self.requestor, self.item_on_loan, self.len_of_loan)
+        return my_str
+
+    def save(self, *args, **kwargs):
+        self.loan_slug = slugify(self.pk)
+        self.out_date = datetime.date.today()
+        self.due_date = self.out_date.date() + datetime.timedelta(days = 7 * self.len_of_loan)
+        print(self)
+        super(Loan, self).save(*args, **kwargs)
+        print(self)
+
+
+
+
+
 
 def upload_gallery_image(instance, filename):
     return f"images/{instance.item.name}/gallery/{filename}"

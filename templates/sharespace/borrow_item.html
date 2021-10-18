@@ -1,0 +1,16 @@
+{% extends 'sharespace/base.html' %}
+{%  load static %}
+
+{% block title_block %}
+    Borrow Item
+{% endblock %}
+
+{% block body_block %}
+<form id="borrow_item_form" method="post" action="{% url 'sharespace:borrow_item' %}" enctype = 'multipart/form-data'>
+    {% csrf_token %}
+
+    {{ form.as_p }}
+   
+
+    <input type ="submit" name="submit" value="Borrow Item"/>
+{% endblock %}

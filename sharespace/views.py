@@ -3,19 +3,20 @@ from django.http.response import HttpResponse
 from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse
 from sharespace.models import Image, Item, Category, Sub_Category, User, UserProfile, Neighbourhood
-from sharespace.forms import AddItemForm, ImageForm, UserForm, UserProfileForm
+from sharespace.forms import AddItemForm, BorrowItemForm, ImageForm, UserForm, UserProfileForm
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.urls import reverse
 from django.contrib.auth import authenticate, logout
 from django.contrib.auth import login as auth_login
+from django.views import View
 
 # Create your views here.
 
 def index (request):
     context_dict = {'boldmessage' : 'this is a try'}
-    for p in Item.objects.raw('SELECT owner FROM sharespace_item'):
-        print(p)
+    #for p in Item.objects.raw('SELECT owner FROM sharespace_item'):
+    #   print(p)
 
     return render(request, 'sharespace/index.html', context=context_dict)
 
@@ -166,3 +167,42 @@ def login(request):
 def user_logout(request):
     logout(request)
     return redirect (reverse('sharespace:index'))
+
+
+class BorrowItemView(View):
+    @method_decorator(login_required)
+    def get(self, request):
+        form = BorrowItemForm
+        return render(request, 'sharespace/borrow_item.html', {'form' : form})
+    
+    @method_decorator(login_required)
+    def post(self, request):
+        form = BorrowItemForm(request.POST)
+        username = request.user.get_username()
+        item_slug = request.POST['item_slug']
+        
+        try:
+            user = UserProfile.objects.get(username = username)
+        except UserProfile.DoesNotExist:
+            print("no user here")
+            return render(request, 'sharespace/index.html', {})
+
+        try:
+            item = Item.objects.get(item_slug = item_slug)
+        except Item.DoesNotExist:
+            print("no item retrived")
+            return render(request, 'sharespace/index.html', {})
+
+
+        if form.is_valid():
+            loan = form.save(commit = False)
+            loan.item_on_loan = item
+            loan.requestor = user
+            loan.save()
+
+            return redirect(reverse('sharespace:index'))
+        else:
+            print(form.errors)
+        
+        return render(request, 'sharespace/borrow_item.html', {'form' : form})
+
