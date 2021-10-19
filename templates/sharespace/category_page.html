@@ -14,7 +14,7 @@
 <h1> {{name}} </h1>
     <ul>
         {% for item in all_items.all %}
-            <li> {{ item.name }}</li>
+            <li> <a href="{% url 'sharespace:item_page' item.item_slug %}"> {{ item.name }} </a></li>
         {% endfor %}
     </ul>
 

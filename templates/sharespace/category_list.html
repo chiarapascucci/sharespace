@@ -13,8 +13,12 @@
 <h1> Category List </h1>
 
     <ul>
+        {% if all_cat %}
+        hello
+        {% endif %}
         {% for cat in all_cat.all %}
-        <li> {{cat.name}} </li>
+        {{ cat.name }}
+        <li> <a href = "{% url 'sharespace:category_page' cat.cat_slug %}" > {{ cat.name }} </a></li>
         {% endfor %}
     </ul>
 

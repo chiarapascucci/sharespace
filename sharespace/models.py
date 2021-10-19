@@ -28,7 +28,7 @@ class Neighbourhood(models.Model):
 class Category(models.Model):
     name = models.CharField(primary_key=True, max_length=MAX_LENGTH_TITLES)
     description = models.CharField(max_length=MAX_LENGTH_TEXT, blank = True)
-    point_value = models.IntegerField(default=1, blank= True)
+    point_value = models.IntegerField(default=1)
     cat_slug = models.SlugField(unique=True)
 
     def save(self, *args, **kwargs):
@@ -67,7 +67,7 @@ class UserProfile(models.Model):
     hood = models.ForeignKey(Neighbourhood, on_delete=models.CASCADE) #will need to manage or prevent situation where a neighbourhood is deleted
 
     def set_hood(self, user_post_code):
-        self.hood = Neighbourhood.objects.get_or_create(nh_post_code = user_post_code )[0]
+        self.hood = Neighbourhood.objects.get_or_create(nh_post_code = user_post_code)[0]
         return self
 
     def save(self, *args, **kwargs):
@@ -88,7 +88,7 @@ class Item(models.Model):
     id = models.UUIDField(primary_key=True, default= uuid.uuid4, editable = False)
     name = models.CharField(max_length=MAX_LENGTH_TITLES)
     description = models.CharField(max_length=MAX_LENGTH_TEXT, blank=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default = 10.00)
     main_category = models.ForeignKey(Category, on_delete=models.CASCADE)
     sec_category = models.ForeignKey(Sub_Category, on_delete=models.SET_NULL, null = True)
     available = models.BooleanField(default=True)
@@ -101,7 +101,7 @@ class Item(models.Model):
     def save(self, *args, **kwargs):
         self.id = uuid.uuid4()
         self.item_slug = slugify(self.id)
-        print(self.owner)
+        #print(self.owner)
         super(Item, self).save(*args, **kwargs)
     
 class Loan(models.Model):
@@ -114,7 +114,7 @@ class Loan(models.Model):
     loan_slug = models.SlugField(unique=True)
 
     def __str__(self):
-        my_str = "{} borrwing {} for {} weeks".format(self.requestor, self.item_on_loan, self.len_of_loan)
+        my_str = "{} borrowing {} for {} weeks".format(self.requestor, self.item_on_loan, self.len_of_loan)
         return my_str
 
     def save(self, *args, **kwargs):

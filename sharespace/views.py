@@ -10,6 +10,7 @@ from django.urls import reverse
 from django.contrib.auth import authenticate, logout
 from django.contrib.auth import login as auth_login
 from django.views import View
+from pprint import pprint as pp
 
 # Create your views here.
 
@@ -100,20 +101,27 @@ def item_page(request, item_slug):
         item_page_context['item'] = item
         item_page_context['owners'] = item.owner.all()
         item_page_context['gallery'] = item.images.all()
-        print("in item view: " , item, item.owner)
+        #print("in item view: " , item, item.owner.all())
+        pp(item_page_context)
+        print(item_page_context['owners'].exists())
     except Item.DoesNotExist:
         item_page_context['item'] = None
 
     return render(request, 'sharespace/item_page.html', context = item_page_context)
 
+
 def gallery_view(request, item_slug):
     item = Item.objects.get(item_slug=item_slug)
     return render(request, 'galley.html', {"item":item})
 
+
 def category_list(request):
+    print("in cat list view")
     cat_list_context = {}
     cat_list_context['all_cat'] = Category.objects.all().order_by('name')
+    print(cat_list_context['all_cat'])
     return render(request, 'sharespace/category_list.html', context = cat_list_context)
+
 
 def category_page(request, cat_slug):
     cat = Category.objects.get(cat_slug = cat_slug)
@@ -123,19 +131,23 @@ def category_page(request, cat_slug):
 
     return render(request, 'sharespace/category_page.html', context = cat_context)
 
+
 def sub_cat_page(request):
 
     return render(request, 'sharespace/sub_cat.html', context = {})
+
 
 def about(request):
 
     return render(request, 'sharespace/about.html', context={})
 
-def user_profile(request):
-    return render(request, 'user_profile.html', context= {})
+
+
+
 
 def edit_user(request):
     return render(request, 'sharespace/edit_user_info.html', context = {})
+
 
 def login(request):
     # If the request is a HTTP POST, try to pull out the relevant information.
@@ -163,6 +175,7 @@ def login(request):
     else:
         return render(request, 'sharespace/login.html')
 
+
 @login_required
 def user_logout(request):
     logout(request)
@@ -170,6 +183,7 @@ def user_logout(request):
 
 
 class BorrowItemView(View):
+    print("in borrow item viewp")
     @method_decorator(login_required)
     def get(self, request):
         form = BorrowItemForm
@@ -192,7 +206,6 @@ class BorrowItemView(View):
         except Item.DoesNotExist:
             print("no item retrived")
             return render(request, 'sharespace/index.html', {})
-
 
         if form.is_valid():
             loan = form.save(commit = False)
