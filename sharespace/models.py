@@ -128,7 +128,7 @@ class Loan(models.Model):
         return my_str
 
     def save(self, *args, **kwargs):
-        self.loan_slug = slugify(self.pk)
+        self.loan_slug = slugify("{self.item_on_loan.id}--{self.requestor.user.username}--{self.out_date}".format(self=self))
         self.due_date = calc_due_date(self.len_of_loan)
         super(Loan, self).save(*args, **kwargs)
 

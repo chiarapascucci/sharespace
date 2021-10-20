@@ -2,7 +2,7 @@ from django.forms.models import modelformset_factory
 from django.http.response import HttpResponse
 from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse
-from sharespace.models import Image, Item, Category, Sub_Category, User, UserProfile, Neighbourhood
+from sharespace.models import Image, Item, Category, Sub_Category, User, UserProfile, Neighbourhood, Loan
 from sharespace.forms import AddItemForm, BorrowItemForm, ImageForm, UserForm, UserProfileForm
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
@@ -163,7 +163,7 @@ def user_profile_view(request, user_slug):
             user_profile = UserProfile.objects.get(user_slug=user_slug)
             user_profile_context['bio'] = user_profile.bio
             user_profile_context['owned_items'] = user_profile.owned.all()
-            user_profile_context['borrowing_items'] = None
+            user_profile_context['borrowing_items'] = None #need to sort this
             print(user_profile_context)
 
         except UserProfile.DoesNotExist:
@@ -247,10 +247,9 @@ class BorrowItemView(View):
             return render(request, 'sharespace/index.html', {})
 
         if form.is_valid():
-            loan = form.save(commit=False)
-            loan.item_on_loan = item
-            loan.requestor = user_p
-            loan.save()
+            # len = request.POST('len_of_loan')
+            loan = Loan.objects.create(item_on_loan = item, requestor = user_p)
+            print(loan)
 
             return redirect(reverse('sharespace:index'))
         else:
