@@ -4,10 +4,6 @@
 {% block title_block %}
     Hi {{username}}
 {% endblock %}
-<br>
-<br>
-<br>
-<br>
 
 {% block body_block %}
 <br>
@@ -33,7 +29,7 @@ Your Items:
                 <li> {{ item.name }}</li>
             {% endfor %}
         {% else %}
-    <br>
+
             you do not own any items
         {% endif %}
 </ul>
@@ -41,7 +37,7 @@ Your Items:
 <ul>
   You are borrowing:
         {% if borrowing_items%}
-           <br>
+
             {{ borrowing_items.name }}
         {% else %}
 

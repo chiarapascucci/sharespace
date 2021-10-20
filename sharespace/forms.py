@@ -29,5 +29,4 @@ class AddItemForm(forms.ModelForm):
 class BorrowItemForm(forms.ModelForm):
     class Meta:
         fields = ('len_of_loan',)
-    
         model = Loan

@@ -25,16 +25,16 @@
             <li> gallery: 
                 <section class="photo_gallery">
                     {% for gallery_image in gallery.all %}
-                        <img src = "{{gallery_image.image.url }}" style="height:300px; width:300px", alt="", title="" />
+                        <img src = "{{gallery_image.image.url }}" style="height:300px; width:300px" alt="" title="" />
                     {% endfor %}
                 </section>
             </li>
 
-        </ul></p>
+        </ul>
       {{ user.user.is_authenticated }}
         {% if user.is_authenticated %}
             {% if item %}
-            <a href="{% url 'sharespace:borrow_item' item.item_slug  %}">Borrow this item</a></li>
+            <a href="{% url 'sharespace:borrow_item' item.item_slug  %}">Borrow this item</a>
             {% endif %}
         {% endif %}
     {% endif %}

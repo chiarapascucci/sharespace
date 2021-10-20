@@ -72,7 +72,7 @@ def populate():
     users =  users = {
        'chp': {'username' : 'chp', 'email':'g1@mail.com', 'password': 'helloyou123'},
        'chpa': {'username' : 'chpa', 'email':'g2@mail.com', 'password': 'helloyou123'},
-       'chpas' : {'username' : 'chpas', 'email':'g3@mail.com', 'password': 'helloyou123'},
+       'chpas1' : {'username' : 'chpas1', 'email':'g3@mail.com', 'password': 'helloyou123'},
         'chpi': {'username' : 'chpi', 'email':'g4@mail.com', 'password': 'helloyou123'},
         'chpic' : {'username' : 'chpic', 'email':'g5@mail.com', 'password': 'helloyou123'},
     }
