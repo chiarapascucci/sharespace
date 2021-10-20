@@ -1,6 +1,5 @@
 from django.urls import path 
 from sharespace import views 
-from sharespace.views import BorrowItemView
 
 app_name = 'sharespace'
 
@@ -14,8 +13,9 @@ urlpatterns = [
     path('category/<slug:cat_slug>/<slug:sub_cat_slug>/', views.sub_cat_page, name = 'sub_cat_page'),
    # path('<slug:user_slug>/', views.user_profile, name = 'user_profile'),
     path('<slug:user_slug>/edit/', views.edit_user, name = 'edit_user_info'),
-    path('<slug:item_slug>/', views.item_page, name = 'item_page'),
-    path('<slug:item_slug>/borrow/', BorrowItemView.as_view(), name='borrow_item'),
+    path('<slug:item_slug>/', views.item_page, name = 'item_page'), #forward slash?
+    path('<slug:item_slug>/borrow/', views.borrow_item_view, name='borrow_item'),
+
 
     path('login/', views.login, name = 'login'),
 

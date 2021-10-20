@@ -99,16 +99,28 @@ class Item(models.Model):
     max_loan_len = models.PositiveIntegerField(choices=max_len_of_loan_choices, default=1, validators = [MaxValueValidator(4)] )
 
     def save(self, *args, **kwargs):
-        self.id = uuid.uuid4()
+        #self.id = uuid.uuid4()
         self.item_slug = slugify(self.id)
         #print(self.owner)
         super(Item, self).save(*args, **kwargs)
-    
+
+    def __str__(self):
+        return self.name
+
+
+def calc_due_date(len_of_loan):
+    today = datetime.date.today()
+    due_date = today + datetime.timedelta(days = len_of_loan)
+    return due_date
+
+
 class Loan(models.Model):
+
+
     requestor = models.OneToOneField(UserProfile, blank = False, on_delete=models.CASCADE)
     item_on_loan = models.OneToOneField(Item, blank = False, on_delete=models.CASCADE)
     overdue = models.BooleanField(default=False)
-    out_date = models.DateField(null=False)
+    out_date = models.DateField(auto_now_add = True, null=False)
     due_date = models.DateField(null=False)
     len_of_loan = models.PositiveIntegerField(default=1, validators = [MaxValueValidator(4)] )
     loan_slug = models.SlugField(unique=True)
@@ -119,11 +131,9 @@ class Loan(models.Model):
 
     def save(self, *args, **kwargs):
         self.loan_slug = slugify(self.pk)
-        self.out_date = datetime.date.today()
-        self.due_date = self.out_date.date() + datetime.timedelta(days = 7 * self.len_of_loan)
-        print(self)
+        self.due_date = calc_due_date(self.len_of_loan)
         super(Loan, self).save(*args, **kwargs)
-        print(self)
+
 
 
 

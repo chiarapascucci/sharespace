@@ -32,7 +32,7 @@
         </ul></p>
       {{ user.user.is_authenticated }}
         {% if user.is_authenticated %}
-            <a href="{% url 'sharespace:borrow_item' item.item_slug  %}">Borrow this item</a></li>
+            <a href="{% url item.item_slug 'sharespace:borrow_item'   %}">Borrow this item</a></li>
         {% endif %}
     {% endif %}
 {% endblock %}

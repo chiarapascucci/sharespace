@@ -71,11 +71,9 @@ def add_item(request):
             item = add_item_form.save(commit=False)
             list_of_owners_id = request.POST.get('owner')
             print(item.owner)
-            #print(UserProfile.objects.get(pk = item.owner))
-            #for id in list_of_owners_id:
-             #   print(UserProfile.objects.get(pk = id))
-              #  item.owner.add(UserProfile.objects.get(pk = id)) 
+
             item.save()
+            item.owner.add()
 
             for form in formset.cleaned_data:
                 if form:
@@ -181,34 +179,43 @@ def user_logout(request):
     logout(request)
     return redirect (reverse('sharespace:index'))
 
+def borrow_item_view(request):
+    if request.method == 'POST':
+        print("post request")
+
+    else:
+        form = BorrowItemForm()
+        return render(request, 'sharespace/borrow_item.html', {'form': form})
+
 
 class BorrowItemView(View):
     print("in borrow item viewp")
+
     @method_decorator(login_required)
     def get(self, request):
-        form = BorrowItemForm
-        return render(request, 'sharespace/borrow_item.html', {'form' : form})
-    
+        form = BorrowItemForm()
+        return render(request, 'sharespace/borrow_item.html', {'form': form})
+
     @method_decorator(login_required)
     def post(self, request):
         form = BorrowItemForm(request.POST)
         username = request.user.get_username()
         item_slug = request.POST['item_slug']
-        
+
         try:
-            user = UserProfile.objects.get(username = username)
+            user = UserProfile.objects.get(username=username)
         except UserProfile.DoesNotExist:
             print("no user here")
             return render(request, 'sharespace/index.html', {})
 
         try:
-            item = Item.objects.get(item_slug = item_slug)
+            item = Item.objects.get(item_slug=item_slug)
         except Item.DoesNotExist:
             print("no item retrived")
             return render(request, 'sharespace/index.html', {})
 
         if form.is_valid():
-            loan = form.save(commit = False)
+            loan = form.save(commit=False)
             loan.item_on_loan = item
             loan.requestor = user
             loan.save()
@@ -216,6 +223,5 @@ class BorrowItemView(View):
             return redirect(reverse('sharespace:index'))
         else:
             print(form.errors)
-        
-        return render(request, 'sharespace/borrow_item.html', {'form' : form})
 
+        return render(request, 'sharespace/borrow_item.html', {'form': form})

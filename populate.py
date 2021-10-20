@@ -30,7 +30,6 @@ def add_item(name, cat, item_owner, sub_cat=None):
     i = Item.objects.get_or_create(name=name, main_category=cat, sec_category=sub_cat)[0]
     i.save()
     i.owner.add(item_owner)
-
     return i
 
 
@@ -142,4 +141,5 @@ def populate():
 if __name__ == '__main__':
     print('running po script')
     populate()
+
 
