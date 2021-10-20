@@ -14,12 +14,18 @@ from pprint import pprint as pp
 
 # Create your views here.
 
-def index (request):
+
+def index(request):
     context_dict = {'boldmessage' : 'this is a try'}
     #for p in Item.objects.raw('SELECT owner FROM sharespace_item'):
     #   print(p)
 
     return render(request, 'sharespace/index.html', context=context_dict)
+
+
+def item_list_view(request):
+
+    return render(request)
 
 
 def register(request):
@@ -90,7 +96,7 @@ def add_item(request):
         return render(request, 'sharespace/add_item.html', context = {'add_item_form' : add_item_form, 'formset': formset})
 
 
-def item_page(request, item_slug):
+def item_page_view(request, item_slug):
 
     item_page_context = {}
 
@@ -140,7 +146,32 @@ def about(request):
     return render(request, 'sharespace/about.html', context={})
 
 
+def user_profile_view(request, user_slug):
+    user_profile_context = {}
 
+    try:
+        username = request.user.get_username()
+        name = request.user.get_full_name()
+
+        print('printing username: ', username)
+        print('printin full name:', name)
+
+        user_profile_context['username'] = username
+        user_profile_context['full_name'] = name
+
+        try:
+            user_profile = UserProfile.objects.get(user_slug=user_slug)
+            user_profile_context['bio'] = user_profile.bio
+            user_profile_context['owned_items'] = user_profile.owned.all()
+            user_profile_context['borrowing_items'] = user_profile.loans.item_on_loan
+            print(user_profile_context)
+
+        except UserProfile.DoesNotExist:
+            print("no user profile")
+    except User.DoesNotExist:
+        print("no user")
+
+    return render(request, 'sharespace/user_profile.html', user_profile_context)
 
 
 def edit_user(request):
@@ -179,7 +210,8 @@ def user_logout(request):
     logout(request)
     return redirect (reverse('sharespace:index'))
 
-def borrow_item_view(request):
+
+def borrow_item_view(request, item_slug):
     if request.method == 'POST':
         print("post request")
 
@@ -192,9 +224,9 @@ class BorrowItemView(View):
     print("in borrow item viewp")
 
     @method_decorator(login_required)
-    def get(self, request):
+    def get(self, request, item_slug):
         form = BorrowItemForm()
-        return render(request, 'sharespace/borrow_item.html', {'form': form})
+        return render(request, 'sharespace/borrow_item.html', {'form': form, 'item_slug': item_slug})
 
     @method_decorator(login_required)
     def post(self, request):

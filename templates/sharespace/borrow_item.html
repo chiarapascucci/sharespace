@@ -6,7 +6,7 @@
 {% endblock %}
 
 {% block body_block %}
-<form id="borrow_item_form" method="post" action="{% url 'sharespace:borrow_item' %}" enctype = 'multipart/form-data'>
+<form id="borrow_item_form" method="post" action="{% url 'sharespace:borrow_item' item_slug %}" enctype = 'multipart/form-data'>
     {% csrf_token %}
 
     {{ form.as_p }}

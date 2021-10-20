@@ -72,7 +72,7 @@ class UserProfile(models.Model):
 
     def save(self, *args, **kwargs):
         self.user_slug = slugify(self.user.username)
-        #self.hood = Neighbourhood.objects.get_or_create(nh_post_code = kwargs['user_post_code'] )[0] #need to check this
+
         super(UserProfile, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -115,9 +115,7 @@ def calc_due_date(len_of_loan):
 
 
 class Loan(models.Model):
-
-
-    requestor = models.OneToOneField(UserProfile, blank = False, on_delete=models.CASCADE)
+    requestor = models.OneToOneField(UserProfile, blank = False, related_name = "loans", on_delete=models.CASCADE)
     item_on_loan = models.OneToOneField(Item, blank = False, on_delete=models.CASCADE)
     overdue = models.BooleanField(default=False)
     out_date = models.DateField(auto_now_add = True, null=False)

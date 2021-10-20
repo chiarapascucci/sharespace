@@ -2,10 +2,50 @@
 {%  load static %}
 
 {% block title_block %}
-    About
+    Hi {{username}}
 {% endblock %}
+<br>
+<br>
+<br>
+<br>
 
 {% block body_block %}
-<h1> About </h1>
+<br>
+<br>
+<br>
+<br>
+<h1> Hi {{ username }} </h1>
+<h2>Welcome to your profile</h2>
+<br>
+Your info:
+<ul>
+    <li>name : {{ name }}</li>
+    <li> bio : {{ bio }}</li>
+</ul>
+<br>
+<br>
+Your Items:
+
+<ul>
+  Your Owned Items
+        {% if owned_items%}
+            {% for item in owned_items.all%}
+                <li> {{ item.name }}</li>
+            {% endfor %}
+        {% else %}
+    <br>
+            you do not own any items
+        {% endif %}
+</ul>
+<br>
+<ul>
+  You are borrowing:
+        {% if borrowing_items%}
+           <br>
+            {{ borrowing_items.name }}
+        {% else %}
+
+        {% endif %}
+</ul>
 
 {% endblock %}
