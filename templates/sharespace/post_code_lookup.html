@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+ <meta charset="utf-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+		<title>Address lookup</title>
+
+		<!-- Latest compiled and minified CSS -->
+		<link
+			rel="stylesheet"
+			href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+			integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+			crossorigin="anonymous"
+		/>
+        <style>
+			body {
+				padding: 5%;
+			}
+			#address {
+				margin-bottom: 20px;
+			}
+			#address_results {
+				padding-top: 20px;
+			}
+			#address_results .radio {
+				padding: 5px;
+			}
+			#address_results .radio:hover {
+				background: #eee;
+			}
+		</style>
+
+</head>
+<body>
+	<!-- Postcode field -->
+<div>
+	<label>Postcode</label>
+	<input id="postcode" type="text">
+	<button id="postcode_lookup" onclick="lookup_func()">Search</button>
+</div>
+<div>
+	<label for="address_list">Choose an address:</label>
+	<select name="addresses" id="address_list">
+
+	</select>
+</div>
+
+<div>
+	<label>Address Line 1</label>
+	<input id="adr_line_1" type="text">
+	<label>Address Line 2</label>
+	<input id="adr_line_2" type="text">
+	<label>Address Line 3</label>
+	<input id="adr_line_3" type="text">
+	<label>Address Line 4</label>
+	<input id="adr_line_4" type="text">
+	<label>Locality</label>
+	<input id="locality" type="text">
+	<label>Town or City</label>
+	<input id="city" type="text">
+	<label>County</label>
+	<input id="county" type="text">
+</div>
+<div>
+	<button id="submit" onclick="lookup_func()">Submit</button>
+</div>
+</body>
+
+        <script src="{% static 'js/jquery-3.3.1.min.js' %}" crossorigin="anonymous"></script>
+        <script src= "{% static 'js/sharespace-jquery.js' %}" crossorigin="anonymous"></script>
+
+
+</html>

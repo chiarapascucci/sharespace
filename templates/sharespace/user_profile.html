@@ -13,9 +13,12 @@
 <h1> Hi {{ username }} </h1>
 <h2>Welcome to your profile</h2>
 <br>
+<a href = "{% url 'sharespace:change_password'  %}" >Change Password</a>
+<br>
 Your info:
 <ul>
-    <li>name : {{ name }}</li>
+    <li> <img src = "{{MEDIA_URL}}{{ picture }}" style="height:300px; width:300px" alt="user profile picture" class="rounded-circle" ></li>
+    <li>name : {{ full_name }}</li>
     <li> bio : {{ bio }}</li>
 </ul>
 <br>
@@ -43,5 +46,7 @@ Your Items:
             no items on loan atm
         {% endif %}
 </ul>
+
+<p>adding a paragraph just to test some JS</p>
 
 {% endblock %}

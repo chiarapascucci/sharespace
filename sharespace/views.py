@@ -11,6 +11,9 @@ from django.contrib.auth import authenticate, logout
 from django.contrib.auth import login as auth_login
 from django.views import View
 from pprint import pprint as pp
+from django.contrib import messages
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.forms import PasswordChangeForm
 
 
 # Create your views here.
@@ -45,12 +48,13 @@ def register_view(request):
             profile.set_hood(request.POST.get('user_post_code'))
             print(type(profile))
             print(profile.hood)
-            profile.save()
-
-            registered = True
 
             if 'picture' in request.FILES:
                 profile.picture = request.FILES['picture']
+
+            profile.save()
+
+            registered = True
 
         else:
             print(user_form.errors, profile_form.errors)
@@ -61,6 +65,10 @@ def register_view(request):
 
     return render(request, 'sharespace/sign_up.html',
                   context={'user_form': user_form, 'profile_form': profile_form, 'registered': registered})
+
+
+def address_lookup_view(request):
+    return render(request, 'sharespace/post_code_lookup.html', {})
 
 
 @login_required
@@ -76,11 +84,11 @@ def add_item_view(request):
         if add_item_form.is_valid():
             print('form is valid')
             item = add_item_form.save(commit=False)
-            list_of_owners_id = request.POST.get('owner')
             print(item.owner)
 
             item.save()
             item.owner.add()
+            item.save()
 
             for form in formset.cleaned_data:
                 if form:
@@ -164,6 +172,7 @@ def user_profile_view(request, user_slug):
             user_profile_context['bio'] = user_profile.bio
             user_profile_context['owned_items'] = user_profile.owned.all()
             user_profile_context['borrowing_items'] = None #need to sort this
+            user_profile_context['picture'] = user_profile.picture
             print(user_profile_context)
 
         except UserProfile.DoesNotExist:
@@ -177,6 +186,22 @@ def user_profile_view(request, user_slug):
 def edit_user_view(request):
     return render(request, 'sharespace/edit_user_info.html', context={})
 
+@login_required
+def change_password_view(request):
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)  # Important!
+            messages.success(request, 'Your password was successfully updated!')
+            return redirect(reverse('sharespace:index'))
+        else:
+            messages.error(request, 'Please correct the error below.')
+    else:
+        form = PasswordChangeForm(request.user)
+    return render(request, 'sharespace/change_password.html', {
+        'form': form
+    })
 
 def login(request):
     # If the request is a HTTP POST, try to pull out the relevant information.
@@ -256,3 +281,4 @@ class BorrowItemView(View):
             print(form.errors)
 
         return render(request, 'sharespace/borrow_item.html', {'form': form})
+

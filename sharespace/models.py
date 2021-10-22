@@ -61,7 +61,7 @@ class Sub_Category(models.Model):
 class UserProfile(models.Model):
     user = OneToOneField(User, on_delete=models.CASCADE)
     bio = models.CharField(max_length=MAX_LENGTH_TEXT, blank=True)
-    picture = models.ImageField(upload_to='profile_images', blank=True) #default='profile_images/default.jpg', blank=True)
+    picture = models.ImageField(upload_to='profile_images', blank = True, default='profile_images/default_profile_image.png')
     user_slug = models.SlugField(unique=True)
     user_post_code = CharField(max_length=8)
     hood = models.ForeignKey(Neighbourhood, on_delete=models.CASCADE) #will need to manage or prevent situation where a neighbourhood is deleted
@@ -133,6 +133,13 @@ class Loan(models.Model):
         super(Loan, self).save(*args, **kwargs)
 
 
+class Address(models.Model):
+    address_line_1 = models.CharField(max_length = MAX_LENGTH_TITLES, blank = False)
+    address_line_2 = models.CharField(max_length = MAX_LENGTH_TITLES, blank = True)
+    post_town = models.CharField(max_length = MAX_LENGTH_TITLES, blank = False)
+    post_code = CharField(max_length=8, blank = False)
+    country = CharField(max_length = MAX_LENGTH_TITLES, default = 'United Kingdom')
+    occupier = models.OneToOneField(UserProfile, blank = False, on_delete=models.CASCADE)
 
 
 
