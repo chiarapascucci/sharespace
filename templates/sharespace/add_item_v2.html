@@ -1,0 +1,70 @@
+{% extends 'sharespace/base.html' %}
+{%  load static %}
+
+{% block title_block %}
+    Add your item
+{% endblock %}
+
+{% block body_block %}
+<h1> Sharing is Caring... </h1>
+
+<h2>Add your item here to share with your neighbours</h2>
+
+{% if user.is_authenticated %}
+<form id="add_item_form" method="post" action="{% url 'sharespace:add_item' %}" enctype = 'multipart/form-data'>
+    {% csrf_token %}
+    <div>
+	<label>Item Name</label>
+	<input id="item_name" type="text">
+	<label>Item Description</label>
+	<input id="item_description" type="text">
+
+	{{ formset.management_form }}
+    {% for form in formset %}
+    {{ form.as_p }}
+    {% endfor %}
+
+	<label for="item_main_cat">Choose a category for your item</label>
+		<select id="item_main_cat"></select>
+
+</div>
+    <div>
+	<label>Postcode</label>
+	<input id="postcode" type="text">
+	<button id="postcode_lookup" onclick="lookup_func()">Search</button>
+</div>
+<div>
+	<label for="address_list">Choose an address:</label>
+	<select name="addresses" id="address_list">
+
+	</select>
+</div>
+
+<div>
+	<label>Address Line 1</label>
+	<input id="adr_line_1" type="text">
+	<label>Address Line 2</label>
+	<input id="adr_line_2" type="text">
+	<label>Address Line 3</label>
+	<input id="adr_line_3" type="text">
+	<label>Address Line 4</label>
+	<input id="adr_line_4" type="text">
+	<label>Locality</label>
+	<input id="locality" type="text">
+	<label>Town or City</label>
+	<input id="city" type="text">
+	<label>County</label>
+	<input id="county" type="text">
+</div>
+    <input type ="submit" name="submit" value="Add Item"/>
+
+{% else %}
+
+<h3>It looks like you are not logged in </h3>
+<p>login now or register with us today</p>
+<p>login</p>
+<p>register</p>
+
+{% endif %}
+
+{% endblock %}
