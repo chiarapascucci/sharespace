@@ -13,21 +13,14 @@
 {% if user.is_authenticated %}
 <form id="add_item_form" method="post" action="{% url 'sharespace:add_item' %}" enctype = 'multipart/form-data'>
     {% csrf_token %}
-    <div>
-	<label>Item Name</label>
-	<input id="item_name" type="text">
-	<label>Item Description</label>
-	<input id="item_description" type="text">
 
-	{{ formset.management_form }}
+    {{ add_item_form.as_p }}
+
+    {{ formset.management_form }}
     {% for form in formset %}
     {{ form.as_p }}
     {% endfor %}
-
-	<label for="item_main_cat">Choose a category for your item</label>
-		<select id="item_main_cat"></select>
-
-</div>
+   
     <div>
 	<label>Postcode</label>
 	<input id="postcode" type="text">

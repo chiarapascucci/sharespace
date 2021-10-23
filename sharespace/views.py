@@ -3,7 +3,7 @@ from django.http.response import HttpResponse
 from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse
 from sharespace.models import Image, Item, Category, Sub_Category, User, UserProfile, Neighbourhood, Loan
-from sharespace.forms import AddItemForm, BorrowItemForm, ImageForm, UserForm, UserProfileForm
+from sharespace.forms import AddItemForm, BorrowItemForm, ImageForm, UserForm, UserProfileForm, AddItemFormWithAddress
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.urls import reverse
@@ -76,7 +76,7 @@ def add_item_view(request):
     ImageFormSet = modelformset_factory(Image, form=ImageForm, extra=3)
 
     if request.method == 'POST':
-        add_item_form = AddItemForm(request.POST)
+        add_item_form = AddItemFormWithAddress(request.POST)
         formset = ImageFormSet(request.POST, request.FILES)
 
         # print(request.POST)
@@ -100,9 +100,22 @@ def add_item_view(request):
             print('there are form errors in item form', add_item_form.errors, add_item_form.is_valid)
             print('there are form errors in image forms', formset.errors, formset.is_valid)
     else:
-        add_item_form = AddItemForm()
-        formset = ImageFormSet(queryset=Image.objects.none())
-        return render(request, 'sharespace/add_item.html', context={'add_item_form': add_item_form, 'formset': formset})
+
+        try:
+            username = request.user.get_username()
+            user = User.objects.get(username=username)
+            try:
+                user_profile = UserProfile.objects.get(user=user)
+                hood = user_profile.hood
+                poss_coowners = UserProfile.objects.filter(hood=hood)
+            except UserProfile.DoesNotExist:
+                print("no user profile")
+        except User.DoesNotExist:
+            print("no user")
+
+        categories = Category.objects.all()
+
+        return render(request, 'sharespace/add-ite_raw.html', context={'user_profile':user_profile, 'owners' : poss_coowners, 'categories':categories})
 
 
 def item_page_view(request, item_slug):
@@ -244,6 +257,13 @@ def borrow_item_view(request, item_slug):
         return render(request, 'sharespace/borrow_item.html', {'form': form})
 
 
+def load_sub_cat_view(request):
+    cat = request.GET.get('main_category_id')
+    print(cat)
+    sub_cat_list = Sub_Category.objects.filter(parent = cat)
+    return render(request, 'sharespace/sub_cat_dropdown_list.html', {'list' : sub_cat_list})
+
+
 class BorrowItemView(View):
     print("in borrow item viewp")
 
@@ -281,4 +301,5 @@ class BorrowItemView(View):
             print(form.errors)
 
         return render(request, 'sharespace/borrow_item.html', {'form': form})
+
 

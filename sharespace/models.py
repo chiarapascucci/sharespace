@@ -12,6 +12,13 @@ from django.core.validators import MaxValueValidator
 MAX_LENGTH_TITLES = 55
 MAX_LENGTH_TEXT = 240
 
+class Address(models.Model):
+    address_line_1 = models.CharField(max_length = MAX_LENGTH_TITLES, blank = False)
+    address_line_2 = models.CharField(max_length = MAX_LENGTH_TITLES, blank = True)
+    post_town = models.CharField(max_length = MAX_LENGTH_TITLES, blank = False)
+    post_code = CharField(max_length=8, blank = False)
+    country = CharField(max_length = MAX_LENGTH_TITLES, default = 'United Kingdom')
+
 class Neighbourhood(models.Model):
     #name = models.CharField(max_length=MAX_LENGTH_TITLES, blank = False)
     nh_post_code = models.CharField(primary_key=True, max_length=8) #need to devise something to enforce valid postcodes
@@ -95,7 +102,7 @@ class Item(models.Model):
     owner = models.ManyToManyField(UserProfile, related_name = "owned", blank = False)
     borrowed_by = models.ForeignKey(UserProfile, related_name = "borrowed", blank = True,  on_delete=models.SET_NULL, null = True)
     item_slug = models.SlugField(unique=True)
-    
+    location = models.ForeignKey(Address, on_delete = models.CASCADE, blank = False)
     max_loan_len = models.PositiveIntegerField(choices=max_len_of_loan_choices, default=1, validators = [MaxValueValidator(4)] )
 
     def save(self, *args, **kwargs):
@@ -133,20 +140,9 @@ class Loan(models.Model):
         super(Loan, self).save(*args, **kwargs)
 
 
-class Address(models.Model):
-    address_line_1 = models.CharField(max_length = MAX_LENGTH_TITLES, blank = False)
-    address_line_2 = models.CharField(max_length = MAX_LENGTH_TITLES, blank = True)
-    post_town = models.CharField(max_length = MAX_LENGTH_TITLES, blank = False)
-    post_code = CharField(max_length=8, blank = False)
-    country = CharField(max_length = MAX_LENGTH_TITLES, default = 'United Kingdom')
-    occupier = models.OneToOneField(UserProfile, blank = False, on_delete=models.CASCADE)
-
-
-
-
-
 def upload_gallery_image(instance, filename):
     return f"images/{instance.item.name}/gallery/{filename}"
+
 
 class Image(models.Model):
     image = models.ImageField(upload_to = upload_gallery_image)

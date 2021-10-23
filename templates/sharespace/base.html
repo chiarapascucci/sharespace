@@ -47,11 +47,12 @@
 
     <body>
         {% block body_block %}
+        <script src="{% static 'js/jquery-3.3.1.min.js' %}" crossorigin="anonymous"></script>
+        <script src= "{% static 'js/sharespace-jquery.js' %}" crossorigin="anonymous"></script>
         {% endblock %}  
     </body>
 
     <!-- Bootstrap core JavaScript -->
         <!-- Placed at the end of the document so the pages load faster -->
 
-        <script src="{% static 'js/jquery-3.3.1.min.js' %}" crossorigin="anonymous"></script>
-        <script src= "{% static 'js/sharespace-jquery.js' %}" crossorigin="anonymous"></script>
+

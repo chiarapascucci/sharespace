@@ -9,6 +9,19 @@ $(document).ready(function() {
             $(this).css('color', 'black');
         }
     );
+
+    $("#main_category").change(function(){
+		const url = $("#add_item_form").attr("data-sub-cat-url");
+		const catID = $(this).val();
+
+		$.ajax({
+			url : url,
+			data: { 'main_category_id' : catID },
+			success : function(data) {
+				$("#sec_category").html(data);
+			}
+		});
+	});
 });
 
 
@@ -30,7 +43,7 @@ function lookup_func() {
 				    populate_list(myData);
 				    var selected_address = document.getElementById("address_list");
 				    var str_address = selected_address.options[selected_address.selectedIndex].text;
-				    populate_address(str_address);
+				   // populate_address(str_address);
 			    }
 			    else { console.log("error at request point" + request.status);
 			    }
