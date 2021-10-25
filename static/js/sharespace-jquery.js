@@ -22,6 +22,9 @@ $(document).ready(function() {
 			}
 		});
 	});
+
+
+
 });
 
 
@@ -41,9 +44,6 @@ function lookup_func() {
 				    console.log("here is the data retrieved");
 				    console.log(myData);
 				    populate_list(myData);
-				    var selected_address = document.getElementById("address_list");
-				    var str_address = selected_address.options[selected_address.selectedIndex].text;
-				   // populate_address(str_address);
 			    }
 			    else { console.log("error at request point" + request.status);
 			    }
@@ -62,15 +62,19 @@ function populate_list(data) {
     }
 }
 
-function populate_address(address_str){
-    const tokens = address_str.split(",");
+function populate_address(){
+    const sel_adr = document.getElementById("address_list");
+    console.log(sel_adr.selectedIndex)
+    var str_address = sel_adr.options[sel_adr.selectedIndex].text
+    console.log(str_address)
+    tokens = str_address.split(',')
     console.log(tokens.length);
-    document.getElementById("adr_line_1").value = tokens[0];
-    document.getElementById("adr_line_2").value = tokens[1];
-    document.getElementById("adr_line_3").value = tokens[2];
-    document.getElementById("adr_line_4").value = tokens[3];
-    document.getElementById("locality").value = tokens[4];
-    document.getElementById("city").value = tokens[5];
-    document.getElementById("county").value = tokens[6];
+    document.getElementById("id_adr_line_1").value = tokens[0];
+    document.getElementById("id_adr_line_2").value = tokens[1];
+    document.getElementById("id_adr_line_3").value = tokens[2];
+    document.getElementById("id_adr_line_4").value = tokens[3];
+    document.getElementById("id_locality").value = tokens[4];
+    document.getElementById("id_city").value = tokens[5];
+    document.getElementById("id_county").value = tokens[6];
 
 }

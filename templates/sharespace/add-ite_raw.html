@@ -35,32 +35,43 @@
                 <option value="2">2 weeks</option>
                 <option value="3">3 weeks</option>
                 <option value="4">4 weeks</option>
-            </select></p>
+            </select></p><br>
 
-        <label for="postcode">Postcode:</label> <input id="postcode" type="text" name="postcode" required >
-		<button id="postcode_lookup" onclick="lookup_func()">Search</button>
-        <select id="address_list"> </select>
-        <label for="id_adr_line_1">Adr line 1:</label> <input type="text" name="adr_line_1" required id="id_adr_line_1">
-        <label for="id_adr_line_2">Adr line 2:</label> <input type="text" name="adr_line_2" required id="id_adr_line_2">
-        <label for="id_adr_line_3">Adr line 3:</label> <input type="text" name="adr_line_3" required id="id_adr_line_3">
-        <label for="id_adr_line_4">Adr line 4:</label> <input type="text" name="adr_line_4" required id="id_adr_line_4">
-        <label for="id_locality">Locality:</label> <input type="text" name="locality" required id="id_locality">
-        <label for="id_city">City:</label> <input type="text" name="city" required id="id_city">
-        <label for="id_county">County:</label> <input type="text" name="county" required id="id_county">
+        <label for="postcode">Postcode:</label> <input id="postcode" type="text" name="postcode" required onkeyup="lookup_func()" >
+		<!--<button id="postcode_lookup" onclick="lookup_func()">Search</button>-->
+        <select id="address_list" name = "address_list" required onchange="populate_address()"> </select><br>
+        <label for="id_adr_line_1">Adr line 1:</label> <input type="text" name="adr_line_1" required id="id_adr_line_1"><br>
+        <label for="id_adr_line_2">Adr line 2:</label> <input type="text" name="adr_line_2"  id="id_adr_line_2"><br>
+        <label for="id_adr_line_3">Adr line 3:</label> <input type="text" name="adr_line_3"  id="id_adr_line_3"><br>
+        <label for="id_adr_line_4">Adr line 4:</label> <input type="text" name="adr_line_4"  id="id_adr_line_4"><br>
+        <label for="id_locality">Locality:</label> <input type="text" name="locality" required id="id_locality"><br>
+        <label for="id_city">City:</label> <input type="text" name="city" required id="id_city"><br>
+        <label for="id_county">County:</label> <input type="text" name="county" required id="id_county"><br>
 
 		<!-- FORMSET FOR IMAGES-->
-		<input type="hidden" name="form-TOTAL_FORMS" value="3" id="id_form-TOTAL_FORMS"><input type="hidden" name="form-INITIAL_FORMS" value="0" id="id_form-INITIAL_FORMS"><input type="hidden" name="form-MIN_NUM_FORMS" value="0" id="id_form-MIN_NUM_FORMS"><input type="hidden" name="form-MAX_NUM_FORMS" value="1000" id="id_form-MAX_NUM_FORMS">
+        {{ formset.management_form }}
+    	{% for form in formset %}
+    	{{ form.as_p }}
+    	{% endfor %}
+		<!--<input type="hidden" name="form-TOTAL_FORMS" value="3" id="id_form-TOTAL_FORMS"><input type="hidden" name="form-INITIAL_FORMS" value="0" id="id_form-INITIAL_FORMS"><input type="hidden" name="form-MIN_NUM_FORMS" value="0" id="id_form-MIN_NUM_FORMS"><input type="hidden" name="form-MAX_NUM_FORMS" value="1000" id="id_form-MAX_NUM_FORMS">
 
     	<p><label for="id_form-0-image">Image:</label> <input type="file" name="form-0-image" accept="image/*" id="id_form-0-image"><input type="hidden" name="form-0-id" id="id_form-0-id"></p>
 
     	<p><label for="id_form-1-image">Image:</label> <input type="file" name="form-1-image" accept="image/*" id="id_form-1-image"><input type="hidden" name="form-1-id" id="id_form-1-id"></p>
 
     	<p><label for="id_form-2-image">Image:</label> <input type="file" name="form-2-image" accept="image/*" id="id_form-2-image"><input type="hidden" name="form-2-id" id="id_form-2-id"></p>
+-->
 
-
-		<label>Owners</label>
-
-    <input type ="submit" name="submit" value="Add Item"/>
+		<label>Owners</label><br>
+        {% if owners %}
+            {% for o in owners %}
+            <input type="checkbox" id="{{ o.user.username }}" name="{{ o.user.username }}" >
+            <label for="{{ o.user.username }}">{{ o.user.username }}</label><br>
+            {% endfor %}
+        {% else %}
+            <p>There are no other possible co-owners</p>
+        {% endif %}
+        <input type ="submit" name="submit" value="Add Item"/>
 	</div>
 </form>
 

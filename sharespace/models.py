@@ -14,8 +14,12 @@ MAX_LENGTH_TEXT = 240
 
 class Address(models.Model):
     address_line_1 = models.CharField(max_length = MAX_LENGTH_TITLES, blank = False)
-    address_line_2 = models.CharField(max_length = MAX_LENGTH_TITLES, blank = True)
-    post_town = models.CharField(max_length = MAX_LENGTH_TITLES, blank = False)
+    address_line_2 = models.CharField(max_length = MAX_LENGTH_TITLES, default = '')
+    address_line_3 = models.CharField(max_length = MAX_LENGTH_TITLES, default = '')
+    address_line_4 = models.CharField(max_length=MAX_LENGTH_TITLES, default = '')
+    locality = models.CharField(max_length=MAX_LENGTH_TITLES, default='')
+    city = models.CharField(max_length = MAX_LENGTH_TITLES, default = '')
+    county = models.CharField(max_length=MAX_LENGTH_TITLES, default = '')
     post_code = CharField(max_length=8, blank = False)
     country = CharField(max_length = MAX_LENGTH_TITLES, default = 'United Kingdom')
 

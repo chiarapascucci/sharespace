@@ -1,0 +1,12 @@
+{% extends 'sharespace/base.html' %}
+{%  load static %}
+
+{% block title_block %}
+{% endblock %}
+
+{% block body_block %}
+  <option value="">---------</option>
+  {% for a in list %}
+  <option value="{{ a }}">{{ a }}</option>
+  {% endfor %}
+{% endblock %}

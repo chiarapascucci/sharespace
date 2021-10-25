@@ -5,8 +5,8 @@ class ImageInLIneAdmin (admin.TabularInline):
     model = Image
 
 class ItemAdmin(admin.ModelAdmin):
-    list_display = ('name', 'description', 'price', 'main_category', 'sec_category', 'available', 'item_slug')
-    fields = ('owner',)
+    list_display = ('name', 'description', 'price', 'main_category', 'sec_category', 'available', )
+    fields = ('owner','item_slug', 'name', 'description', 'price', 'main_category', 'sec_category', 'available', )
     prepopulated_fields = {'item_slug': ('name',)}
     inlines = [
         ImageInLIneAdmin

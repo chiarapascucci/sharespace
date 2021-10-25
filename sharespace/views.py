@@ -2,7 +2,7 @@ from django.forms.models import modelformset_factory
 from django.http.response import HttpResponse
 from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse
-from sharespace.models import Image, Item, Category, Sub_Category, User, UserProfile, Neighbourhood, Loan
+from sharespace.models import Image, Item, Category, Sub_Category, User, UserProfile, Neighbourhood, Loan, Address
 from sharespace.forms import AddItemForm, BorrowItemForm, ImageForm, UserForm, UserProfileForm, AddItemFormWithAddress
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
@@ -76,47 +76,99 @@ def add_item_view(request):
     ImageFormSet = modelformset_factory(Image, form=ImageForm, extra=3)
 
     if request.method == 'POST':
-        add_item_form = AddItemFormWithAddress(request.POST)
+        name = request.POST['name']
+        print(name)
+        description = request.POST['description']
+        print(description)
+
+        main_cat_name = request.POST['main_category']
+        main_cat = Category.objects.get(name=main_cat_name)
+        print(type(main_cat))
+        sec_category_name = request.POST['sec_category']
+        sec_category = Sub_Category.objects.get(name=sec_category_name)
+        print(type(sec_category))
+        max_loan_len = request.POST['max_loan_len']
+        owners = find_owners(request)
+        username = request.user.get_username()
+        print(username)
+        us = User.objects.get(username=username)
+        up = UserProfile.objects.get(user=us)
+        print("up: ", up)
+        owners.append(up)
+        print(len(owners))
+        item_address = create_address(request)
+        item_added = Item.objects.create(name=name, description=description, main_category = main_cat,
+                                         sec_category=sec_category, location=item_address,
+                                         max_loan_len = max_loan_len)
+
+        item_added.owner.add(up)
+        item_added.save()
+        if not owners:
+            for o in owners:
+                item_added.add(o)
+                item_added.save()
+
         formset = ImageFormSet(request.POST, request.FILES)
 
         # print(request.POST)
-
-        if add_item_form.is_valid():
-            print('form is valid')
-            item = add_item_form.save(commit=False)
-            print(item.owner)
-
-            item.save()
-            item.owner.add()
-            item.save()
-
+        if formset.is_valid():
             for form in formset.cleaned_data:
                 if form:
                     image = form['image']
-                    Image.objects.create(image=image, item=item)
-
-            return redirect(reverse('sharespace:item_page', kwargs={'item_slug': item.item_slug}))
+                    Image.objects.create(image=image, item=item_added)
         else:
-            print('there are form errors in item form', add_item_form.errors, add_item_form.is_valid)
-            print('there are form errors in image forms', formset.errors, formset.is_valid)
-    else:
+            print("errors in image form")
 
+        return redirect(reverse('sharespace:item_page', kwargs={'item_slug': item_added.item_slug}))
+
+    else:
+        item_context = {'formset': ImageFormSet(queryset=Image.objects.none())}
         try:
             username = request.user.get_username()
             user = User.objects.get(username=username)
             try:
                 user_profile = UserProfile.objects.get(user=user)
+                item_context['user_profile'] = user_profile
                 hood = user_profile.hood
-                poss_coowners = UserProfile.objects.filter(hood=hood)
+                item_context['hood']=hood
+                print(hood)
+                poss_coowners = UserProfile.objects.filter(hood=hood).exclude(user=user)
+                item_context['owners']=poss_coowners
+                print(poss_coowners)
             except UserProfile.DoesNotExist:
                 print("no user profile")
         except User.DoesNotExist:
             print("no user")
 
-        categories = Category.objects.all()
+        item_context['categories'] = Category.objects.all()
 
-        return render(request, 'sharespace/add-ite_raw.html', context={'user_profile':user_profile, 'owners' : poss_coowners, 'categories':categories})
+        return render(request, 'sharespace/add-ite_raw.html', context= item_context)
 
+
+def find_owners(request):
+    list = []
+    for key in request:
+        if request[key] == 'on':
+            print(key)
+            us = User.objects.get(username = key)
+            up = UserProfile.objects.get(user=us)
+            list.append(up)
+            print(up)
+
+    return list
+
+
+def create_address(adr_dict):
+    item_adr = Address.objects.get_or_create(address_line_1 = adr_dict.POST['adr_line_1'],
+                                             address_line_2 = adr_dict.POST['adr_line_2'],
+                                             address_line_3 = adr_dict.POST['adr_line_3'],
+                                             address_line_4 = adr_dict.POST['adr_line_4'],
+                                             city = adr_dict.POST['city'],
+                                             locality = adr_dict.POST['locality'],
+                                             county = adr_dict.POST['county'],
+                                             post_code = adr_dict.POST['postcode'])[0]
+
+    return item_adr
 
 def item_page_view(request, item_slug):
     item_page_context = {}
@@ -184,7 +236,8 @@ def user_profile_view(request, user_slug):
             user_profile = UserProfile.objects.get(user_slug=user_slug)
             user_profile_context['bio'] = user_profile.bio
             user_profile_context['owned_items'] = user_profile.owned.all()
-            user_profile_context['borrowing_items'] = None #need to sort this
+            user_profile_context['borrowing_items'] = user_profile.loans
+            print("this is the name of the item on loan ", user_profile.loans.item_on_loan.name)
             user_profile_context['picture'] = user_profile.picture
             print(user_profile_context)
 
@@ -262,6 +315,7 @@ def load_sub_cat_view(request):
     print(cat)
     sub_cat_list = Sub_Category.objects.filter(parent = cat)
     return render(request, 'sharespace/sub_cat_dropdown_list.html', {'list' : sub_cat_list})
+
 
 
 class BorrowItemView(View):

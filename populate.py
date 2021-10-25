@@ -1,11 +1,12 @@
-import os 
+import os
+from pprint import pprint
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sharespace_project.settings')
 
 import django
 django.setup()
 from django.contrib.auth.hashers import PBKDF2PasswordHasher, make_password
-from sharespace.models import Item, UserProfile, Category, Sub_Category, Neighbourhood
+from sharespace.models import Item, UserProfile, Category, Sub_Category, Neighbourhood, Address
 import random
 from django.contrib.auth.models import User
 from django.core.files import File
@@ -24,12 +25,13 @@ def add_sub_cat(name, category):
     return sc
 
 
-def add_item(name, cat, item_owner, sub_cat=None):
+def add_item(name, cat, item_owner, address, sub_cat=None):
     print(item_owner, "line 28")
     print(type(item_owner), "line 29")
-    i = Item.objects.get_or_create(name=name, main_category=cat, sec_category=sub_cat)[0]
+    i = Item.objects.get_or_create(name=name, main_category=cat, sec_category=sub_cat, location=address)[0]
     i.save()
     i.owner.add(item_owner)
+    i.save()
     return i
 
 
@@ -56,6 +58,24 @@ def add_user_profile(user, post_code):
 
 def populate():
 
+    addresses = {
+        1 : {
+            'adr_line_1' : 'manor house',
+            'post_code' : 'ABC 123',
+        },
+        2: {
+            'adr_line_1': 'fancy villa',
+            'post_code': 'ABC 543',
+        },
+        3: {
+            'adr_line_1': 'my house',
+            'post_code': 'GL7 3AY',
+        },
+        4: {
+            'adr_line_1': 'none of your buz',
+            'post_code': 'GL7 3AY',
+        }
+    }
     #data dictionaries to be populated - manually!! 
     categories = ['kitchen', 'health', 'tech', 'DIY', 'car']
 
@@ -77,7 +97,6 @@ def populate():
         'chpic' : {'username' : 'chpic', 'email':'g5@mail.com', 'password': 'helloyou123'},
     }
 
-    #user_profiles = []
 
     hoods = ['GL7 3AY', 'ABC 233', 'AB24 4HP', 'SW9 6TQ']
 
@@ -101,7 +120,13 @@ def populate():
             add_sub_cat(sc, cat)
             print(sc)
 
-
+# create addresses (placeholders to create objects)
+    address_list=[]
+    for key, data in addresses.items():
+        adr = Address.objects.get_or_create(address_line_1 = data['adr_line_1'], post_code = data['post_code'])[0]
+        address_list.append(adr)
+        pprint(adr)
+        print(type(adr))
 
 # create user
     user_list = []
@@ -130,7 +155,8 @@ def populate():
     for item_name in items:
         owner = user_profile_list[random.randint(0, len(user_profile_list)-1)]
         cat = cat_list[random.randint(0, len(cat_list)-1)]
-        item = add_item(item_name, cat, owner)
+        address = address_list[random.randint(0, 3)]
+        item = add_item(item_name, cat, owner, address)
         item_list.append(item)
         print(item)
     print(len(item_list))

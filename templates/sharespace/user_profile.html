@@ -40,8 +40,7 @@ Your Items:
 <ul>
   You are borrowing:
         {% if borrowing_items %}
-
-            {{ borrowing_items.name }}
+            {{ borrowing_items.item_on_loan.name }}
         {% else %}
             no items on loan atm
         {% endif %}
