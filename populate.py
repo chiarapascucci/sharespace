@@ -120,16 +120,8 @@ def populate():
             add_sub_cat(sc, cat)
             print(sc)
 
-# create addresses (placeholders to create objects)
-    address_list=[]
-    for key, data in addresses.items():
-        adr = Address.objects.get_or_create(address_line_1 = data['adr_line_1'], post_code = data['post_code'])[0]
-        address_list.append(adr)
-        pprint(adr)
-        print(type(adr))
-
-# create user
     user_list = []
+    hood_list = []
 
     for username, user_data in users.items():
         user = add_user(username, user_data['email'], user_data['password'])
@@ -146,9 +138,22 @@ def populate():
         hood = hoods[random.randint(0, 3)]
         print(hood)
         up = add_user_profile(user, hood)
+        hood_list.append(up.hood)
         user_profile_list.append(up)
         print(up)
     print(len(user_profile_list))
+
+# create addresses (placeholders to create objects)
+    address_list=[]
+    for key, data in addresses.items():
+        adr = Address.objects.get_or_create(address_line_1 = data['adr_line_1'],
+                                            adr_hood = hood_list[random.randint(0, len(hood_list)-1)])[0]
+        address_list.append(adr)
+        pprint(adr)
+        print(type(adr))
+
+# create user
+
 
 # having list of user profiles and categories - can now create items
     item_list = []

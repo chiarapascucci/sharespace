@@ -12,6 +12,21 @@ from django.core.validators import MaxValueValidator
 MAX_LENGTH_TITLES = 55
 MAX_LENGTH_TEXT = 240
 
+
+class Neighbourhood(models.Model):
+    # name = models.CharField(max_length=MAX_LENGTH_TITLES, blank = False)
+    nh_post_code = models.CharField(primary_key=True,
+                                    max_length=8)  # need to devise something to enforce valid postcodes
+    description = models.CharField(max_length=MAX_LENGTH_TEXT, blank=True)
+    nh_slug = models.SlugField()
+
+    def save(self, *args, **kwargs):
+        self.nh_slug = slugify(self.nh_post_code)
+        super(Neighbourhood, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return self.nh_post_code
+
 class Address(models.Model):
     address_line_1 = models.CharField(max_length = MAX_LENGTH_TITLES, blank = False)
     address_line_2 = models.CharField(max_length = MAX_LENGTH_TITLES, default = '')
@@ -20,21 +35,9 @@ class Address(models.Model):
     locality = models.CharField(max_length=MAX_LENGTH_TITLES, default='')
     city = models.CharField(max_length = MAX_LENGTH_TITLES, default = '')
     county = models.CharField(max_length=MAX_LENGTH_TITLES, default = '')
-    post_code = CharField(max_length=8, blank = False)
-    country = CharField(max_length = MAX_LENGTH_TITLES, default = 'United Kingdom')
+    country = models.CharField(max_length = MAX_LENGTH_TITLES, default = 'United Kingdom')
+    adr_hood = models.ForeignKey(Neighbourhood, blank = False, on_delete = models.CASCADE)
 
-class Neighbourhood(models.Model):
-    #name = models.CharField(max_length=MAX_LENGTH_TITLES, blank = False)
-    nh_post_code = models.CharField(primary_key=True, max_length=8) #need to devise something to enforce valid postcodes
-    description = models.CharField(max_length = MAX_LENGTH_TEXT, blank = True)
-    nh_slug = models.SlugField()
-
-    def save(self, *args, **kwargs):
-        self.nh_slug = slugify(self.nh_post_code)
-        super(Neighbourhood, self).save( *args, **kwargs)
-    
-    def __str__(self):
-        return self.nh_post_code
 
 class Category(models.Model):
     name = models.CharField(primary_key=True, max_length=MAX_LENGTH_TITLES)
@@ -81,11 +84,13 @@ class UserProfile(models.Model):
     hood = models.ForeignKey(Neighbourhood, on_delete=models.CASCADE) #will need to manage or prevent situation where a neighbourhood is deleted
 
     def set_hood(self, user_post_code):
-        self.hood = Neighbourhood.objects.get_or_create(nh_post_code = user_post_code)[0]
+        f_user_post_code = user_post_code.strip().replace(' ','').lower()
+        self.hood = Neighbourhood.objects.get_or_create(nh_post_code = f_user_post_code)[0]
         return self
 
     def save(self, *args, **kwargs):
         self.user_slug = slugify(self.user.username)
+        self.user_post_code = self.user_post_code.strip().replace(' ','').lower()
         if self.curr_no_of_items >= self.max_no_of_items:
             self.can_borrow = False
         super(UserProfile, self).save(*args, **kwargs)
@@ -130,14 +135,14 @@ def calc_due_date(len_of_loan):
 
 
 class Loan(models.Model):
-    requestor = models.OneToOneField(UserProfile, blank = False, related_name = "loans", on_delete=models.CASCADE)
-    item_on_loan = models.OneToOneField(Item, blank = False, on_delete=models.CASCADE)
+    requestor = models.ForeignKey(UserProfile, blank = False, related_name = "loans", on_delete=models.CASCADE)
+    item_on_loan = models.ForeignKey(Item, blank = False, on_delete=models.CASCADE)
     overdue = models.BooleanField(default=False)
     active = models.BooleanField(default = True)
     out_date = models.DateField(auto_now_add = True, null=False)
     due_date = models.DateField(null=False)
     len_of_loan = models.PositiveIntegerField(default=1, validators = [MaxValueValidator(4)] )
-    loan_slug = models.SlugField(unique=True)
+    loan_slug = models.SlugField(primary_key = True)
 
     def __str__(self):
         my_str = "{} borrowing {} for {} weeks".format(self.requestor, self.item_on_loan, self.len_of_loan)
@@ -151,7 +156,10 @@ class Loan(models.Model):
     def apply_loan(self):
         self.requestor.curr_no_of_items = self.requestor.curr_no_of_items + 1
         self.requestor.save()
-        self.item_on_loan.available = False
+        if self.requestor.curr_no_of_items >= self.requestor.max_no_of_items:
+            self.requestor.can_borrow = False
+            self.requestor.save()
+        self.item_on_loan.available=False
         self.item_on_loan.save()
 
     def mark_as_complete(self):

@@ -23,6 +23,8 @@ $(document).ready(function() {
 		});
 	});
 
+	$("#postcode").load(lookup_func())
+
 
 
 });

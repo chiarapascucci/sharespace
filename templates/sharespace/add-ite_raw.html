@@ -37,9 +37,10 @@
                 <option value="4">4 weeks</option>
             </select></p><br>
 
-        <label for="postcode">Postcode:</label> <input id="postcode" type="text" name="postcode" required onkeyup="lookup_func()" >
-		<!--<button id="postcode_lookup" onclick="lookup_func()">Search</button>-->
-        <select id="address_list" name = "address_list" required onchange="populate_address()"> </select><br>
+        <label for="postcode">Postcode:</label>
+        <input id="postcode" type="text" name="postcode" value = "{{ hood }}" required readonly >
+
+        <select id="address_list" name = "address_list"  onchange="populate_address()"> </select><br>
         <label for="id_adr_line_1">Adr line 1:</label> <input type="text" name="adr_line_1" required id="id_adr_line_1"><br>
         <label for="id_adr_line_2">Adr line 2:</label> <input type="text" name="adr_line_2"  id="id_adr_line_2"><br>
         <label for="id_adr_line_3">Adr line 3:</label> <input type="text" name="adr_line_3"  id="id_adr_line_3"><br>

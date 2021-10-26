@@ -96,6 +96,7 @@ def add_item_view(request):
         print("up: ", up)
         owners.append(up)
         print(len(owners))
+
         item_address = create_address(request)
         item_added = Item.objects.create(name=name, description=description, main_category = main_cat,
                                          sec_category=sec_category, location=item_address,
@@ -130,7 +131,7 @@ def add_item_view(request):
                 user_profile = UserProfile.objects.get(user=user)
                 item_context['user_profile'] = user_profile
                 hood = user_profile.hood
-                item_context['hood']=hood
+                item_context['hood']=hood.nh_post_code
                 print(hood)
                 poss_coowners = UserProfile.objects.filter(hood=hood).exclude(user=user)
                 item_context['owners']=poss_coowners
@@ -159,6 +160,7 @@ def find_owners(request):
 
 
 def create_address(adr_dict):
+    hood = Neighbourhood.objects.get_or_create(nh_post_code = adr_dict.POST['postcode'])[0]
     item_adr = Address.objects.get_or_create(address_line_1 = adr_dict.POST['adr_line_1'],
                                              address_line_2 = adr_dict.POST['adr_line_2'],
                                              address_line_3 = adr_dict.POST['adr_line_3'],
@@ -166,7 +168,7 @@ def create_address(adr_dict):
                                              city = adr_dict.POST['city'],
                                              locality = adr_dict.POST['locality'],
                                              county = adr_dict.POST['county'],
-                                             post_code = adr_dict.POST['postcode'])[0]
+                                             adr_hood = hood)[0]
 
     return item_adr
 
@@ -175,12 +177,10 @@ def item_page_view(request, item_slug):
 
     try:
         item = Item.objects.get(item_slug=item_slug)
+        print("item information: \n name: ", item.name, "available: ", item.available)
         item_page_context['item'] = item
         item_page_context['owners'] = item.owner.all()
         item_page_context['gallery'] = item.images.all()
-        # print("in item view: " , item, item.owner.all())
-       # pp(item_page_context)
-        # print(item_page_context['owners'].exists())
 
     except Item.DoesNotExist:
         item_page_context['item'] = None
@@ -228,12 +228,20 @@ def category_list_view(request):
 
 
 def category_page_view(request, cat_slug):
+
+    up = extract_us_up(request)['up']
+
     cat = Category.objects.get(cat_slug=cat_slug)
-    cat_context = {}
-    cat_context['name'] = cat.name
-    cat_context['all_items'] = Item.objects.filter(main_category=cat).order_by('name')
+    cat_context = {'name': cat.name}
+    if not up:
+
+        cat_context['all_items'] = Item.objects.filter(main_category=cat).order_by('name')
+    else:
+        up_post_code = up.user_post_code
 
     return render(request, 'sharespace/category_page.html', context=cat_context)
+
+
 
 
 def sub_cat_page_view(request):
@@ -261,13 +269,14 @@ def user_profile_view(request, user_slug):
 
         try:
             user_profile = UserProfile.objects.get(user_slug=user_slug)
-            print(user_profile.can_borrow)
+            print("user is borrowing: ", user_profile.curr_no_of_items, "\n user can borrow mad:",
+                  user_profile.max_no_of_items, "you can still borrow? ", user_profile.can_borrow)
             user_profile_context['bio'] = user_profile.bio
             user_profile_context['owned_items'] = user_profile.owned.all()
             try:
 
-                user_profile_context['borrowing_items'] = user_profile.loans
-                print("this is the name of the item on loan ", user_profile.loans.item_on_loan.name)
+                user_profile_context['borrowing_items'] = user_profile.loans.all()
+                #print("this is the name of the item on loan ", user_profile.loans.all().item_on_loan.name)
             except Loan.DoesNotExist:
                 print("no item on loan exception")
                 user_profile_context['borrowing_items'] = None
@@ -373,20 +382,26 @@ class BorrowItemView(View):
     def post(self, request, item_slug):
         print("printing post request : ", request.POST)
 
-        username = request.user.get_username()
-        print(username)
-        user = User.objects.get(username=username)
+        user_dict = extract_us_up(request)
+        item_slug = request.POST['item_slug']
+        len_of_loan = int(request.POST['len_of_loan'])
 
-        try:
-            user_p = UserProfile.objects.get(user = user)
-        except UserProfile.DoesNotExist:
-            print("no user here")
+        if user_dict:
+            up = user_dict['up']
+            user_slug = up.user_slug
+
+        else:
+            print("no user found")
             return render(request, 'sharespace/index.html', {})
 
         try:
             item = Item.objects.get(item_slug=item_slug)
+            loan = Loan.objects.create(requestor = up, item_on_loan = item, len_of_loan = len_of_loan)
+            print(loan)
+            loan.apply_loan()
+
         except Item.DoesNotExist:
             print("no item retrived")
             return render(request, 'sharespace/index.html', {})
 
-        return redirect(reverse('sharespace:index'))
+        return redirect(reverse('sharespace:user_profile', kwargs={'user_slug':user_slug}))
