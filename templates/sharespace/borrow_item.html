@@ -6,10 +6,23 @@
 {% endblock %}
 
 {% block body_block %}
+<br>
+<br>
+<br>
+<br>
 <form id="borrow_item_form" method="post" action="{% url 'sharespace:borrow_item' item_slug %}" enctype = 'multipart/form-data'>
     {% csrf_token %}
 
-    {{ form.as_p }}
+     You are borrowing : <input type="text" id = "item_name" name = "item_name" value = "{{ item.name }}" readonly required>
+    <input type="text" id = "item_slug" name = "item_slug" value = "{{ item.item_slug }}" readonly required>
+
+    {% if choices %}
+        {% for choice in choices %}
+            <input type="radio" id="len_of_loan" name="len_of_loan" value="{{choice}}">
+            <label for="len_of_loan"> {{ choice }} weeks </label><br>
+        {% endfor %}
+    {% endif %}
+
    
 
     <input type ="submit" name="submit" value="Borrow Item"/>

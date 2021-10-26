@@ -56,6 +56,7 @@ class AddItemFormWithAddress(AddItemForm):
 
 
 class BorrowItemForm(forms.ModelForm):
+    len_of_loan = forms.ChoiceField(choices=[], widget=forms.RadioSelect)
     class Meta:
         fields = ('len_of_loan',)
         model = Loan

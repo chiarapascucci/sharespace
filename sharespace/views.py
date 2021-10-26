@@ -179,12 +179,39 @@ def item_page_view(request, item_slug):
         item_page_context['owners'] = item.owner.all()
         item_page_context['gallery'] = item.images.all()
         # print("in item view: " , item, item.owner.all())
-        pp(item_page_context)
-        print(item_page_context['owners'].exists())
+       # pp(item_page_context)
+        # print(item_page_context['owners'].exists())
+
     except Item.DoesNotExist:
         item_page_context['item'] = None
 
+    up_dict = extract_us_up(request)
+    if up_dict:
+        item_page_context['up'] = up_dict['up']
+
     return render(request, 'sharespace/item_page.html', context=item_page_context)
+
+def extract_us_up (request):
+    if request.user.is_anonymous:
+        print("anonymous user")
+        return {}
+    else:
+        try:
+            username = request.user.get_username()
+            us = User.objects.get(username = username)
+
+            try:
+                up = UserProfile.objects.get(user = us)
+                return {'us': us, 'up' : up}
+
+            except UserProfile.DoesNotExist:
+                print("no user profile here (views/200")
+                return {}
+
+        except User.DoesNotExist:
+            print("no user here (views/200")
+            return {}
+
 
 
 def gallery_view(request, item_slug):
@@ -234,10 +261,17 @@ def user_profile_view(request, user_slug):
 
         try:
             user_profile = UserProfile.objects.get(user_slug=user_slug)
+            print(user_profile.can_borrow)
             user_profile_context['bio'] = user_profile.bio
             user_profile_context['owned_items'] = user_profile.owned.all()
-            user_profile_context['borrowing_items'] = user_profile.loans
-            print("this is the name of the item on loan ", user_profile.loans.item_on_loan.name)
+            try:
+
+                user_profile_context['borrowing_items'] = user_profile.loans
+                print("this is the name of the item on loan ", user_profile.loans.item_on_loan.name)
+            except Loan.DoesNotExist:
+                print("no item on loan exception")
+                user_profile_context['borrowing_items'] = None
+
             user_profile_context['picture'] = user_profile.picture
             print(user_profile_context)
 
@@ -323,12 +357,22 @@ class BorrowItemView(View):
 
     @method_decorator(login_required)
     def get(self, request, item_slug):
-        form = BorrowItemForm()
-        return render(request, 'sharespace/borrow_item.html', {'form': form, 'item_slug': item_slug})
+
+        try:
+            item = Item.objects.get(item_slug = item_slug)
+            print(item.max_loan_len)
+            max_len = item.max_loan_len
+            choices = []
+            for i in range(1,max_len +1):
+                choices.append(i)
+        except Item.DoesNotExist:
+            print("no item here (views/360")
+        return render(request, 'sharespace/borrow_item.html', {'item':item, 'item_slug': item_slug, 'choices':choices})
 
     @method_decorator(login_required)
     def post(self, request, item_slug):
-        form = BorrowItemForm(request.POST)
+        print("printing post request : ", request.POST)
+
         username = request.user.get_username()
         print(username)
         user = User.objects.get(username=username)
@@ -345,15 +389,4 @@ class BorrowItemView(View):
             print("no item retrived")
             return render(request, 'sharespace/index.html', {})
 
-        if form.is_valid():
-            # len = request.POST('len_of_loan')
-            loan = Loan.objects.create(item_on_loan = item, requestor = user_p)
-            print(loan)
-
-            return redirect(reverse('sharespace:index'))
-        else:
-            print(form.errors)
-
-        return render(request, 'sharespace/borrow_item.html', {'form': form})
-
-
+        return redirect(reverse('sharespace:index'))

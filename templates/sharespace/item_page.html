@@ -31,10 +31,20 @@
             </li>
 
         </ul>
-      {{ user.user.is_authenticated }}
+
         {% if user.is_authenticated %}
-            {% if item %}
-            <a href="{% url 'sharespace:borrow_item' item.item_slug  %}">Borrow this item</a>
+
+            {{ up.can_borrow }}
+            {% if up.can_borrow %}
+
+                    {% if item.available %}
+                        <a href="{% url 'sharespace:borrow_item' item.item_slug  %}">Borrow this item</a>
+                    {% else %}
+                        this item is currently not available
+                    {% endif %}
+
+            {% else %}
+                you are already borrowing your max number of items
             {% endif %}
         {% endif %}
     {% endif %}

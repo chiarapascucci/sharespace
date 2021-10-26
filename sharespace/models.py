@@ -75,6 +75,9 @@ class UserProfile(models.Model):
     picture = models.ImageField(upload_to='profile_images', blank = True, default='profile_images/default_profile_image.png')
     user_slug = models.SlugField(unique=True)
     user_post_code = CharField(max_length=8)
+    max_no_of_items = models.PositiveIntegerField(default = 1)
+    curr_no_of_items = models.PositiveIntegerField(default = 0)
+    can_borrow = models.BooleanField(default = True)
     hood = models.ForeignKey(Neighbourhood, on_delete=models.CASCADE) #will need to manage or prevent situation where a neighbourhood is deleted
 
     def set_hood(self, user_post_code):
@@ -83,7 +86,8 @@ class UserProfile(models.Model):
 
     def save(self, *args, **kwargs):
         self.user_slug = slugify(self.user.username)
-
+        if self.curr_no_of_items >= self.max_no_of_items:
+            self.can_borrow = False
         super(UserProfile, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -107,7 +111,7 @@ class Item(models.Model):
     borrowed_by = models.ForeignKey(UserProfile, related_name = "borrowed", blank = True,  on_delete=models.SET_NULL, null = True)
     item_slug = models.SlugField(unique=True)
     location = models.ForeignKey(Address, on_delete = models.CASCADE, blank = False)
-    max_loan_len = models.PositiveIntegerField(choices=max_len_of_loan_choices, default=1, validators = [MaxValueValidator(4)] )
+    max_loan_len = models.PositiveIntegerField(choices=max_len_of_loan_choices, default=4, validators = [MaxValueValidator(4)] )
 
     def save(self, *args, **kwargs):
         #self.id = uuid.uuid4()
@@ -129,6 +133,7 @@ class Loan(models.Model):
     requestor = models.OneToOneField(UserProfile, blank = False, related_name = "loans", on_delete=models.CASCADE)
     item_on_loan = models.OneToOneField(Item, blank = False, on_delete=models.CASCADE)
     overdue = models.BooleanField(default=False)
+    active = models.BooleanField(default = True)
     out_date = models.DateField(auto_now_add = True, null=False)
     due_date = models.DateField(null=False)
     len_of_loan = models.PositiveIntegerField(default=1, validators = [MaxValueValidator(4)] )
@@ -142,6 +147,16 @@ class Loan(models.Model):
         self.loan_slug = slugify("{self.item_on_loan.id}--{self.requestor.user.username}--{self.out_date}".format(self=self))
         self.due_date = calc_due_date(self.len_of_loan)
         super(Loan, self).save(*args, **kwargs)
+
+    def apply_loan(self):
+        self.requestor.curr_no_of_items = self.requestor.curr_no_of_items + 1
+        self.requestor.save()
+        self.item_on_loan.available = False
+        self.item_on_loan.save()
+
+    def mark_as_complete(self):
+        self.active = False
+        self.save()
 
 
 def upload_gallery_image(instance, filename):
