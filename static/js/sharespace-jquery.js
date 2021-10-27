@@ -80,3 +80,5 @@ function populate_address(){
     document.getElementById("id_county").value = tokens[6];
 
 }
+
+function mark_as_complete(slug)

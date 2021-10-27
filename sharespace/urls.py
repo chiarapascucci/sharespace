@@ -24,5 +24,11 @@ urlpatterns = [
     path('user/<slug:user_slug>/', views.user_profile_view, name='user_profile'),
     path('user/<slug:user_slug>/edit/', views.edit_user_view, name = 'edit_user_info'),
 
+    path('loan/<slug:loan_slug>/', views.LoanView.as_view(), name ='loan_page'),
+
+    path('hood/<slug:nh_slug>/', views.hood_page_view, name  ='hood_page'),
+
+    path('search/', views.search_view, name = 'search'),
+
     path('ajax/load_sub_cat', views.load_sub_cat_view, name = "ajax_load_sub_cat"),
 ]

@@ -38,6 +38,9 @@ class Address(models.Model):
     country = models.CharField(max_length = MAX_LENGTH_TITLES, default = 'United Kingdom')
     adr_hood = models.ForeignKey(Neighbourhood, blank = False, on_delete = models.CASCADE)
 
+    def __str__(self):
+        address_str = self.address_line_1 + "\n" + self.address_line_2 + "\n" + self.city + "\n" + self.adr_hood.nh_post_code
+        return address_str
 
 class Category(models.Model):
     name = models.CharField(primary_key=True, max_length=MAX_LENGTH_TITLES)
@@ -130,7 +133,7 @@ class Item(models.Model):
 
 def calc_due_date(len_of_loan):
     today = datetime.date.today()
-    due_date = today + datetime.timedelta(days = len_of_loan)
+    due_date = today + datetime.timedelta(days = (len_of_loan*7))
     return due_date
 
 
@@ -139,8 +142,8 @@ class Loan(models.Model):
     item_on_loan = models.ForeignKey(Item, blank = False, on_delete=models.CASCADE)
     overdue = models.BooleanField(default=False)
     active = models.BooleanField(default = True)
-    out_date = models.DateField(auto_now_add = True, null=False)
-    due_date = models.DateField(null=False)
+    out_date = models.DateField(null=False)
+    due_date = models.DateField(null=True)
     len_of_loan = models.PositiveIntegerField(default=1, validators = [MaxValueValidator(4)] )
     loan_slug = models.SlugField(primary_key = True)
 
@@ -150,7 +153,11 @@ class Loan(models.Model):
 
     def save(self, *args, **kwargs):
         self.loan_slug = slugify("{self.item_on_loan.id}--{self.requestor.user.username}--{self.out_date}".format(self=self))
+        self.out_date = datetime.date.today()
         self.due_date = calc_due_date(self.len_of_loan)
+        print("in loan save")
+        print(self.out_date)
+        print(self.due_date)
         super(Loan, self).save(*args, **kwargs)
 
     def apply_loan(self):

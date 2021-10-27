@@ -1,0 +1,25 @@
+{% extends 'sharespace/base.html' %}
+{%  load static %}
+
+{% block title_block %}
+    Your Loan
+{% endblock %}
+
+{% block body_block %}
+<br>
+<br>
+<br>
+<br>
+<br>
+<h1> Your Loan </h1>
+    {% if loan %}
+        <p>Loaned item: {{ loan.item_on_loan }}</p>
+        <p>Checkout date: {{ loan.out_date }}</p>
+        <p>Due Date: {{ loan.due_date }}</p>
+        <p>Overdue status: {{ loan.overdue }}</p>
+        <p> Where to pick up your item: </p>
+        <p> {{loan.item_on_loan.location}}</p>
+    {% endif %}
+
+
+{% endblock %}

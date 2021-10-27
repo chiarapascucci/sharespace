@@ -1,3 +1,4 @@
+from django.db.models import Subquery, Q
 from django.forms.models import modelformset_factory
 from django.http.response import HttpResponse
 from django.shortcuts import render, redirect
@@ -223,21 +224,28 @@ def category_list_view(request):
     print("in cat list view")
     cat_list_context = {}
     cat_list_context['all_cat'] = Category.objects.all().order_by('name')
-    print(cat_list_context['all_cat'])
+    #print(cat_list_context['all_cat'])
     return render(request, 'sharespace/category_list.html', context=cat_list_context)
 
 
 def category_page_view(request, cat_slug):
-
-    up = extract_us_up(request)['up']
-
+    print("in category page view, trying to extract users")
+    up_cont = extract_us_up(request)
     cat = Category.objects.get(cat_slug=cat_slug)
     cat_context = {'name': cat.name}
-    if not up:
-
+    #if dict is empty
+    if not up_cont:
+        print("dict is empty")
         cat_context['all_items'] = Item.objects.filter(main_category=cat).order_by('name')
     else:
-        up_post_code = up.user_post_code
+        up_post_code = up_cont['up'].user_post_code
+        print(up_post_code)
+        hood = Neighbourhood.objects.get(nh_post_code = up_post_code)
+        hood_list = Address.objects.filter(adr_hood = hood)
+        items_available_in_hood = Item.objects.filter(location__in = Subquery(hood_list.values('pk'))).filter(main_category = cat)
+        print(items_available_in_hood)
+        cat_context['all_items'] = items_available_in_hood
+
 
     return render(request, 'sharespace/category_page.html', context=cat_context)
 
@@ -359,7 +367,24 @@ def load_sub_cat_view(request):
     sub_cat_list = Sub_Category.objects.filter(parent = cat)
     return render(request, 'sharespace/sub_cat_dropdown_list.html', {'list' : sub_cat_list})
 
+def search_view(request):
+    search_context = {}
 
+    if request.method == 'GET':
+        search = request.GET['search_input'].strip().lower()
+        search_context['search']= search
+
+        search_context['category'] = Category.objects.filter(Q(name__contains = search) | Q(description__contains = search))
+        search_context['sub_category'] = Sub_Category.objects.filter(Q(name__contains = search) | Q(description__contains = search))
+        search_context['items']= Item.objects.filter(Q(name__contains = search) | Q(description__contains = search))
+
+        return render(request, 'sharespace/search_result_page.html', context=search_context)
+    else:
+        return render(request, 'sharespace/search_result_page.html', context=search_context)
+
+def hood_page_view(request):
+    hood_context = {}
+    return render(request, 'sharespace/hood_page.html', context=hood_context)
 
 class BorrowItemView(View):
     print("in borrow item viewp")
@@ -398,10 +423,26 @@ class BorrowItemView(View):
             item = Item.objects.get(item_slug=item_slug)
             loan = Loan.objects.create(requestor = up, item_on_loan = item, len_of_loan = len_of_loan)
             print(loan)
+            loan_slug = loan.loan_slug
             loan.apply_loan()
 
         except Item.DoesNotExist:
             print("no item retrived")
             return render(request, 'sharespace/index.html', {})
 
-        return redirect(reverse('sharespace:user_profile', kwargs={'user_slug':user_slug}))
+        return redirect(reverse('sharespace:loan_page', kwargs={'loan_slug':loan_slug}))
+
+
+
+class LoanView(View):
+    @method_decorator(login_required)
+    def get(self, request, loan_slug):
+        loan = Loan.objects.get(loan_slug=loan_slug)
+
+        loan_context = {'loan':loan}
+
+        return render(request, 'sharespace/loan_page.html', context = loan_context)
+
+
+    def post(self, request):
+        pass

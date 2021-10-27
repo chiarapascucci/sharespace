@@ -21,7 +21,7 @@
             <li> item price : {{ item.price }}</li>
             <li> description: {{ item.description }}</li>
             <li> available : {{ item.available }}</li>
-            <li> slug : {{ item.item_slug }}</li>
+            <li> hood : {{ item.location.adr_hood }}</li>
             <li> gallery: 
                 <section class="photo_gallery">
                     {% for gallery_image in gallery.all %}

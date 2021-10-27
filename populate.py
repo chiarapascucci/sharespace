@@ -36,7 +36,9 @@ def add_item(name, cat, item_owner, address, sub_cat=None):
 
 
 def add_hood(post_code):
-    n = Neighbourhood.objects.get_or_create(nh_post_code=post_code)[0]
+    f_post_code = post_code.strip().lower().replace(' ', '')
+    n = Neighbourhood.objects.get_or_create(nh_post_code=f_post_code)[0]
+    print(n)
     n.save()
     return n
 

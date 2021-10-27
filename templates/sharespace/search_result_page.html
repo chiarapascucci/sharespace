@@ -1,0 +1,39 @@
+{% extends 'sharespace/base.html' %}
+{%  load static %}
+
+{% block title_block %}
+   Results
+{% endblock %}
+
+{% block body_block %}
+
+<br>
+<br>
+<br>
+<br>
+<br>
+<h1> Your Results </h1>
+{% if search %}
+you searched for {{ search }}
+{% endif %}
+<br>
+<ul>
+    <br>
+    {% if category %}
+    {% for cat in category %}
+    <li> <a href="{% url 'sharespace:category_page' cat.cat_slug %} ">{{ cat.name }}</a>  </li>
+    {% endfor %}
+    {% endif %}
+    {% if sub_category %}
+    {% for sub in sub_category %}
+    <li>  {{ sub.name }} </li>
+    {% endfor %}
+    {% endif %}
+    {% if items %}
+    {% for i in items %}
+    <li>  <a href="{% url 'sharespace:item_page' i.item_slug %}">{{ i.name }}</a> </li>
+    {% endfor %}
+    {% endif %}
+</ul>
+
+{% endblock %}
