@@ -24,7 +24,9 @@ urlpatterns = [
     path('user/<slug:user_slug>/', views.user_profile_view, name='user_profile'),
     path('user/<slug:user_slug>/edit/', views.edit_user_view, name = 'edit_user_info'),
 
+    path('loan/return/', views.MarkItemAsReturned.as_view(), name = 'return_item'),
     path('loan/<slug:loan_slug>/', views.LoanView.as_view(), name ='loan_page'),
+
 
     path('hood/<slug:nh_slug>/', views.hood_page_view, name  ='hood_page'),
 

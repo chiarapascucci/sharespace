@@ -41,7 +41,7 @@ Your Items:
   You are borrowing:
         {% if borrowing_items %}
             {% for loan in borrowing_items.all %}
-                {{ loan.item_on_loan }}
+            <a href="{% url 'sharespace:loan_page' loan.loan_slug %}"> {{ loan.item_on_loan }} </a>
             {% endfor %}
         {% else %}
             no items on loan atm

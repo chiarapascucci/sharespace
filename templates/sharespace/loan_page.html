@@ -20,6 +20,7 @@
         <p> Where to pick up your item: </p>
         <p> {{loan.item_on_loan.location}}</p>
     {% endif %}
+<button id = "returned-item-btn" data-loanslug = "{{ loan.loan_slug }}" class = "btn btn-primary btn-sm" type="button" >button</button>
 
-
+<p id="display-result"></p>
 {% endblock %}

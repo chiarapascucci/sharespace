@@ -6,7 +6,7 @@ from django.db.models.fields import CharField
 from django.db.models.fields.related import ForeignKey, OneToOneField
 from django.template.defaultfilters import slugify
 from django.contrib.auth.models import User
-import datetime
+from datetime import datetime, date, time, timedelta
 from django.core.validators import MaxValueValidator
 
 MAX_LENGTH_TITLES = 55
@@ -94,8 +94,12 @@ class UserProfile(models.Model):
     def save(self, *args, **kwargs):
         self.user_slug = slugify(self.user.username)
         self.user_post_code = self.user_post_code.strip().replace(' ','').lower()
+        print("curr no of items" , self.curr_no_of_items)
         if self.curr_no_of_items >= self.max_no_of_items:
             self.can_borrow = False
+        else:
+            self.can_borrow = True
+            print(self.can_borrow)
         super(UserProfile, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -132,8 +136,8 @@ class Item(models.Model):
 
 
 def calc_due_date(len_of_loan):
-    today = datetime.date.today()
-    due_date = today + datetime.timedelta(days = (len_of_loan*7))
+    today = date.today()
+    due_date = today + timedelta(days = (len_of_loan*7))
     return due_date
 
 
@@ -142,8 +146,9 @@ class Loan(models.Model):
     item_on_loan = models.ForeignKey(Item, blank = False, on_delete=models.CASCADE)
     overdue = models.BooleanField(default=False)
     active = models.BooleanField(default = True)
-    out_date = models.DateField(null=False)
+    out_date = models.DateTimeField(null=False)
     due_date = models.DateField(null=True)
+
     len_of_loan = models.PositiveIntegerField(default=1, validators = [MaxValueValidator(4)] )
     loan_slug = models.SlugField(primary_key = True)
 
@@ -152,12 +157,15 @@ class Loan(models.Model):
         return my_str
 
     def save(self, *args, **kwargs):
-        self.loan_slug = slugify("{self.item_on_loan.id}--{self.requestor.user.username}--{self.out_date}".format(self=self))
-        self.out_date = datetime.date.today()
+
+        self.out_date = datetime.now()
         self.due_date = calc_due_date(self.len_of_loan)
+        self.time_out = datetime.now()
         print("in loan save")
         print(self.out_date)
         print(self.due_date)
+        self.loan_slug = slugify(
+            "{self.item_on_loan.id}--{self.requestor.user.username}--{self.out_date}".format(self=self))
         super(Loan, self).save(*args, **kwargs)
 
     def apply_loan(self):

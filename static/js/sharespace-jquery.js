@@ -23,8 +23,27 @@ $(document).ready(function() {
 		});
 	});
 
-	$("#postcode").load(lookup_func())
 
+
+	$('#returned-item-btn').click(function(){
+	    console.log("button in loan page clicked")
+	    var loanSlugVar;
+	    loanSlugVar = $(this).attr('data-loanslug');
+        console.log("loan slug")
+        console.log(loanSlugVar)
+	    $.get('/sharespace/loan/return/',
+	        {'loan_slug': loanSlugVar },
+	        function(data){
+	            $('#display-result').html("loan completed");
+	            $('#returned-item-btn').hide();
+	            console.log("ajax request done");
+	        }
+	    );
+
+	});
+
+
+    $("#add_item_postcode").load(lookup_func())
 
 
 });
@@ -34,7 +53,7 @@ function lookup_func() {
 			console.log("function exec");
 			var url = "https://api.getAddress.io/find/";
 			var api_key = "IdUvLkdSBki8uOcIoH01EQ33123";
-			var post_code = document.getElementById("postcode").value;
+			var post_code = document.getElementById("add_item_postcode").value;
 			var f_post_code = post_code.toLowerCase().replace(' ', '');
 			console.log(f_post_code);
 			var full_url = url + f_post_code + "?api-key=" + api_key;
@@ -81,4 +100,4 @@ function populate_address(){
 
 }
 
-function mark_as_complete(slug)
+

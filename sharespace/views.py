@@ -284,6 +284,7 @@ def user_profile_view(request, user_slug):
             try:
 
                 user_profile_context['borrowing_items'] = user_profile.loans.all()
+
                 #print("this is the name of the item on loan ", user_profile.loans.all().item_on_loan.name)
             except Loan.DoesNotExist:
                 print("no item on loan exception")
@@ -385,6 +386,37 @@ def search_view(request):
 def hood_page_view(request):
     hood_context = {}
     return render(request, 'sharespace/hood_page.html', context=hood_context)
+
+class MarkItemAsReturned(View):
+    @method_decorator(login_required)
+    def get(self, request):
+        print("request received for marking item as returned")
+
+        loan_slug = request.GET['loan_slug']
+        print("loan slug in view: ", loan_slug)
+
+        try:
+            print("trying loan")
+            loan = Loan.objects.get(loan_slug = loan_slug)
+        except Loan.DoesNotExist:
+            print("no loan")
+
+        except ValueError:
+            return HttpResponse(-1)
+
+        item = loan.item_on_loan
+        up = loan.requestor
+
+        item.available = True
+        item.save()
+        loan.active = False
+        loan.overdue = False
+        loan.save()
+        up.curr_no_of_items = up.curr_no_of_items - 1
+        up.save()
+
+        return HttpResponse(loan.active)
+
 
 class BorrowItemView(View):
     print("in borrow item viewp")
