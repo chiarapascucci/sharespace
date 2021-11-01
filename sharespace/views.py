@@ -16,6 +16,7 @@ from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from datetime import datetime, date, time, timedelta
+from allauth.account.views import LoginView, SignupView
 
 # ------- FUNCTION BASED VIEWS (alph sorted) -------
 # --- most views check if there is a logged in user (server side)
@@ -255,7 +256,12 @@ def login(request):
             print(f"Invalid login details: {username}, {password}")
             return HttpResponse("Invalid login details supplied.")
     else:
-        return render(request, 'sharespace/login.html')
+        return render(request, 'allauth/login.html')
+
+class MyLoginView(LoginView):
+    @property
+    def success_url(self):
+        return redirect('sharespace:index')
 
 
 # register view. if post request data from user and user profile registration form is used to create entities in DB
