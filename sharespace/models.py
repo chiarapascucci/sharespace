@@ -11,6 +11,8 @@ from django.core.validators import MaxValueValidator
 
 MAX_LENGTH_TITLES = 55
 MAX_LENGTH_TEXT = 240
+
+
 class Neighbourhood(models.Model):
     # name = models.CharField(max_length=MAX_LENGTH_TITLES, blank = False)
     nh_post_code = models.CharField(primary_key=True,
@@ -25,6 +27,7 @@ class Neighbourhood(models.Model):
     def __str__(self):
         return self.nh_post_code
 
+
 class Address(models.Model):
     address_line_1 = models.CharField(max_length = MAX_LENGTH_TITLES, blank = False)
     address_line_2 = models.CharField(max_length = MAX_LENGTH_TITLES, default = '')
@@ -34,11 +37,13 @@ class Address(models.Model):
     city = models.CharField(max_length = MAX_LENGTH_TITLES, default = '')
     county = models.CharField(max_length=MAX_LENGTH_TITLES, default = '')
     country = models.CharField(max_length = MAX_LENGTH_TITLES, default = 'United Kingdom')
+
     adr_hood = models.ForeignKey(Neighbourhood, blank = False, on_delete = models.CASCADE)
 
     def __str__(self):
         address_str = self.address_line_1 + "\n" + self.address_line_2 + "\n" + self.city + "\n" + self.adr_hood.nh_post_code
         return address_str
+
 
 class Category(models.Model):
     name = models.CharField(primary_key=True, max_length=MAX_LENGTH_TITLES)
@@ -56,6 +61,7 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+
 class Sub_Category(models.Model):
     name = models.CharField(primary_key=True, max_length=MAX_LENGTH_TITLES)
     description = models.CharField(max_length=MAX_LENGTH_TEXT)
@@ -72,6 +78,7 @@ class Sub_Category(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class UserProfile(models.Model):
     user = OneToOneField(User, on_delete=models.CASCADE)
@@ -103,6 +110,7 @@ class UserProfile(models.Model):
     def __str__(self):
         return self.user.username
 
+
 class HoodGroup(models.Model):
     group_name = models.CharField(blank = False, null=False, max_length=MAX_LENGTH_TITLES, primary_key=True)
     group_description = models.TextField(blank = True, max_length=MAX_LENGTH_TEXT)
@@ -114,6 +122,7 @@ class HoodGroup(models.Model):
     def save(self, *args, **kwargs):
         self.group_slug = slugify(self.group_name)
         super(HoodGroup, self).save(*args, **kwargs)
+
 
 class Item(models.Model):
     max_len_of_loan_choices = [
@@ -134,60 +143,69 @@ class Item(models.Model):
     item_slug = models.SlugField(unique=True)
     location = models.ForeignKey(Address, on_delete = models.CASCADE, blank = False)
     max_loan_len = models.PositiveIntegerField(choices=max_len_of_loan_choices, default=4, validators = [MaxValueValidator(4)] )
+    item_post_code = CharField(max_length=8)
 
     def save(self, *args, **kwargs):
         #self.id = uuid.uuid4()
         self.item_slug = slugify(self.id)
         #print(self.owner)
+        self.item_post_code = self.location.adr_hood.nh_post_code
         super(Item, self).save(*args, **kwargs)
 
     def __str__(self):
         return self.name
 
 
-def calc_due_date(len_of_loan):
-    today = date.today()
-    due_date = today + timedelta(days = (len_of_loan*7))
-    return due_date
+
 
 
 class Loan(models.Model):
+    id = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     requestor = models.ForeignKey(UserProfile, blank = False, related_name = "loans", on_delete=models.CASCADE)
     item_on_loan = models.ForeignKey(Item, blank = False, on_delete=models.CASCADE)
     overdue = models.BooleanField(default=False)
     active = models.BooleanField(default = True)
     out_date = models.DateTimeField(null=False)
-    due_date = models.DateField(null=True)
+    due_date = models.DateTimeField(null=True)
     len_of_loan = models.PositiveIntegerField(default=1, validators = [MaxValueValidator(4)] )
-    loan_slug = models.SlugField(primary_key = True)
+    loan_slug = models.SlugField(primary_key=True)
 
     def __str__(self):
         my_str = "{} borrowing {} for {} weeks".format(self.requestor, self.item_on_loan, self.len_of_loan)
         return my_str
 
     def save(self, *args, **kwargs):
-
-        self.out_date = datetime.now()
-        self.due_date = calc_due_date(self.len_of_loan)
-        self.time_out = datetime.now()
-        print("in loan save")
-        print(self.out_date)
-        print(self.due_date)
         self.loan_slug = slugify(
-            "{self.item_on_loan.id}--{self.requestor.user.username}--{self.out_date}".format(self=self))
+            "{self.requestor.user.username}-loan-{self.id}".format(self=self))
+        print("\n in save method in loan model \n out time: {} \n due time: {} ".format(self.out_date, self.due_date))
         super(Loan, self).save(*args, **kwargs)
 
-    def apply_loan(self):
+    def apply_loan(self, len_of_loan):
+        # setting loan's due date
+        due_date = self.out_date + timedelta(days=(len_of_loan * 7))
+        self.due_date = due_date
+        self.save()
+
+        # updating requestor's status
         self.requestor.curr_no_of_items = self.requestor.curr_no_of_items + 1
-        self.requestor.save()
         if self.requestor.curr_no_of_items >= self.requestor.max_no_of_items:
             self.requestor.can_borrow = False
             self.requestor.save()
-        self.item_on_loan.available=False
+        else:
+            self.requestor.save()
+
+        # updating item's status
+        self.item_on_loan.available = False
         self.item_on_loan.save()
 
     def mark_as_complete(self):
         self.active = False
+        self.item_on_loan.available = True
+        self.item_on_loan.save()
+        self.requestor.curr_no_of_items = self.requestor.curr_no_of_items -1
+        if self.requestor.curr_no_of_items < self.requestor.max_no_of_items:
+            self.requestor.can_borrow = True
+            self.requestor.save()
         self.save()
 
 
@@ -198,6 +216,7 @@ def upload_gallery_image(instance, filename):
 class Image(models.Model):
     image = models.ImageField(upload_to = upload_gallery_image)
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name = "images")
+
 
 class PurchaseProposal(models.Model):
     submitter = models.ForeignKey(UserProfile, blank=False, on_delete=models.CASCADE, related_name="proposals")

@@ -30,7 +30,7 @@ urlpatterns = [
 
     path('hood/<slug:nh_slug>/', views.hood_page_view, name  ='hood_page'),
 
-    path('search/', views.search_view, name = 'search'),
+    path('search/', views.SearchView.as_view(), name = 'search'),
 
     path('ajax/load_sub_cat', views.load_sub_cat_view, name = "ajax_load_sub_cat"),
 ]

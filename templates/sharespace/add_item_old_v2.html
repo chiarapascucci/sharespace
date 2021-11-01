@@ -1,0 +1,50 @@
+{% extends 'sharespace/base.html' %}
+{%  load static %}
+
+{% block title_block %}
+    Add your item
+{% endblock %}
+
+{% block body_block %}
+<h1> Sharing is Caring... </h1>
+
+<h2>Add your item here to share with your neighbours</h2>
+
+{% if user.is_authenticated %}
+<form id="add_item_form" method="post" action="{% url 'sharespace:add_item' %}" enctype = 'multipart/form-data' data-sub-cat-url = "{% url 'sharespace:ajax_load_sub_cat' %}">
+    {% csrf_token %}
+    <div>
+		<!--MANUAL FORM FOR BASIC INFO -->
+		{{ add_item_form.as_p }}
+		<button id="postcode_lookup" onclick="lookup_func()">Search</button>
+		<!-- FORMSET FOR IMAGES-->
+		{{ formset.management_form }}
+    	{% for form in formset %}
+    	{{ form.as_p }}
+    	{% endfor %}
+
+		<label>Owners</label>
+		{% for up in owners %}
+			{{ up.user.username }}
+			<input type="checkbox" id="{{ up.user.username }}" name="{{ up.user.username }}">
+		{% endfor %}
+
+
+    <input type ="submit" name="submit" value="Add Item"/>
+	</div>
+</form>
+
+
+
+{% else %}
+
+	<h3>It looks like you are not logged in </h3>
+	<p>login now or register with us today</p>
+	<p>login</p>
+	<p>register</p>
+
+{% endif %}
+	<script src="{% static 'js/jquery-3.3.1.min.js' %}" crossorigin="anonymous"></script>
+	<script src= "{% static 'js/sharespace-jquery.js' %}" crossorigin="anonymous"></script>
+
+{% endblock %}
