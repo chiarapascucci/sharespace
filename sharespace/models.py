@@ -1,7 +1,7 @@
 
 import uuid
 from django.db import models
-from django.db.models.deletion import CASCADE
+
 from django.db.models.fields import CharField
 from django.db.models.fields.related import ForeignKey, OneToOneField
 from django.template.defaultfilters import slugify
@@ -11,8 +11,6 @@ from django.core.validators import MaxValueValidator
 
 MAX_LENGTH_TITLES = 55
 MAX_LENGTH_TEXT = 240
-
-
 class Neighbourhood(models.Model):
     # name = models.CharField(max_length=MAX_LENGTH_TITLES, blank = False)
     nh_post_code = models.CharField(primary_key=True,
@@ -105,6 +103,18 @@ class UserProfile(models.Model):
     def __str__(self):
         return self.user.username
 
+class HoodGroup(models.Model):
+    group_name = models.CharField(blank = False, null=False, max_length=MAX_LENGTH_TITLES, primary_key=True)
+    group_description = models.TextField(blank = True, max_length=MAX_LENGTH_TEXT)
+    group_founder = models.ForeignKey(UserProfile, null=False, on_delete=models.CASCADE, related_name = 'founded')
+    group_members = models.ManyToManyField(UserProfile, blank=True, related_name = 'member_of')
+    group_hood = models.ForeignKey(Neighbourhood, blank = False, null = False, on_delete=models.CASCADE)
+    group_slug = models.SlugField(null = False)
+
+    def save(self, *args, **kwargs):
+        self.group_slug = slugify(self.group_name)
+        super(HoodGroup, self).save(*args, **kwargs)
+
 class Item(models.Model):
     max_len_of_loan_choices = [
         (1, '1 week'),
@@ -148,7 +158,6 @@ class Loan(models.Model):
     active = models.BooleanField(default = True)
     out_date = models.DateTimeField(null=False)
     due_date = models.DateField(null=True)
-
     len_of_loan = models.PositiveIntegerField(default=1, validators = [MaxValueValidator(4)] )
     loan_slug = models.SlugField(primary_key = True)
 
@@ -190,3 +199,20 @@ class Image(models.Model):
     image = models.ImageField(upload_to = upload_gallery_image)
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name = "images")
 
+class PurchaseProposal(models.Model):
+    submitter = models.ForeignKey(UserProfile, blank=False, on_delete=models.CASCADE, related_name="proposals")
+    subscribers = models.ManyToManyField(UserProfile, blank=True, related_name="interested")
+    item_name = models.TextField(blank=False, max_length=MAX_LENGTH_TITLES)
+    item_description = models.TextField(blank= False, max_length=MAX_LENGTH_TEXT)
+    price = models.DecimalField(max_digits=10, decimal_places=2, blank=False)
+    location = models.ForeignKey(Address, on_delete=models.CASCADE)
+    proposal_slug = models.SlugField(primary_key=True)
+    active = models.BooleanField(default = True)
+    purchased = models.BooleanField(default = False)
+    timestamp = models.DateTimeField(blank=False)
+    proposal_postcode = models.CharField(max_length=8)
+
+    def save(self, *args, **kwargs):
+        self.timestamp = datetime.now()
+        self.proposal_postcode = self.location.adr_hood.nh_post_code
+        self.proposal_slug = slugify("{self.item_name}-{self.proposal_postcode}-{self.timestamp}-".format(self=self))
