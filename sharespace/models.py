@@ -1,12 +1,15 @@
 
 import uuid
+
+from django.contrib.auth.base_user import BaseUserManager, AbstractBaseUser
 from django.db import models
 
 from django.db.models.fields import CharField
 from django.db.models.fields.related import ForeignKey, OneToOneField
 from django.template.defaultfilters import slugify
-from django.contrib.auth.models import User
-from datetime import datetime, date, time, timedelta
+from django.contrib.auth.models import PermissionsMixin
+from datetime import datetime, date, time, timedelta, timezone
+
 from django.core.validators import MaxValueValidator
 
 MAX_LENGTH_TITLES = 55
@@ -79,9 +82,62 @@ class Sub_Category(models.Model):
     def __str__(self):
         return self.name
 
+class UserManager(BaseUserManager):
+    def _create_user(self, username, email, password, is_staff, is_superuser, **extra_fields):
+        if not email:
+            raise ValueError('Users must have an email address')
+        now = datetime.now()
+        email = self.normalize_email(email)
+        user = self.model(
+            username = username,
+            email=email,
+            is_staff=is_staff,
+            is_active=True,
+            is_superuser=is_superuser,
+            last_login=now,
+            date_joined=now,
+            **extra_fields
+        )
+        user.set_password(password)
+        if not is_superuser:
+            print("in user manager model")
+            user.create_linked_profile(extra_fields['bio'], extra_fields['picture'], extra_fields['user_post_code'])
+        user.save(using=self._db)
+        return user
+
+    def create_user(self, username, email, password, **extra_fields):
+        return self._create_user(username, email, password, False, False, **extra_fields)
+
+    def create_superuser(self, username, email, password, **extra_fields):
+        user = self._create_user(username, email, password, True, True, **extra_fields)
+        user.save(using=self._db)
+        return user
+
+class User(AbstractBaseUser, PermissionsMixin):
+    email = models.EmailField(max_length=254, unique=True)
+    username = models.CharField(max_length=MAX_LENGTH_TITLES, blank = False, unique=True)
+    first_name = models.CharField(max_length=254, null=True, blank=True)
+    last_name = models.CharField(max_length=254, null=True, blank=True)
+    is_staff = models.BooleanField(default=False)
+    is_superuser = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    last_login = models.DateTimeField(null=True, blank=True)
+    date_joined = models.DateTimeField(auto_now_add=True)
+
+    USERNAME_FIELD = 'username'
+    EMAIL_FIELD = 'email'
+    REQUIRED_FIELDS = [EMAIL_FIELD,]
+
+    objects = UserManager()
+
+    def create_linked_profile(self, bio, picture, user_post_code):
+        UserProfile.objects.create(user = self, bio = bio, picture = picture, user_post_code = user_post_code)
+
+    def get_absolute_url(self):
+        return "/users/%i/" % (self.pk)
 
 class UserProfile(models.Model):
-    user = OneToOneField(User, on_delete=models.CASCADE)
+    user = OneToOneField(User, on_delete=models.CASCADE, related_name='userinfo')
     bio = models.CharField(max_length=MAX_LENGTH_TEXT, blank=True)
     picture = models.ImageField(upload_to='profile_images', blank = True, default='profile_images/default_profile_image.png')
     user_slug = models.SlugField(unique=True)
@@ -109,6 +165,9 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return self.user.username
+
+
+
 
 
 class HoodGroup(models.Model):

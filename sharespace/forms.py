@@ -1,6 +1,27 @@
 from django import forms
 from django.forms.widgets import EmailInput, HiddenInput, SelectMultiple 
 from sharespace.models import Image, Item, Loan, User, UserProfile, Category, Sub_Category
+from allauth.account.forms import SignupForm
+
+
+class MyCustomSignUpForm (SignupForm):
+    first_name = forms.CharField(max_length=50, label = 'Your First Name')
+    last_name = forms.CharField(max_length=50, label = 'Your Last Name')
+    username = forms.CharField(max_length=50, label = 'Choose a username')
+    bio = forms.CharField(max_length = 500, label = 'Let us know a bit about you')
+    picture = forms.FileField(label= 'Upload a picture of your self')
+    user_post_code = forms.CharField(max_length=8, label = 'Please insert your post code')
+
+    def signup(self, user):
+        user.first_name = self.cleaned_data['first_name']
+        user.last_name = self.cleaned_data['last_name']
+        user.username = self.cleaned_data['username']
+        user.save()
+        print("in sign up form custom method")
+        user_profile = UserProfile(user=user, bio = self.cleaned_data['bio'], picture=self.form['picture'], user_post_code = self.form['user_post_code'] )
+        user_profile.save()
+        return user
+
 
 class UserForm(forms.ModelForm):
     password = forms.CharField(widget = forms.PasswordInput())
@@ -10,15 +31,18 @@ class UserForm(forms.ModelForm):
         fields = ('email', 'password', 'username', 'first_name', 'last_name')
         model = User
 
+
 class UserProfileForm(forms.ModelForm):
     class Meta:
         fields = ('bio', 'picture', 'user_post_code')
         model = UserProfile
 
+
 class ImageForm(forms.ModelForm):
     class Meta:
         model = Image
         fields = ('image',)
+
 
 class AddItemForm(forms.ModelForm):
     class Meta:
@@ -60,3 +84,5 @@ class BorrowItemForm(forms.ModelForm):
     class Meta:
         fields = ('len_of_loan',)
         model = Loan
+
+

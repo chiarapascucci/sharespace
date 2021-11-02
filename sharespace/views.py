@@ -1,10 +1,12 @@
+
 from django.db.models import Subquery, Q
 from django.forms.models import modelformset_factory
 from django.http.response import HttpResponse
 from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse
 from sharespace.models import Image, Item, Category, Sub_Category, User, UserProfile, Neighbourhood, Loan, Address
-from sharespace.forms import AddItemForm, BorrowItemForm, ImageForm, UserForm, UserProfileForm, AddItemFormWithAddress
+from sharespace.forms import AddItemForm, BorrowItemForm, ImageForm, UserForm, UserProfileForm, AddItemFormWithAddress, \
+    MyCustomSignUpForm
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.urls import reverse
@@ -232,6 +234,25 @@ def load_sub_cat_view(request):
     sub_cat_list = Sub_Category.objects.filter(parent = cat)
     return render(request, 'sharespace/sub_cat_dropdown_list.html', {'list' : sub_cat_list})
 
+def sub_cat_page_view(request):
+    return render(request, 'sharespace/sub_cat.html', context={})
+
+class MySignUpView(SignupView):
+
+    # form_class = MyCustomSignUpForm
+    success_url = 'http://127.0.0.1:8000/sharespace/complete/'
+
+class CompleteYourProfileView (View):
+    def get(self, request):
+        return render (request, 'sharespace/complete_profile.html', context={})
+
+    def post(self, request):
+        return render(request, 'sharespace/complete_profile.html', context={})
+
+def sub_cat_page_view(request):
+    return render(request, 'sharespace/sub_cat.html', context={})
+
+
 
 def login(request):
     # If the request is a HTTP POST, try to pull out the relevant information.
@@ -306,9 +327,6 @@ def register_view(request):
 
 
 
-def sub_cat_page_view(request):
-    return render(request, 'sharespace/sub_cat.html', context={})
-
 
 @login_required
 def user_logout(request):
@@ -322,7 +340,7 @@ def user_profile_view(request, user_slug):
 
     try:
         username = request.user.get_username()
-        name = request.user.get_full_name()
+        name = request.user.first_name
 
         print('printing username: ', username)
         print('printin full name:', name)

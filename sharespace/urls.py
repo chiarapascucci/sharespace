@@ -23,6 +23,7 @@ urlpatterns = [
 
     path('user/<slug:user_slug>/', views.user_profile_view, name='user_profile'),
     path('user/<slug:user_slug>/edit/', views.edit_user_view, name = 'edit_user_info'),
+    path('user/complete/', views.CompleteYourProfileView.as_view(), name = 'complete_profile'),
 
     path('loan/return/', views.MarkItemAsReturned.as_view(), name = 'return_item'),
     path('loan/<slug:loan_slug>/', views.LoanView.as_view(), name ='loan_page'),
