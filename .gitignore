@@ -5,3 +5,7 @@ migrations/
 db.sqlite3
 *.key
 thumbs.db
+settings.py
+.idea/
+media/*
+tests.pygit 
