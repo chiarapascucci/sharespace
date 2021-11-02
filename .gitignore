@@ -8,4 +8,4 @@ thumbs.db
 settings.py
 .idea/
 media/*
-tests.pygit 
+tests.py
