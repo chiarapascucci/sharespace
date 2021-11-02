@@ -6,3 +6,6 @@ db.sqlite3
 *.key
 thumbs.db
 .pyc
+.idea/
+media/
+tests.py

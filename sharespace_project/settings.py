@@ -35,6 +35,8 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'django.contrib.sites',
+    'registration',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -42,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'sharespace',
+
 ]
 
 MIDDLEWARE = [
@@ -104,6 +107,24 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+# user authentication settings
+REGISTRATION_OPEN = True
+REGISTRATION_AUTO_LOGIN = False
+INCLUDE_AUTH_URLS = True
+INCLUDE_REGISTER_URL = True
+LOGIN_REDIRECT_URL = 'sharespace:index'
+LOGIN_URL = 'auth_login'
+ACCOUNT_ACTIVATION_DAYS = 5
+
+SITE_ID = 1
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'sharespace.app.dev@gmail.com'
+EMAIL_HOST_PASSWORD = 'sharespaceDevelopment2022'
 
 
 # Internationalization
