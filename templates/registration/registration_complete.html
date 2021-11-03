@@ -4,7 +4,9 @@
 {% block title_block %}{% trans "Activation email sent" %}{% endblock %}
 
 {% block body_block %}
-<p>{% trans "Please check your email to complete the registration process." %}</p>
+<p>{% trans "Please check your email to complete the registration process. Make sure you check your junk folder" %}</p>
+
+<p> if you do not receive our email within the next 5 minute you can ask us to <a href="{% url 'registration_resend_activation' %}"> resend it</a></p>
 {% endblock %}
 
 

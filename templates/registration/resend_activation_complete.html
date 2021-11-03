@@ -1,12 +1,14 @@
 {% extends "registration/registration_base.html" %}
 {% load i18n %}
 
-{% block title %}{% trans "Account Activation Resent" %}{% endblock %}
+{% block title_block %}{% trans "Account Activation Resent" %}{% endblock %}
 
-{% block content %}
+{% block body_block %}
 <p>
   {% blocktrans %}
   We have sent an email to {{ email }} with further instructions.
+    <br>
+    if the email above is not correct, please re-register with the correct email: <a href="{% url 'registration_register' %}">Register</a>
   {% endblocktrans %}
 </p>
 {% endblock %}

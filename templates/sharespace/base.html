@@ -8,6 +8,7 @@
         <meta name="description" content="">
         <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
         <meta name="generator" content="Jekyll v3.8.5">
+        {% block meta %} {% endblock %}
         <title> ShareSpace - {% block title_block %}{% endblock %}</title>
 
             <!-- Bootstrap core CSS -->
@@ -28,7 +29,7 @@
                 <ul class="navbar-nav mr-auto">
                     {% if user.is_authenticated %}
                      <li class="nav-item active">
-                        <a class="nav-link" href="{% url 'auth_logout' %}?next={% url 'sharespace:index '%}">Logout <span class="sr-only">(current)</span></a>
+                        <a class="nav-link" href="{% url 'auth_logout' %}?next={% url 'sharespace:index'%}">Logout <span class="sr-only">(current)</span></a>
                     </li>
                     <li class="nav-item">
                         {% if user_profile %}

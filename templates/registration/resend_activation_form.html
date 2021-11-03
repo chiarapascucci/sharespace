@@ -1,9 +1,9 @@
 {% extends "registration/registration_base.html" %}
 {% load i18n %}
 
-{% block title %}{% trans "Resend Activation Email" %}{% endblock %}
+{% block title_block %}{% trans "Resend Activation Email" %}{% endblock %}
 
-{% block content %}
+{% block body_block %}
 <form method="post" action="">
     {% csrf_token %}
     {{ form.as_p }}

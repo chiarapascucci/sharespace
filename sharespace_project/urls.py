@@ -15,16 +15,25 @@ Including another URLconf
 """
 from django.conf.urls import url
 from django.contrib import admin
-from django.urls import path
+from django.shortcuts import redirect
+from django.urls import path, reverse
 from django.urls import include
 from sharespace import views
 from django.conf import settings 
 from django.conf.urls.static import static
+from registration.backends.default.views import ActivationView
+
+
+class MyActivationView(ActivationView):
+    def get_success_url(self, user):
+        print("in customer activation view")
+        return reverse('sharespace:complete_profile')
 
 
 urlpatterns = [
     path('', views.index, name='index'),
     path('sharespace/', include('sharespace.urls')),
     path('admin/', admin.site.urls),
+    path('accounts/activate/<activation_key>/', MyActivationView.as_view(), name='registration_activate'),
     path('accounts/', include('registration.backends.default.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

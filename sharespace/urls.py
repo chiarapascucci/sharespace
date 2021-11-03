@@ -20,9 +20,10 @@ urlpatterns = [
     path('add_item/', views.add_item_view, name = 'add_item'),
     path('item/<slug:item_slug>/', views.item_page_view, name = 'item_page'),
     path('item/<slug:item_slug>/borrow/', BorrowItemView.as_view(), name='borrow_item'),
-
+    path('user/complete-profile/', views.CompleteProfileView.as_view(), name = 'complete_profile'),
     path('user/<slug:user_slug>/', views.user_profile_view, name='user_profile'),
     path('user/<slug:user_slug>/edit/', views.edit_user_view, name = 'edit_user_info'),
+
 
     path('loan/return/', views.MarkItemAsReturned.as_view(), name = 'return_item'),
     path('loan/<slug:loan_slug>/', views.LoanView.as_view(), name ='loan_page'),

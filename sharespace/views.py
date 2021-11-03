@@ -298,6 +298,40 @@ def register_view(request):
     return render(request, 'sharespace/sign_up.html', context=register_user_context)
 
 
+class CompleteProfileView(View):
+    @method_decorator(login_required)
+    def get(self, request):
+        profile_form = UserProfileForm()
+        profile_dict = extract_us_up(request)
+        if profile_dict['up'] is not None:
+            print("you already have a profile") # need to handle this
+            return redirect(reverse('sharespace:index'))
+        else:
+            return render(request, 'sharespace/complete_profile.html', {'form' : profile_form})
+
+    def post(self, request):
+        profile_dict = extract_us_up(request)
+        if profile_dict['up'] is not None:
+            print("you already have a profile") # need to handle this
+            return redirect(reverse('sharespace:index'))
+        else:
+            profile_form = UserProfileForm(request.POST)
+            if profile_form.is_valid():
+                profile = profile_form.save(commit=False)
+                profile.user = profile_dict['us']
+                profile.set_hood(request.POST.get('user_post_code'))
+                print(type(profile))
+                print(profile.hood)
+
+                if 'picture' in request.FILES:
+                    profile.picture = request.FILES['picture']
+
+                profile.save()
+
+                return redirect(reverse('sharespace:user_profile', kwargs={'user_slug': profile.user_slug}))
+            else:
+                print(profile_form.errors)
+                return render(request, 'sharespace/complete_profile.html', {})
 
 
 def sub_cat_page_view(request):
@@ -329,6 +363,7 @@ def user_profile_view(request, user_slug):
             print("user is borrowing: ", user_profile.curr_no_of_items, "\n user can borrow mad:",
                   user_profile.max_no_of_items, "you can still borrow? ", user_profile.can_borrow)
             user_profile_context['bio'] = user_profile.bio
+            user_profile_context['post_code'] = user_profile.user_post_code
             user_profile_context['owned_items'] = user_profile.owned.all()
             try:
 
@@ -503,7 +538,7 @@ def extract_us_up (request):
 
             except UserProfile.DoesNotExist:
                 print("no user profile here (views/200")
-                return {}
+                return {'us' : us, 'up' : None}
 
         except User.DoesNotExist:
             print("no user here (views/200")

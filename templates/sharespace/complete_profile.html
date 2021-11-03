@@ -1,0 +1,23 @@
+{% extends 'sharespace/base.html' %}
+{%  load static %}
+
+{% block title_block %}
+Titlte
+{% endblock %}
+
+{% block body_block %}
+<h1>Complete your profile</h1>
+<div>
+    <form id="userprofile_form" method="post" action="{% url 'sharespace:complete_profile' %}" enctype = 'multipart/form-data'>
+        {% csrf_token %}
+
+        {% if form %}
+        {{ form.as_p }}
+        {% endif %}
+
+        <input type ="submit" name="submit" value="Complete Profile"/>
+    </form>
+</div>
+
+
+{% endblock %}
