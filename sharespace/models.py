@@ -8,6 +8,7 @@ from django.template.defaultfilters import slugify
 from django.contrib.auth.models import User
 from datetime import datetime, date, time, timedelta
 from django.core.validators import MaxValueValidator
+from django.utils.timezone import now as default_time
 
 MAX_LENGTH_TITLES = 55
 MAX_LENGTH_TEXT = 240
@@ -160,11 +161,20 @@ class Item(models.Model):
 
 
 class Loan(models.Model):
+    ACTIVE = 'act'
+    PENDING = 'pen'
+    COMPLETED = 'com'
+    STATUS_CHOICES = [
+        (ACTIVE, 'Active'),
+        (PENDING, 'Pending'),
+        (COMPLETED, 'Completed'),
+    ]
     id = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     requestor = models.ForeignKey(UserProfile, blank = False, related_name = "loans", on_delete=models.CASCADE)
     item_on_loan = models.ForeignKey(Item, blank = False, on_delete=models.CASCADE)
     overdue = models.BooleanField(default=False)
-    active = models.BooleanField(default = True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=ACTIVE)
+    # active = models.BooleanField(default = True)
     out_date = models.DateTimeField(null=False)
     due_date = models.DateTimeField(null=True)
     len_of_loan = models.PositiveIntegerField(default=1, validators = [MaxValueValidator(4)] )
@@ -198,14 +208,17 @@ class Loan(models.Model):
         self.item_on_loan.available = False
         self.item_on_loan.save()
 
-    def mark_as_complete(self):
-        self.active = False
-        self.item_on_loan.available = True
-        self.item_on_loan.save()
-        self.requestor.curr_no_of_items = self.requestor.curr_no_of_items -1
-        if self.requestor.curr_no_of_items < self.requestor.max_no_of_items:
-            self.requestor.can_borrow = True
-            self.requestor.save()
+    def mark_as_complete_by_borrower(self):
+        self.status = self.PENDING
+        self.save()
+        receiver = self.item_on_loan.owner.first()
+        print("creating notification in loan model")
+        notif = LoanCompleteNotification.objects.create(receiver = receiver, sender = self.requestor,
+                                                               subject = self)
+        print(notif, type(notif))
+
+    def mark_as_complete_by_lender(self):
+        self.status = self.COMPLETED
         self.save()
 
 
@@ -235,3 +248,33 @@ class PurchaseProposal(models.Model):
         self.timestamp = datetime.now()
         self.proposal_postcode = self.location.adr_hood.nh_post_code
         self.proposal_slug = slugify("{self.item_name}-{self.proposal_postcode}-{self.timestamp}-".format(self=self))
+
+class BaseNotification(models.Model):
+    sender = models.ForeignKey(UserProfile, null=True, on_delete=models.SET_NULL, related_name="sent_notifications")
+    receiver = models.ForeignKey(UserProfile, null = False, on_delete=models.CASCADE, related_name="received_notifications")
+    date_sent = models.DateField(default = default_time)
+    read = models.BooleanField(default = False)
+    complete = models.BooleanField(default=False)
+
+    def __str__(self):
+        return "You received a notifiation from {}".format(self.sender)
+
+
+
+
+class LoanCompleteNotification(BaseNotification):
+    subject = models.ForeignKey(Loan, null=False, on_delete=models.CASCADE)
+    title = models.CharField(max_length=MAX_LENGTH_TITLES, default = "Your item has been returned")
+    body = models.CharField(editable = False, max_length=400, default = "Please ensure that you action this notification: your item has been marked as returned")
+
+
+    def complete(self):
+        self.complete = True
+        self.read = True
+        self.save()
+
+    def __str__(self):
+        return "noticication: {} was returned".format(self.subject.item_on_loan)
+
+class LoanActiveNotification(BaseNotification):
+    pass

@@ -3,7 +3,8 @@ from django.forms.models import modelformset_factory
 from django.http.response import HttpResponse
 from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse
-from sharespace.models import Image, Item, Category, Sub_Category, User, UserProfile, Neighbourhood, Loan, Address
+from sharespace.models import Image, Item, Category, Sub_Category, User, UserProfile, Neighbourhood, Loan, Address, \
+    LoanCompleteNotification
 from sharespace.forms import AddItemForm, BorrowItemForm, ImageForm, UserForm, UserProfileForm, AddItemFormWithAddress
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
@@ -388,6 +389,9 @@ def user_profile_view(request, user_slug):
             user_profile_context['bio'] = user_profile.bio
             user_profile_context['post_code'] = user_profile.user_post_code
             user_profile_context['owned_items'] = user_profile.owned.all()
+            notif_list = get_user_notification(user_profile)
+            if notif_list:
+                user_profile_context['notifications'] = notif_list
             try:
 
                 user_profile_context['borrowing_items'] = user_profile.loans.all()
@@ -464,8 +468,10 @@ class LoanView(View):
     @method_decorator(login_required)
     def get(self, request, loan_slug):
         loan = Loan.objects.get(loan_slug=loan_slug)
-
-        loan_context = {'loan': loan}
+        btn_flag = False
+        if loan.status == 'act':
+            btn_flag=True
+        loan_context = {'loan': loan, 'btn_flag' : btn_flag }
 
         return render(request, 'sharespace/loan_page.html', context=loan_context)
 
@@ -473,7 +479,7 @@ class LoanView(View):
         pass
 
 
-class MarkItemAsReturned(View):
+class MarkItemAsReturnedPendingApproval(View):
     @method_decorator(login_required)
     def get(self, request):
         print("request received for marking item as returned")
@@ -484,14 +490,14 @@ class MarkItemAsReturned(View):
         try:
             print("trying loan")
             loan = Loan.objects.get(loan_slug=loan_slug)
-            loan.mark_as_complete()
+            loan.mark_as_complete_by_borrower()
         except Loan.DoesNotExist:
             print("no loan")
 
         except ValueError:
             return HttpResponse(-1)
 
-        return HttpResponse(loan.active)
+        return HttpResponse(loan.status)
 
 
 class SearchView (View):
@@ -517,6 +523,20 @@ class SearchView (View):
         return render(request, 'sharespace/search_result_page.html', context=search_context)
 
 # ---------------- HELPER FUNCTIONS --------------
+
+
+def get_user_notification(up):
+    try:
+        notification_list = up.received_notifications.all()
+        print("got notication list, print:")
+        for n in notification_list:
+            print("something? Anything??!!")
+            print("not: ", n)
+        return notification_list
+
+    except LoanCompleteNotification.DoesNotExist:
+        print("no notification to pass")
+        return []
 
 
 def find_owners(request):

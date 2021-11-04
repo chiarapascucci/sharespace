@@ -41,13 +41,23 @@ Your Items:
   You are borrowing:
         {% if borrowing_items %}
             {% for loan in borrowing_items.all %}
-            <a href="{% url 'sharespace:loan_page' loan.loan_slug %}"> {{ loan.item_on_loan }} </a>
+                    <a href="{% url 'sharespace:loan_page' loan.loan_slug %}"> {{ loan.item_on_loan }} </a>
             {% endfor %}
         {% else %}
             no items on loan atm
         {% endif %}
 </ul>
 
-<p>adding a paragraph just to test some JS</p>
+<ul>
+  Your Notifications
+        {% if notifications %}
+            {% for n in notifications %}
+                <li> {{ n }}</li>
+            {% endfor %}
+        {% else %}
+
+            No notifications at the moment
+        {% endif %}
+</ul>
 
 {% endblock %}
