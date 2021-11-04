@@ -1,14 +1,9 @@
 $(document).ready(function() {
     console.log("page ready")
+    ajax_user_query();
 
-    $('p').hover(
-        function() {
-            $(this).css('color', 'red');
-        },
-        function() {
-            $(this).css('color', 'black');
-        }
-    );
+
+
 
     $("#main_category").change(function(){
 		const url = $("#add_item_form").attr("data-sub-cat-url");
@@ -22,7 +17,6 @@ $(document).ready(function() {
 			}
 		});
 	});
-
 
 
 	$('#returned-item-btn').click(function(){
@@ -43,14 +37,86 @@ $(document).ready(function() {
 	});
 
 
-    $("#add_item_postcode").load(lookup_func())
+      $("#add_item_postcode").on(lookup_func())
 
-
+     $('p').hover(
+        function() {
+            $(this).css('color', 'red');
+        },
+        function() {
+            $(this).css('color', 'black');
+        }
+    );
 });
+
+function isEmpty(obj) {
+    return Object.keys(obj).length === 0;
+}
+
+function ajax_user_query(){
+    console.log("profile link func")
+        const full_data = $("#profile-link").attr("data-username-url");
+        const elems = full_data.split('-')
+        console.log(elems[0], elems[1])
+        url = elems[0]
+        username = elems[1]
+        $.ajax({
+            url : url,
+            data : {'username': username},
+            success : function(data){
+                console.log(data);
+                set_elements(data);
+
+            }
+        });
+}
+
+function set_elements(data) {
+    console.log("set element function");
+    if (isEmpty(data)){
+        console.log("anonymous user?");
+    }
+
+    else{
+        if (Object.keys(data).length === 2){
+            console.log(data);
+            console.log("in here")
+            const profile_url = data['user_url'];
+
+            var profile_link = document.getElementById("profile-link");
+            profile_link.setAttribute("href", profile_url);
+
+            //add item logic
+            const add_item_url = data['add_item_url'];
+            var item_link = document.createElement("a");
+            item_link.setAttribute("href", add_item_url);
+            item_link.setAttribute("id", "add-item-link");
+            item_link.setAttribute("class", "nav-item active");
+            item_link.innerHTML = "Add Item"
+            console.log(item_link)
+
+            var list_item = document.createElement("li");
+            list_item.appendChild(item_link);
+            console.log(list_item)
+
+            var elem = document.getElementById("navbar-link-list");
+            elem.appendChild(list_item);
+            console.log(elem)
+
+        }
+        else{
+            console.log(data)
+            var link = document.getElementById("profile-link");
+            const value = data['profile_url'];
+            link.setAttribute("href", value);
+            link.innerHTML = "Profile";
+        }
+    }
+}
 
 
 function lookup_func() {
-			console.log("function exec");
+			console.log("post code function exec");
 			var url = "https://api.getAddress.io/find/";
 			var api_key = "IdUvLkdSBki8uOcIoH01EQ33123";
 			var post_code = document.getElementById("add_item_postcode").value;

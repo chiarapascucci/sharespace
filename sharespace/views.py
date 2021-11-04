@@ -16,6 +16,7 @@ from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from datetime import datetime, date, time, timedelta
+from django.http import JsonResponse
 
 # ------- FUNCTION BASED VIEWS (alph sorted) -------
 # --- most views check if there is a logged in user (server side)
@@ -225,11 +226,33 @@ def item_page_view(request, item_slug):
     return render(request, 'sharespace/item_page.html', context=item_page_context)
 
 
+# ajax view
 def load_sub_cat_view(request):
     cat = request.GET.get('main_category_id')
     print(cat)
     sub_cat_list = Sub_Category.objects.filter(parent = cat)
     return render(request, 'sharespace/sub_cat_dropdown_list.html', {'list' : sub_cat_list})
+
+
+# ajax view
+def load_user_profile_view(request):
+    username = request.GET.get('username')
+    print(username)
+    try:
+        user = User.objects.get(username=username)
+        try:
+            user_profile = UserProfile.objects.get(user = user)
+            user_url = reverse('sharespace:user_profile', kwargs={'user_slug': user_profile.user_slug})
+            print(type(user_url))
+            add_item_url = reverse('sharespace:add_item')
+            return JsonResponse({'user_url' : user_url , 'add_item_url' : add_item_url})
+        except UserProfile.DoesNotExist:
+
+            profile_url = reverse('sharespace:complete_profile')
+            return JsonResponse({ 'profile_url' : profile_url})
+    except User.DoesNotExist:
+        print("user does not exist - views 253")
+        return JsonResponse({})
 
 
 def login(request):

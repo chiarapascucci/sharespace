@@ -34,4 +34,5 @@ urlpatterns = [
     path('search/', views.SearchView.as_view(), name = 'search'),
 
     path('ajax/load_sub_cat', views.load_sub_cat_view, name = "ajax_load_sub_cat"),
+    path('ajax/load_user_profile', views.load_user_profile_view, name = 'load_user_profile')
 ]

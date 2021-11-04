@@ -26,17 +26,16 @@
             </button>
 
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav mr-auto">
+                <ul class="navbar-nav mr-auto" id="navbar-link-list">
                     {% if user.is_authenticated %}
                      <li class="nav-item active">
                         <a class="nav-link" href="{% url 'auth_logout' %}?next={% url 'sharespace:index'%}">Logout <span class="sr-only">(current)</span></a>
                     </li>
-                    <li class="nav-item">
-                        {% if user_profile %}
+                    <li class="nav-item active">
 
-                        {% else %}
-                         <a class="nav-link" href="{% url 'sharespace:add_item' %}">Add Item</a>
-                        {% endif %}
+                         <a class="nav-link" id="profile-link"  data-username-url="{% url 'sharespace:load_user_profile' %}-{{user.username}}" href="#">Your Profile</a>
+                    </li>
+
                     {% else %}
                     <li class="nav-item active">
                         <a class="nav-link" href="{% url 'auth_login' %}">Login <span class="sr-only">(current)</span></a>
@@ -47,7 +46,7 @@
                     {% endif %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            Dropdown
+                            More Actions
                         </a>
                         <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                             <a class="dropdown-item" href="{% url 'sharespace:category_list' %}">Categories</a>
@@ -75,6 +74,7 @@
 
         {% endblock %}
         <script src="{% static 'js/jquery-3.3.1.min.js' %}" crossorigin="anonymous"></script>
+        <script src="https://code.jquery.com/jquery-migrate-1.4.1.min.js"></script>
         <script src= "{% static 'js/sharespace-jquery.js' %}" crossorigin="anonymous"></script>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
