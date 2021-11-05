@@ -1,0 +1,29 @@
+{% extends 'sharespace/base.html' %}
+{%  load static %}
+
+{% block title_block %}
+    Your Notification
+{% endblock %}
+
+{% block body_block %}
+<br>
+<br>
+<br>
+<h1>You have a notification!</h1>
+<ul>
+    <li>{{ title }}</li>
+    <li>{{ body }}</li>
+    <li>From: {{ sender }}</li>
+    <li>To: {{ receiver }}</li>
+</ul>
+<form id="loan_complete_notification_form" method="post" action="{% url 'sharespace:this' notification_slug %}" enctype = 'multipart/form-data'>
+     {% csrf_token %}
+    Choose an action:
+    <select id="action-desired-selection" name="action-desired-selection" required>
+        <option value="returned-ok">Item has been returned correctly</option>
+        <option value="returned-issue">Item was returned, but there is an issue</option>
+        <option value="returned-not">The item was not returned</option>
+    </select>
+    <input type="submit" name="Complete Action" value="Send"/>
+</form>
+{% endblock %}

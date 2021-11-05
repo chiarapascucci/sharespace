@@ -25,11 +25,11 @@ def add_sub_cat(name, category):
     return sc
 
 
-def add_item(name, cat, item_owner, address, sub_cat=None):
+def add_item(name, cat, item_owner, address):
     print(item_owner, "line 28")
     print(type(item_owner), "line 29")
-    i = Item.objects.get_or_create(name=name, main_category=cat, sec_category=sub_cat, location=address)[0]
-    i.save()
+
+    i = Item.objects.get_or_create(name=name, main_category=cat, location=address)[0]
     i.owner.add(item_owner)
     i.save()
     return i
@@ -51,8 +51,8 @@ def add_user(username, email, password):
     return user
 
 
-def add_user_profile(user, post_code):
-    hood = add_hood(post_code)
+def add_user_profile(user,  hood, post_code):
+
     up = UserProfile.objects.get_or_create(user = user, hood = hood, user_post_code = post_code)[0]
     up.save()
     return up
@@ -63,19 +63,19 @@ def populate():
     addresses = {
         1 : {
             'adr_line_1' : 'manor house',
-            'post_code' : 'ABC 123',
+            'post_code' : 'sw96tq',
         },
         2: {
             'adr_line_1': 'fancy villa',
-            'post_code': 'ABC 543',
+            'post_code': 'sw96tq',
         },
         3: {
             'adr_line_1': 'my house',
-            'post_code': 'GL7 3AY',
+            'post_code': 'gl73ay',
         },
         4: {
             'adr_line_1': 'none of your buz',
-            'post_code': 'GL7 3AY',
+            'post_code': 'gl73ay',
         }
     }
     #data dictionaries to be populated - manually!! 
@@ -100,11 +100,28 @@ def populate():
     }
 
 
-    hoods = ['GL7 3AY', 'ABC 233', 'AB24 4HP', 'SW9 6TQ']
+    hoods = ['gl73ay', 'sw96tq']
 
 
     #defining add functions for each type
 
+# start with creating the hoods
+    '''
+     
+
+    for post_code in hoods:
+        hood_entity_list.append(add_hood(post_code))
+        print(hood_entity_list[-1])
+    print("total hoods created: ", len(hood_entity_list))
+    '''
+    hood_entity_list = []
+    address_list = []
+
+    for key, data in addresses.items():
+        hood = Neighbourhood.objects.get_or_create(nh_post_code = data['post_code'])[0]
+        adr = Address.objects.get_or_create(address_line_1=data['adr_line_1'], adr_hood=hood)[0]
+        hood_entity_list.append(hood)
+        address_list.append(adr)
 
 
 # define loops to execute population
@@ -113,7 +130,7 @@ def populate():
     for cat_name in categories:
         cat_list.append(add_category(cat_name))
         print(cat_list[-1])
-    print(len(cat_list))
+    print("total number of categories created: ", len(cat_list))
 
     # use created categories to create associated sub-categories
     for cat in cat_list:
@@ -123,11 +140,11 @@ def populate():
             print(sc)
 
     user_list = []
-    hood_list = []
+
 
     for username, user_data in users.items():
         user = add_user(username, user_data['email'], user_data['password'])
-        print("creating: ", user.username)
+        print("creating user: ", user.username)
         user_list.append(user)
 
     # user_list.reverse()
@@ -137,33 +154,22 @@ def populate():
     user_profile_list = []
 
     for user in user_list:
-        hood = hoods[random.randint(0, 3)]
-        print(hood)
-        up = add_user_profile(user, hood)
-        hood_list.append(up.hood)
+        hood = hood_entity_list[random.randint(0, len(hood_entity_list)-1)]
+        user_postcode = hood.nh_post_code
+        up = add_user_profile(user, hood, user_postcode)
         user_profile_list.append(up)
-        print(up)
-    print(len(user_profile_list))
-
-# create addresses (placeholders to create objects)
-    address_list=[]
-    for key, data in addresses.items():
-        adr = Address.objects.get_or_create(address_line_1 = data['adr_line_1'],
-                                            adr_hood = hood_list[random.randint(0, len(hood_list)-1)])[0]
-        address_list.append(adr)
-        pprint(adr)
-        print(type(adr))
-
-# create user
+        print("user profile {} in hood {}".format(up, user_postcode))
+    print("total user profile created: ", len(user_profile_list))
 
 
-# having list of user profiles and categories - can now create items
+# having list of user profiles, categories, and addresses - can now create items
     item_list = []
     for item_name in items:
         owner = user_profile_list[random.randint(0, len(user_profile_list)-1)]
         cat = cat_list[random.randint(0, len(cat_list)-1)]
-        address = address_list[random.randint(0, 3)]
-        item = add_item(item_name, cat, owner, address)
+        poss_hood = owner.hood
+        poss_address = Address.objects.filter(adr_hood=poss_hood).first()
+        item = add_item(item_name, cat, owner, poss_address)
         item_list.append(item)
         print(item)
     print(len(item_list))

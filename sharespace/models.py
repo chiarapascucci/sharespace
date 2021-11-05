@@ -42,7 +42,7 @@ class Address(models.Model):
     adr_hood = models.ForeignKey(Neighbourhood, blank = False, on_delete = models.CASCADE)
 
     def __str__(self):
-        address_str = self.address_line_1 + "\n" + self.address_line_2 + "\n" + self.city + "\n" + self.adr_hood.nh_post_code
+        address_str = str(self.address_line_1) + "\n" + str(self.address_line_2) + "\n" + str(self.city) + "\n" + self.adr_hood.nh_post_code
         return address_str
 
 
@@ -248,13 +248,19 @@ class PurchaseProposal(models.Model):
         self.timestamp = datetime.now()
         self.proposal_postcode = self.location.adr_hood.nh_post_code
         self.proposal_slug = slugify("{self.item_name}-{self.proposal_postcode}-{self.timestamp}-".format(self=self))
+        super(PurchaseProposal, self).save(*args, **kwargs)
 
 class BaseNotification(models.Model):
-    sender = models.ForeignKey(UserProfile, null=True, on_delete=models.SET_NULL, related_name="sent_notifications")
-    receiver = models.ForeignKey(UserProfile, null = False, on_delete=models.CASCADE, related_name="received_notifications")
+
     date_sent = models.DateField(default = default_time)
     read = models.BooleanField(default = False)
     complete = models.BooleanField(default=False)
+    notification_slug = models.SlugField(unique = True)
+
+    def save(self, *args, **kwargs):
+        self.notification_slug = slugify(self.pk)
+        super(BaseNotification, self).save(*args, **kwargs)
+
 
     def __str__(self):
         return "You received a notifiation from {}".format(self.sender)
@@ -262,16 +268,25 @@ class BaseNotification(models.Model):
 
 
 
-class LoanCompleteNotification(BaseNotification):
+class LoanCompleteNotification(models.Model):
+    date_sent = models.DateField(default=default_time)
+    read = models.BooleanField(default=False)
+    complete = models.BooleanField(default=False)
+    notification_slug = models.SlugField(unique=True, default= uuid.uuid4)
     subject = models.ForeignKey(Loan, null=False, on_delete=models.CASCADE)
     title = models.CharField(max_length=MAX_LENGTH_TITLES, default = "Your item has been returned")
     body = models.CharField(editable = False, max_length=400, default = "Please ensure that you action this notification: your item has been marked as returned")
+    sender = models.ForeignKey(UserProfile, null=True, on_delete=models.SET_NULL, related_name="sent_notifications")
+    receiver = models.ForeignKey(UserProfile, null=False, on_delete=models.CASCADE,
+                                 related_name="received_notifications")
+
 
 
     def complete(self):
         self.complete = True
         self.read = True
         self.save()
+
 
     def __str__(self):
         return "noticication: {} was returned".format(self.subject.item_on_loan)

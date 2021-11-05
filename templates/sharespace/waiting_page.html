@@ -1,0 +1,24 @@
+{% extends 'sharespace/base.html' %}
+{%  load static %}
+
+{% block title_block %}
+    Sharespace
+{% endblock %}
+
+{% block body_block %}
+<br>
+<br>
+<br>
+<br>
+<h1> Hello There! </h1>
+
+  {{message}}
+
+Where to next?
+<a href="{% url 'sharespace:index' %}">HomePage</a>
+
+{% if profile_slug %}
+    <a href="{% url 'sharespace:user_profile' profile_slug %}">Your Profile</a>
+{% endif %}
+
+{% endblock %}

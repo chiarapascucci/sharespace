@@ -28,6 +28,7 @@ urlpatterns = [
     path('loan/return/', views.MarkItemAsReturnedPendingApproval.as_view(), name ='return_item'),
     path('loan/<slug:loan_slug>/', views.LoanView.as_view(), name ='loan_page'),
 
+    path('notifications/<slug:notification_slug>/', views.LoanCompleteNotificationView.as_view(), name = 'this'),
 
     path('hood/<slug:nh_slug>/', views.hood_page_view, name  ='hood_page'),
 

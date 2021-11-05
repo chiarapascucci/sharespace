@@ -17,6 +17,7 @@ from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from datetime import datetime, date, time, timedelta
+import time
 from django.http import JsonResponse
 
 # ------- FUNCTION BASED VIEWS (alph sorted) -------
@@ -521,6 +522,49 @@ class SearchView (View):
     def post(self, request):
         search_context = {}
         return render(request, 'sharespace/search_result_page.html', context=search_context)
+
+
+class LoanCompleteNotificationView (View):
+    @method_decorator(login_required)
+    def get(self, request, notification_slug):
+        form = None
+
+        notif = LoanCompleteNotification.objects.get(notification_slug = notification_slug)
+        print(notif)
+        sender = notif.sender
+        receiver = notif.receiver
+        title = notif.title
+        body = notif.body
+        context = {
+            'form' : form,
+            'notification' : notif,
+            'sender': sender,
+            'receiver' : receiver,
+            'title' : title,
+            'body': body,
+            'notification_slug':notification_slug,
+        }
+        return render(request, 'sharespace/notification_page.html', context=context)
+
+    @method_decorator(login_required)
+    def post(self, request, notification_slug):
+        print(request)
+        input_value = request.POST['action-desired-selection']
+        if input_value == 'returned-ok':
+            message = """ Thank you for confirming that your item was returned correctly
+                            and thank you for sharing something with your neighbours
+                            hold on tight while we redirect you"""
+            context={'message' : message}
+            up_dict = extract_us_up(request)
+            if up_dict['up'] is not None:
+                context['profile_slug']= up_dict['up'].user_slug
+
+            return render(request, 'sharespace/waiting_page.html', context)
+        else:
+            #will need to redirect to complaint / dispute form
+            return redirect(reverse('sharespace:index'))
+
+
 
 # ---------------- HELPER FUNCTIONS --------------
 
