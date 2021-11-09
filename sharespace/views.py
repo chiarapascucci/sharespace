@@ -8,7 +8,7 @@ from django.template.defaultfilters import slugify
 from sharespace.models import Image, Item, Category, Sub_Category, User, UserProfile, Neighbourhood, Loan, Address, \
     LoanCompleteNotification
 from sharespace.forms import AddItemForm, BorrowItemForm, ImageForm, UserForm, UserProfileForm, AddItemFormWithAddress, \
-    SubmitReportForm
+    SubmitReportForm, EditUserProfileBasicForm
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.urls import reverse
@@ -177,9 +177,7 @@ def change_password_view(request):
     })
 
 
-@login_required()
-def edit_user_view(request):
-    return render(request, 'sharespace/edit_user_info.html', context={})
+
 
 
 def gallery_view(request, item_slug):
@@ -392,6 +390,7 @@ def user_profile_view(request, user_slug):
             user_profile_context['bio'] = user_profile.bio
             user_profile_context['post_code'] = user_profile.user_post_code
             user_profile_context['owned_items'] = user_profile.owned.all()
+            user_profile_context['slug'] = user_profile.user_slug
             notif_list = get_user_notification(user_profile)
             if notif_list:
                 user_profile_context['notifications'] = notif_list
@@ -415,6 +414,25 @@ def user_profile_view(request, user_slug):
         print("no user")
 
     return render(request, 'sharespace/user_profile.html', context=user_profile_context)
+
+@login_required
+def edit_profile(request, user_slug):
+    form = EditUserProfileBasicForm()
+    if request.method == 'POST':
+        print("in edit profile view, post request")
+        print(request.POST)
+        form = EditUserProfileBasicForm(request.POST, request.FILES, instance=UserProfile.objects.get(user_slug=user_slug))
+        if form.is_valid():
+           form.save(commit=True)
+           return redirect(reverse('sharespace:user_profile', kwargs= {'user_slug': user_slug}))
+        else:
+            print(form.errors)
+        return redirect(reverse('sharespace:user_profile', kwargs= {'user_slug': user_slug}))
+    else:
+        form = EditUserProfileBasicForm(instance=UserProfile.objects.get(user_slug=user_slug))
+        context_dict = {}
+        context_dict['form'] = form
+        return render(request, ('sharespace/edit_user_info.html'), context=context_dict)
 
 
 # ---------- CLASS BASED VIEWS ------------

@@ -22,7 +22,7 @@ urlpatterns = [
     path('item/<slug:item_slug>/borrow/', BorrowItemView.as_view(), name='borrow_item'),
     path('user/complete-profile/', views.CompleteProfileView.as_view(), name = 'complete_profile'),
     path('user/<slug:user_slug>/', views.user_profile_view, name='user_profile'),
-    path('user/<slug:user_slug>/edit/', views.edit_user_view, name = 'edit_user_info'),
+    path('user/<slug:user_slug>/edit/', views.edit_profile, name = 'edit_user_info'),
 
     path('submit-report/<slug:subject_slug>', views.SubmitReportView.as_view(), name = 'submit_report'),
 

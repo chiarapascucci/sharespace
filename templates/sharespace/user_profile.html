@@ -13,7 +13,7 @@
 <h1> Hi {{ username }} </h1>
 <h2>Welcome to your profile</h2>
 <br>
-<a href = "{% url 'sharespace:change_password'  %}" >Change Password</a>
+
 <br>
 Your info:
 <ul>
@@ -61,4 +61,16 @@ Your Items:
         {% endif %}
 </ul>
 
+    <p>
+        you can edit your bio and picture here: <a href="{% url 'sharespace:edit_user_info' slug %}"> Edit your info </a>
+    </p>
+    <p>
+        you can change your password here: <a href = "{% url 'sharespace:change_password'  %}" >Change Password</a>
+    </p>
+    <p>
+        you can change your email and username here:
+    </p>
+    <p>
+        you can change your Neighbourhood here:
+    </p>
 {% endblock %}

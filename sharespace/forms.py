@@ -15,6 +15,13 @@ class UserProfileForm(forms.ModelForm):
         fields = ('bio', 'picture', 'user_post_code')
         model = UserProfile
 
+class EditUserProfileBasicForm(forms.ModelForm):
+    picture = forms.ImageField(required=False)
+    bio = forms.CharField(required=False)
+    class Meta:
+        model = UserProfile
+        fields = ('bio', 'picture', )
+
 class ImageForm(forms.ModelForm):
     class Meta:
         model = Image

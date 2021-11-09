@@ -2,7 +2,7 @@
 {%  load static %}
 
 {% block title_block %}
-    Your Neighbourhood
+    Edit your details
 {% endblock %}
 
 {% block body_block %}
@@ -11,8 +11,13 @@
 <br>
 <br>
 <br>
-<h1> Your Neighbourhood </h1>
+<h1> Edit Your Details </h1>
 
-
+<form method="post" action="." enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="Save" />
+    <input type="hidden" name="next" value="{{ next }}" />
+</form>
 
 {% endblock %}
