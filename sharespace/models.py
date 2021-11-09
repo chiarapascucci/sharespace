@@ -46,7 +46,11 @@ class Address(models.Model):
         return address_str
 
 
-class Category(models.Model):
+class Reportable(models.Model):
+    pass
+
+
+class Category(Reportable):
     name = models.CharField(primary_key=True, max_length=MAX_LENGTH_TITLES)
     description = models.CharField(max_length=MAX_LENGTH_TEXT, blank = True)
     point_value = models.IntegerField(default=1)
@@ -63,7 +67,7 @@ class Category(models.Model):
         return self.name
 
 
-class Sub_Category(models.Model):
+class Sub_Category(Reportable):
     name = models.CharField(primary_key=True, max_length=MAX_LENGTH_TITLES)
     description = models.CharField(max_length=MAX_LENGTH_TEXT)
     point_value = models.IntegerField(default=1)
@@ -81,7 +85,7 @@ class Sub_Category(models.Model):
         return self.name
 
 
-class UserProfile(models.Model):
+class UserProfile(Reportable):
     user = OneToOneField(User, on_delete=models.CASCADE)
     bio = models.CharField(max_length=MAX_LENGTH_TEXT, blank=True)
     picture = models.ImageField(upload_to='profile_images', blank = True, default='profile_images/default_profile_image.png')
@@ -112,7 +116,7 @@ class UserProfile(models.Model):
         return self.user.username
 
 
-class HoodGroup(models.Model):
+class HoodGroup(Reportable):
     group_name = models.CharField(blank = False, null=False, max_length=MAX_LENGTH_TITLES, primary_key=True)
     group_description = models.TextField(blank = True, max_length=MAX_LENGTH_TEXT)
     group_founder = models.ForeignKey(UserProfile, null=False, on_delete=models.CASCADE, related_name = 'founded')
@@ -125,14 +129,14 @@ class HoodGroup(models.Model):
         super(HoodGroup, self).save(*args, **kwargs)
 
 
-class Item(models.Model):
+class Item(Reportable):
     max_len_of_loan_choices = [
         (1, '1 week'),
         (2, '2 weeks'),
         (3, '3 weeks'),
         (4, '4 weeks'),
     ]
-    id = models.UUIDField(primary_key=True, default= uuid.uuid4, editable = False)
+    item_id = models.UUIDField(primary_key=True, default= uuid.uuid4, editable = False)
     name = models.CharField(max_length=MAX_LENGTH_TITLES)
     description = models.CharField(max_length=MAX_LENGTH_TEXT, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, default = 10.00)
@@ -140,7 +144,7 @@ class Item(models.Model):
     sec_category = models.ForeignKey(Sub_Category, on_delete=models.SET_NULL, null = True)
     available = models.BooleanField(default=True)
     owner = models.ManyToManyField(UserProfile, related_name = "owned", blank = False)
-    borrowed_by = models.ForeignKey(UserProfile, related_name = "borrowed", blank = True,  on_delete=models.SET_NULL, null = True)
+    # borrowed_by = models.ForeignKey(UserProfile, related_name = "borrowed", blank = True,  on_delete=models.SET_NULL, null = True)
     item_slug = models.SlugField(unique=True)
     location = models.ForeignKey(Address, on_delete = models.CASCADE, blank = False)
     max_loan_len = models.PositiveIntegerField(choices=max_len_of_loan_choices, default=4, validators = [MaxValueValidator(4)] )
@@ -160,7 +164,7 @@ class Item(models.Model):
 
 
 
-class Loan(models.Model):
+class Loan(Reportable):
     ACTIVE = 'act'
     PENDING = 'pen'
     COMPLETED = 'com'
@@ -169,7 +173,7 @@ class Loan(models.Model):
         (PENDING, 'Pending'),
         (COMPLETED, 'Completed'),
     ]
-    id = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
+    loan_id = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     requestor = models.ForeignKey(UserProfile, blank = False, related_name = "loans", on_delete=models.CASCADE)
     item_on_loan = models.ForeignKey(Item, blank = False, on_delete=models.CASCADE)
     overdue = models.BooleanField(default=False)
@@ -186,7 +190,7 @@ class Loan(models.Model):
 
     def save(self, *args, **kwargs):
         self.loan_slug = slugify(
-            "{self.requestor.user.username}-loan-{self.id}".format(self=self))
+            "{self.requestor.user.username}-loan-{self.loan_id}".format(self=self))
         print("\n in save method in loan model \n out time: {} \n due time: {} ".format(self.out_date, self.due_date))
         super(Loan, self).save(*args, **kwargs)
 
@@ -219,6 +223,10 @@ class Loan(models.Model):
 
     def mark_as_complete_by_lender(self):
         self.status = self.COMPLETED
+        self.item_on_loan.available = True
+        self.item_on_loan.save()
+        self.requestor.curr_no_of_items = self.requestor.curr_no_of_items - 1
+        self.requestor.save()
         self.save()
 
 
@@ -231,7 +239,7 @@ class Image(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name = "images")
 
 
-class PurchaseProposal(models.Model):
+class PurchaseProposal(Reportable):
     submitter = models.ForeignKey(UserProfile, blank=False, on_delete=models.CASCADE, related_name="proposals")
     subscribers = models.ManyToManyField(UserProfile, blank=True, related_name="interested")
     item_name = models.TextField(blank=False, max_length=MAX_LENGTH_TITLES)
@@ -251,40 +259,29 @@ class PurchaseProposal(models.Model):
         super(PurchaseProposal, self).save(*args, **kwargs)
 
 class BaseNotification(models.Model):
-
-    date_sent = models.DateField(default = default_time)
-    read = models.BooleanField(default = False)
-    complete = models.BooleanField(default=False)
-    notification_slug = models.SlugField(unique = True)
-
-    def save(self, *args, **kwargs):
-        self.notification_slug = slugify(self.pk)
-        super(BaseNotification, self).save(*args, **kwargs)
-
-
-    def __str__(self):
-        return "You received a notifiation from {}".format(self.sender)
-
-
-
-
-class LoanCompleteNotification(models.Model):
     date_sent = models.DateField(default=default_time)
     read = models.BooleanField(default=False)
     complete = models.BooleanField(default=False)
-    notification_slug = models.SlugField(unique=True, default= uuid.uuid4)
-    subject = models.ForeignKey(Loan, null=False, on_delete=models.CASCADE)
-    title = models.CharField(max_length=MAX_LENGTH_TITLES, default = "Your item has been returned")
-    body = models.CharField(editable = False, max_length=400, default = "Please ensure that you action this notification: your item has been marked as returned")
+    notification_slug = models.SlugField(unique=True, default=uuid.uuid4)
+
+    class Meta:
+        abstract = True
+
+
+
+class LoanCompleteNotification(BaseNotification):
     sender = models.ForeignKey(UserProfile, null=True, on_delete=models.SET_NULL, related_name="sent_notifications")
     receiver = models.ForeignKey(UserProfile, null=False, on_delete=models.CASCADE,
                                  related_name="received_notifications")
-
-
+    title = models.CharField(max_length=MAX_LENGTH_TITLES, default="Your item has been returned")
+    body = models.CharField(editable=False, max_length=400,
+                            default="Please ensure that you action this notification: your item has been marked as returned")
+    subject = models.ForeignKey(Loan, null=False, on_delete=models.CASCADE)
 
     def complete(self):
         self.complete = True
         self.read = True
+        self.subject.mark_as_compelete_by_lender()
         self.save()
 
 
@@ -292,4 +289,32 @@ class LoanCompleteNotification(models.Model):
         return "noticication: {} was returned".format(self.subject.item_on_loan)
 
 class LoanActiveNotification(BaseNotification):
+    pass
+
+
+class UserSubmitttedReport(models.Model):
+    report_date_out = models.DateField(default=default_time)
+    report_subject = models.ForeignKey(Reportable, null=False, on_delete=models.CASCADE, related_name='target')
+    report_sender = models.ForeignKey(UserProfile, null = False, on_delete=models.CASCADE, related_name='submitter')
+    report_title = models.CharField(max_length=MAX_LENGTH_TITLES, blank=False)
+    report_body = models.TextField(max_length=MAX_LENGTH_TEXT, blank = False)
+
+    def __str__(self):
+        return "report - submitted by: {}   target: {}".format(self.report_sender, self.report_subject)
+
+
+class UserProfileReport(UserSubmitttedReport):
+    pass
+
+class ItemReportToAdmin(UserSubmitttedReport):
+    pass
+
+class ItemReportToOwner(UserSubmitttedReport):
+    pass
+
+
+class GeneralReport(UserSubmitttedReport):
+    pass
+
+class PurchaseProposalReport(UserSubmitttedReport):
     pass

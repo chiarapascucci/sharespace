@@ -1,0 +1,17 @@
+{% extends 'sharespace/base.html' %}
+{%  load static %}
+
+{% block title_block %}
+    Submit a report
+{% endblock %}
+
+{% block body_block %}
+
+<form id="report_form" method="post" action="{% url 'sharespace:submit_report' subject_slug %}" enctype = 'multipart/form-data'>
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <input type ="submit" name="submit" value="Submit"/>
+</form>
+
+{% endblock %}

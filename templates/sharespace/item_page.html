@@ -18,6 +18,9 @@
         <h1> {{ item.name }} </h1>
         <h2> Item's details: </h2>
         <p><ul>
+            {% for o in item.owner.all  %}
+                {{ o }}
+            {% endfor %}
             <li> item price : {{ item.price }}</li>
             <li> description: {{ item.description }}</li>
             <li> available : {{ item.available }}</li>

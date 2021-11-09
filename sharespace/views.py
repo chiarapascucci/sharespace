@@ -3,9 +3,12 @@ from django.forms.models import modelformset_factory
 from django.http.response import HttpResponse
 from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse
+from django.template.defaultfilters import slugify
+
 from sharespace.models import Image, Item, Category, Sub_Category, User, UserProfile, Neighbourhood, Loan, Address, \
     LoanCompleteNotification
-from sharespace.forms import AddItemForm, BorrowItemForm, ImageForm, UserForm, UserProfileForm, AddItemFormWithAddress
+from sharespace.forms import AddItemForm, BorrowItemForm, ImageForm, UserForm, UserProfileForm, AddItemFormWithAddress, \
+    SubmitReportForm
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.urls import reverse
@@ -17,7 +20,6 @@ from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from datetime import datetime, date, time, timedelta
-import time
 from django.http import JsonResponse
 
 # ------- FUNCTION BASED VIEWS (alph sorted) -------
@@ -550,6 +552,7 @@ class LoanCompleteNotificationView (View):
     def post(self, request, notification_slug):
         print(request)
         input_value = request.POST['action-desired-selection']
+        notification = LoanCompleteNotification.objects.get(notification_slug=notification_slug)
         if input_value == 'returned-ok':
             message = """ Thank you for confirming that your item was returned correctly
                             and thank you for sharing something with your neighbours
@@ -559,15 +562,71 @@ class LoanCompleteNotificationView (View):
             if up_dict['up'] is not None:
                 context['profile_slug']= up_dict['up'].user_slug
 
+            notification.read = True
+            notification.complete = True
+            notification.save()
+            notification.subject.mark_as_complete_by_lender()
+            item = notification.subject.item_on_loan
+            borrower = notification.subject.requestor
+
             return render(request, 'sharespace/waiting_page.html', context)
         else:
-            #will need to redirect to complaint / dispute form
-            return redirect(reverse('sharespace:index'))
+            slug = slugify("_".join(("loan", notification.subject.loan_slug)))
+            return redirect(reverse('sharespace:submit_report', kwargs ={'subject_slug' : slug}) )
 
+
+class SubmitReportView(View):
+    @method_decorator(login_required)
+    def get(self, request, subject_slug):
+        report_subject = unpack_slug_for_report(subject_slug)
+        up_dict = extract_us_up(request)
+
+        if up_dict['up'] is None:
+            return HttpResponse("404 user not found")
+
+        up = up_dict['up']
+
+        bound_form_data = {
+            'report_sender': up,
+            'report_subject' : report_subject,
+            'report_date_out' : date.today(),
+        }
+        form = SubmitReportForm(bound_form_data)
+        context = {'form' : form,
+                   'subject_slug': subject_slug}
+
+        return render(request, 'sharespace/report.html', context=context)
+
+
+    def post(self, request, subject_slug):
+
+        print(request.POST)
+        form = SubmitReportForm(request.POST)
+        if form.is_valid():
+            report = form.save(commit=False)
+            subject = unpack_slug_for_report(subject_slug)
+            if subject is None:
+                return HttpResponse("invalid report subject")
+            else:
+                report.report_subject = subject
+                report.save()
+                return HttpResponse("your report was submitted correctly")
+        else:
+            print("there are report form errors: ", form.errors)
 
 
 # ---------------- HELPER FUNCTIONS --------------
 
+def unpack_slug_for_report(slug):
+    tokens = slug.split("_")
+    print(len(tokens), "--", tokens[0])
+    if tokens[0] == 'loan':
+        loan = Loan.objects.get(loan_slug=tokens[1])
+        print(tokens[1], "-loan slug   ", loan)
+        return loan
+    else:
+        print("no object to extract when unpacking slug")
+        return None
 
 def get_user_notification(up):
     try:
