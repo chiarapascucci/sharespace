@@ -396,8 +396,10 @@ def user_profile_view(request, user_slug):
             if notif_list:
                 user_profile_context['notifications'] = notif_list
             try:
+                loan_list = user_profile.loans.exclude(status = 'com')
 
-                user_profile_context['borrowing_items'] = user_profile.loans.all()
+
+                user_profile_context['borrowing_items'] = loan_list
 
                 #print("this is the name of the item on loan ", user_profile.loans.all().item_on_loan.name)
             except Loan.DoesNotExist:
@@ -529,23 +531,32 @@ class SearchView (View):
 class LoanCompleteNotificationView (View):
     @method_decorator(login_required)
     def get(self, request, notification_slug):
-        form = None
+        # coded form manually
+        # form = None
 
         notif = LoanCompleteNotification.objects.get(notification_slug = notification_slug)
+        if not notif.read_status:
+            notif.read_status = True
         print(notif)
         sender = notif.sender
         receiver = notif.receiver
         title = notif.title
         body = notif.body
         context = {
-            'form' : form,
-            'notification' : notif,
+            'notification': notif,
             'sender': sender,
-            'receiver' : receiver,
-            'title' : title,
+            'receiver': receiver,
+            'title': title,
             'body': body,
-            'notification_slug':notification_slug,
+            'notification_slug': notification_slug,
+            'read': notif.read_status,
+            'complete' : notif.complete_status,
         }
+        if notif.complete_status:
+            context['msg'] =  "thank you for actioning this notification \n if you submitted a report please see your reports page for any updates "
+
+        else:
+            context['msg'] = "please select an action for this notification"
         return render(request, 'sharespace/notification_page.html', context=context)
 
     @method_decorator(login_required)
@@ -562,8 +573,8 @@ class LoanCompleteNotificationView (View):
             if up_dict['up'] is not None:
                 context['profile_slug']= up_dict['up'].user_slug
 
-            notification.read = True
-            notification.complete = True
+            notification.read_status = True
+            notification.complete_status = True
             notification.save()
             notification.subject.mark_as_complete_by_lender()
             item = notification.subject.item_on_loan
@@ -608,7 +619,7 @@ class SubmitReportView(View):
             if subject is None:
                 return HttpResponse("invalid report subject")
             else:
-                report.report_subject = subject
+                report.content_object = subject
                 report.save()
                 return HttpResponse("your report was submitted correctly")
         else:
@@ -630,8 +641,8 @@ def unpack_slug_for_report(slug):
 
 def get_user_notification(up):
     try:
-        notification_list = up.received_notifications.all()
-        print("got notication list, print:")
+        notification_list = up.received_notifications.all().filter(complete_status=False)
+        print("got notification list, print:")
         for n in notification_list:
             print("something? Anything??!!")
             print("not: ", n)

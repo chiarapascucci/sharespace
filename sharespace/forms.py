@@ -1,6 +1,6 @@
 from django import forms
 from django.forms.widgets import EmailInput, HiddenInput, SelectMultiple 
-from sharespace.models import Image, Item, Loan, User, UserProfile, Category, Sub_Category, UserSubmitttedReport
+from sharespace.models import Image, Item, Loan, User, UserProfile, Category, Sub_Category, UserToAdminReportNotAboutUser
 
 class UserForm(forms.ModelForm):
     password = forms.CharField(widget = forms.PasswordInput())
@@ -66,9 +66,9 @@ class BorrowItemForm(forms.ModelForm):
 class SubmitReportForm(forms.ModelForm):
 
     class Meta:
-        model = UserSubmitttedReport
-        fields = ('report_title', 'report_body', 'report_sender', 'report_subject', 'report_date_out')
+        model = UserToAdminReportNotAboutUser
+        fields = ('report_title', 'report_body', 'report_sender', 'report_date_out')
         widgets = {'report_sender': forms.HiddenInput(),
                    'report_receiver': forms.HiddenInput(),
                    'report_date_out' : forms.HiddenInput(),
-                   'report_subject' : forms.HiddenInput()}
+                    }

@@ -10,6 +10,9 @@ from datetime import datetime, date, time, timedelta
 from django.core.validators import MaxValueValidator
 from django.utils.timezone import now as default_time
 
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.models import ContentType
+
 MAX_LENGTH_TITLES = 55
 MAX_LENGTH_TEXT = 240
 
@@ -46,11 +49,11 @@ class Address(models.Model):
         return address_str
 
 
-class Reportable(models.Model):
-    pass
+#class Reportable(models.Model):
+ #   pass
 
 
-class Category(Reportable):
+class Category(models.Model):
     name = models.CharField(primary_key=True, max_length=MAX_LENGTH_TITLES)
     description = models.CharField(max_length=MAX_LENGTH_TEXT, blank = True)
     point_value = models.IntegerField(default=1)
@@ -67,7 +70,7 @@ class Category(Reportable):
         return self.name
 
 
-class Sub_Category(Reportable):
+class Sub_Category(models.Model):
     name = models.CharField(primary_key=True, max_length=MAX_LENGTH_TITLES)
     description = models.CharField(max_length=MAX_LENGTH_TEXT)
     point_value = models.IntegerField(default=1)
@@ -85,7 +88,7 @@ class Sub_Category(Reportable):
         return self.name
 
 
-class UserProfile(Reportable):
+class UserProfile(models.Model):
     user = OneToOneField(User, on_delete=models.CASCADE)
     bio = models.CharField(max_length=MAX_LENGTH_TEXT, blank=True)
     picture = models.ImageField(upload_to='profile_images', blank = True, default='profile_images/default_profile_image.png')
@@ -116,20 +119,37 @@ class UserProfile(Reportable):
         return self.user.username
 
 
-class HoodGroup(Reportable):
+class UserToAdminReportNotAboutUser(models.Model):
+    report_date_out = models.DateField(default=default_time)
+    # report_subject = models.ForeignKey(Reportable, null=False, on_delete=models.CASCADE, related_name='target')
+    report_sender = models.ForeignKey(UserProfile, null=False, on_delete=models.CASCADE, related_name='submitter')
+    report_title = models.CharField(max_length=MAX_LENGTH_TITLES, blank=False)
+    report_body = models.TextField(max_length=MAX_LENGTH_TEXT, blank=False)
+
+    # content type relation
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.CharField(max_length=75)
+    content_object = GenericForeignKey()
+
+    def __str__(self):
+        return "report - submitted by: {}   target: {}".format(self.report_sender, self.content_type)
+
+
+class HoodGroup(models.Model):
     group_name = models.CharField(blank = False, null=False, max_length=MAX_LENGTH_TITLES, primary_key=True)
     group_description = models.TextField(blank = True, max_length=MAX_LENGTH_TEXT)
     group_founder = models.ForeignKey(UserProfile, null=False, on_delete=models.CASCADE, related_name = 'founded')
     group_members = models.ManyToManyField(UserProfile, blank=True, related_name = 'member_of')
     group_hood = models.ForeignKey(Neighbourhood, blank = False, null = False, on_delete=models.CASCADE)
     group_slug = models.SlugField(null = False)
+    group_reported = GenericRelation(UserToAdminReportNotAboutUser)
 
     def save(self, *args, **kwargs):
         self.group_slug = slugify(self.group_name)
         super(HoodGroup, self).save(*args, **kwargs)
 
 
-class Item(Reportable):
+class Item(models.Model):
     max_len_of_loan_choices = [
         (1, '1 week'),
         (2, '2 weeks'),
@@ -149,10 +169,11 @@ class Item(Reportable):
     location = models.ForeignKey(Address, on_delete = models.CASCADE, blank = False)
     max_loan_len = models.PositiveIntegerField(choices=max_len_of_loan_choices, default=4, validators = [MaxValueValidator(4)] )
     item_post_code = CharField(max_length=8)
+    item_reported_to_admin = GenericRelation(UserToAdminReportNotAboutUser)
 
     def save(self, *args, **kwargs):
         #self.id = uuid.uuid4()
-        self.item_slug = slugify(self.id)
+        self.item_slug = slugify(self.item_id)
         #print(self.owner)
         self.item_post_code = self.location.adr_hood.nh_post_code
         super(Item, self).save(*args, **kwargs)
@@ -164,7 +185,7 @@ class Item(Reportable):
 
 
 
-class Loan(Reportable):
+class Loan(models.Model):
     ACTIVE = 'act'
     PENDING = 'pen'
     COMPLETED = 'com'
@@ -173,7 +194,7 @@ class Loan(Reportable):
         (PENDING, 'Pending'),
         (COMPLETED, 'Completed'),
     ]
-    loan_id = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
+    loan_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     requestor = models.ForeignKey(UserProfile, blank = False, related_name = "loans", on_delete=models.CASCADE)
     item_on_loan = models.ForeignKey(Item, blank = False, on_delete=models.CASCADE)
     overdue = models.BooleanField(default=False)
@@ -182,7 +203,8 @@ class Loan(Reportable):
     out_date = models.DateTimeField(null=False)
     due_date = models.DateTimeField(null=True)
     len_of_loan = models.PositiveIntegerField(default=1, validators = [MaxValueValidator(4)] )
-    loan_slug = models.SlugField(primary_key=True)
+    loan_slug = models.SlugField(unique=True)
+    loan_reported = GenericRelation (UserToAdminReportNotAboutUser)
 
     def __str__(self):
         my_str = "{} borrowing {} for {} weeks".format(self.requestor, self.item_on_loan, self.len_of_loan)
@@ -229,6 +251,9 @@ class Loan(Reportable):
         self.requestor.save()
         self.save()
 
+    def mark_as_compelete_by_lender(self, subject):
+        pass
+
 
 def upload_gallery_image(instance, filename):
     return f"images/{instance.item.name}/gallery/{filename}"
@@ -239,7 +264,7 @@ class Image(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name = "images")
 
 
-class PurchaseProposal(Reportable):
+class PurchaseProposal(models.Model):
     submitter = models.ForeignKey(UserProfile, blank=False, on_delete=models.CASCADE, related_name="proposals")
     subscribers = models.ManyToManyField(UserProfile, blank=True, related_name="interested")
     item_name = models.TextField(blank=False, max_length=MAX_LENGTH_TITLES)
@@ -251,6 +276,7 @@ class PurchaseProposal(Reportable):
     purchased = models.BooleanField(default = False)
     timestamp = models.DateTimeField(blank=False)
     proposal_postcode = models.CharField(max_length=8)
+    proposal_reported = GenericRelation(UserToAdminReportNotAboutUser)
 
     def save(self, *args, **kwargs):
         self.timestamp = datetime.now()
@@ -260,8 +286,8 @@ class PurchaseProposal(Reportable):
 
 class BaseNotification(models.Model):
     date_sent = models.DateField(default=default_time)
-    read = models.BooleanField(default=False)
-    complete = models.BooleanField(default=False)
+    read_status = models.BooleanField(default=False)
+    complete_status = models.BooleanField(default=False)
     notification_slug = models.SlugField(unique=True, default=uuid.uuid4)
 
     class Meta:
@@ -278,10 +304,10 @@ class LoanCompleteNotification(BaseNotification):
                             default="Please ensure that you action this notification: your item has been marked as returned")
     subject = models.ForeignKey(Loan, null=False, on_delete=models.CASCADE)
 
-    def complete(self):
+    def complete_notification(self):
         self.complete = True
         self.read = True
-        self.subject.mark_as_compelete_by_lender()
+        self.subject.mark_as_compelete_by_lender(self.subject)
         self.save()
 
 
@@ -292,29 +318,24 @@ class LoanActiveNotification(BaseNotification):
     pass
 
 
-class UserSubmitttedReport(models.Model):
-    report_date_out = models.DateField(default=default_time)
-    report_subject = models.ForeignKey(Reportable, null=False, on_delete=models.CASCADE, related_name='target')
-    report_sender = models.ForeignKey(UserProfile, null = False, on_delete=models.CASCADE, related_name='submitter')
-    report_title = models.CharField(max_length=MAX_LENGTH_TITLES, blank=False)
-    report_body = models.TextField(max_length=MAX_LENGTH_TEXT, blank = False)
-
-    def __str__(self):
-        return "report - submitted by: {}   target: {}".format(self.report_sender, self.report_subject)
-
-
-class UserProfileReport(UserSubmitttedReport):
+class UserToUserItemReport(models.Model):
     pass
 
-class ItemReportToAdmin(UserSubmitttedReport):
+class UserToAdminReportAboutUser(models.Model):
     pass
 
-class ItemReportToOwner(UserSubmitttedReport):
+class UserProfileReport(UserToAdminReportNotAboutUser):
+    pass
+
+class ItemReportToAdmin(UserToAdminReportNotAboutUser):
+    pass
+
+class ItemReportToOwner(UserToAdminReportNotAboutUser):
     pass
 
 
-class GeneralReport(UserSubmitttedReport):
+class GeneralReport(UserToAdminReportNotAboutUser):
     pass
 
-class PurchaseProposalReport(UserSubmitttedReport):
+class PurchaseProposalReport(UserToAdminReportNotAboutUser):
     pass
