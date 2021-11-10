@@ -5,7 +5,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse
 from django.template.defaultfilters import slugify
 
-from sharespace.models import Image, Item, Category, Sub_Category, User, UserProfile, Neighbourhood, Loan, Address, \
+from sharespace.models import Image, Item, Category, Sub_Category, CustomUser, UserProfile, Neighbourhood, Loan, Address, \
     LoanCompleteNotification
 from sharespace.forms import AddItemForm, BorrowItemForm, ImageForm, UserForm, UserProfileForm, AddItemFormWithAddress, \
     SubmitReportForm, EditUserProfileBasicForm
@@ -69,7 +69,7 @@ def add_item_view(request):
         username = request.user.get_username()
         print(username)
         # getting user profile from username (CHANGE THIS TO HELPER FUNCTION TO MANAGE IF EXCEPTION IS RAISED)
-        us = User.objects.get(username=username)
+        us = CustomUser.objects.get(username=username)
         up = UserProfile.objects.get(user=us)
         print("up: ", up)
         item_added.owner.add(up)
@@ -241,7 +241,7 @@ def load_user_profile_view(request):
     username = request.GET.get('username')
     print(username)
     try:
-        user = User.objects.get(username=username)
+        user = CustomUser.objects.get(username=username)
         try:
             user_profile = UserProfile.objects.get(user = user)
             user_url = reverse('sharespace:user_profile', kwargs={'user_slug': user_profile.user_slug})
@@ -252,7 +252,7 @@ def load_user_profile_view(request):
 
             profile_url = reverse('sharespace:complete_profile')
             return JsonResponse({ 'profile_url' : profile_url})
-    except User.DoesNotExist:
+    except CustomUser.DoesNotExist:
         print("user does not exist - views 253")
         return JsonResponse({})
 
@@ -371,11 +371,14 @@ def user_logout(request):
 
 def user_profile_view(request, user_slug):
     print("in user profile view")
+
     user_profile_context = {}
 
     try:
         username = request.user.get_username()
         name = request.user.get_full_name()
+
+        print(request.GET)
 
         print('printing username: ', username)
         print('printin full name:', name)
@@ -410,7 +413,7 @@ def user_profile_view(request, user_slug):
 
         except UserProfile.DoesNotExist:
             print("no user profile")
-    except User.DoesNotExist:
+    except CustomUser.DoesNotExist:
         print("no user")
 
     return render(request, 'sharespace/user_profile.html', context=user_profile_context)
@@ -676,7 +679,7 @@ def find_owners(request):
     for key in request:
         if request[key] == 'on':
             print(key)
-            us = User.objects.get(username = key)
+            us = CustomUser.objects.get(username = key)
             up = UserProfile.objects.get(user=us)
             list.append(up)
             print(up)
@@ -705,7 +708,8 @@ def extract_us_up (request):
     else:
         try:
             username = request.user.get_username()
-            us = User.objects.get(username = username)
+            print("in extract user method. this is the result of get_username ", username)
+            us = CustomUser.objects.get(email = username)
 
             try:
                 up = UserProfile.objects.get(user = us)
@@ -715,8 +719,8 @@ def extract_us_up (request):
                 print("no user profile here (views/200")
                 return {'us' : us, 'up' : None}
 
-        except User.DoesNotExist:
-            print("no user here (views/200")
+        except CustomUser.DoesNotExist:
+            print("no user here (views)")
             return {}
 
 

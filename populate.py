@@ -8,7 +8,7 @@ django.setup()
 from django.contrib.auth.hashers import PBKDF2PasswordHasher, make_password
 from sharespace.models import Item, UserProfile, Category, Sub_Category, Neighbourhood, Address
 import random
-from django.contrib.auth.models import User
+from sharespace.models import CustomUser as User
 from django.core.files import File
 import sharespace_project.settings as Psettings
 
@@ -44,8 +44,8 @@ def add_hood(post_code):
 
 
 def add_user(username, email, password):
-    user = User.objects.get_or_create(username=username)[0]
-    user.email = email
+    user = User.objects.get_or_create(username=username, email=email)[0]
+
     user.password = make_password(password, salt=None, hasher='default')
     user.save()
     return user

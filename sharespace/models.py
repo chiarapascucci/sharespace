@@ -5,13 +5,15 @@ from django.db import models
 from django.db.models.fields import CharField
 from django.db.models.fields.related import ForeignKey, OneToOneField
 from django.template.defaultfilters import slugify
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser
 from datetime import datetime, date, time, timedelta
 from django.core.validators import MaxValueValidator
 from django.utils.timezone import now as default_time
 
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
+
+from sharespace.managers import MyUserManager
 
 MAX_LENGTH_TITLES = 55
 MAX_LENGTH_TEXT = 240
@@ -88,8 +90,20 @@ class Sub_Category(models.Model):
         return self.name
 
 
+class CustomUser(AbstractUser):
+    username = models.CharField(max_length=MAX_LENGTH_TITLES, unique=True)
+    email = models.EmailField('email address', unique=True)
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username',]
+
+    objects = MyUserManager()
+
+    def __str__(self):
+        return self.email
+
 class UserProfile(models.Model):
-    user = OneToOneField(User, on_delete=models.CASCADE)
+    user = OneToOneField(CustomUser, on_delete=models.CASCADE)
     bio = models.CharField(max_length=MAX_LENGTH_TEXT, blank=True)
     picture = models.ImageField(upload_to='profile_images', blank = True, default='profile_images/default_profile_image.png')
     user_slug = models.SlugField(unique=True)

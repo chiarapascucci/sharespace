@@ -1,14 +1,18 @@
 from django import forms
-from django.forms.widgets import EmailInput, HiddenInput, SelectMultiple 
-from sharespace.models import Image, Item, Loan, User, UserProfile, Category, Sub_Category, UserToAdminReportNotAboutUser
+from django.forms.widgets import EmailInput, HiddenInput, SelectMultiple
+from registration.forms import RegistrationForm
+from sharespace.models import Image, Item, Loan, CustomUser, UserProfile, Category, Sub_Category, UserToAdminReportNotAboutUser
 
 class UserForm(forms.ModelForm):
+   # required_css_class = 'required'
+    print("using my custom reg form")
     password = forms.CharField(widget = forms.PasswordInput())
     email = forms.EmailField(widget = forms.EmailInput())
+    username = forms.CharField(max_length=55)
 
     class Meta:
-        fields = ('email', 'password', 'username', 'first_name', 'last_name')
-        model = User
+        fields = ('email', 'password', 'username',)
+        model = CustomUser
 
 class UserProfileForm(forms.ModelForm):
     class Meta:
