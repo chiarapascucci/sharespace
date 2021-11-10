@@ -15,6 +15,8 @@ from django.contrib.contenttypes.models import ContentType
 
 from sharespace.managers import MyUserManager
 
+from sharespace.model_fields import EmailFieldLowerCase
+
 MAX_LENGTH_TITLES = 55
 MAX_LENGTH_TEXT = 240
 
@@ -90,9 +92,12 @@ class Sub_Category(models.Model):
         return self.name
 
 
+
+
+
 class CustomUser(AbstractUser):
     username = models.CharField(max_length=MAX_LENGTH_TITLES, unique=True)
-    email = models.EmailField('email address', unique=True)
+    email = EmailFieldLowerCase('email address', unique=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username',]
