@@ -1,0 +1,22 @@
+{% extends 'sharespace/base.html' %}
+{%  load static %}
+
+{% block title_block %}
+    Purchase Proposal
+{% endblock %}
+
+{% block body_block %}
+<h1> Purchase Proposals in your Hood </h1>
+<h3> Get Rich... or Try Sharing! </h3>
+
+
+{% if list %}
+    {% for prop in list %}
+        <p><a href="{% url 'sharespace:proposal_page' prop.proposal_slug %}">{{ prop }}</a></p>
+    {% endfor %}
+{% else %}
+    There are no purchase proposal in your neighbourhood yet
+    why not add one <a href="{% url 'sharespace:submit_proposal' %}">here</a>?
+
+{% endif %}
+{% endblock %}

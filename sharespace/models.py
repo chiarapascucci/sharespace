@@ -59,7 +59,7 @@ class Address(models.Model):
 
 class Category(models.Model):
     name = models.CharField(primary_key=True, max_length=MAX_LENGTH_TITLES)
-    description = models.CharField(max_length=MAX_LENGTH_TEXT, blank = True)
+    description = models.TextField(max_length=MAX_LENGTH_TEXT, blank = True)
     point_value = models.IntegerField(default=1)
     cat_slug = models.SlugField(unique=True)
 
@@ -76,7 +76,7 @@ class Category(models.Model):
 
 class Sub_Category(models.Model):
     name = models.CharField(primary_key=True, max_length=MAX_LENGTH_TITLES)
-    description = models.CharField(max_length=MAX_LENGTH_TEXT)
+    description = models.TextField(max_length=MAX_LENGTH_TEXT)
     point_value = models.IntegerField(default=1)
     parent = models.ForeignKey(Category, on_delete=models.CASCADE)
     sub_cat_slug = models.SlugField(unique=True)
@@ -201,9 +201,6 @@ class Item(models.Model):
         return self.name
 
 
-
-
-
 class Loan(models.Model):
     ACTIVE = 'act'
     PENDING = 'pen'
@@ -284,24 +281,32 @@ class Image(models.Model):
 
 
 class PurchaseProposal(models.Model):
-    submitter = models.ForeignKey(UserProfile, blank=False, on_delete=models.CASCADE, related_name="proposals")
-    subscribers = models.ManyToManyField(UserProfile, blank=True, related_name="interested")
-    item_name = models.TextField(blank=False, max_length=MAX_LENGTH_TITLES)
-    item_description = models.TextField(blank= False, max_length=MAX_LENGTH_TEXT)
-    price = models.DecimalField(max_digits=10, decimal_places=2, blank=False)
-    location = models.ForeignKey(Address, on_delete=models.CASCADE)
+    proposal_submitter = models.ForeignKey(UserProfile, blank=False, on_delete=models.CASCADE, related_name="proposals")
+    proposal_subscribers = models.ManyToManyField(UserProfile, blank=True, default = None, related_name="interested")
+    proposal_item_name = models.TextField(blank=False, max_length=MAX_LENGTH_TITLES)
+    proposal_cat = models.ForeignKey(Category, null = False, on_delete=models.CASCADE)
+    proposal_sub_cat = models.ForeignKey(Sub_Category, null = True, on_delete=models.SET_NULL)
+    proposal_item_description = models.TextField(blank= False, max_length=MAX_LENGTH_TEXT)
+    proposal_price = models.DecimalField(max_digits=10, decimal_places=2, blank=False)
+    proposal_hood = models.ForeignKey(Neighbourhood, null = False, on_delete=models.CASCADE)
     proposal_slug = models.SlugField(primary_key=True)
-    active = models.BooleanField(default = True)
-    purchased = models.BooleanField(default = False)
-    timestamp = models.DateTimeField(blank=False)
-    proposal_postcode = models.CharField(max_length=8)
+    proposal_active = models.BooleanField(default = True)
+    proposal_purchased = models.BooleanField(default = False)
+    proposal_timestamp = models.DateTimeField(blank=False, default=default_time)
+    # proposal_postcode = models.CharField(max_length=8)
     proposal_reported = GenericRelation(UserToAdminReportNotAboutUser)
 
     def save(self, *args, **kwargs):
-        self.timestamp = datetime.now()
-        self.proposal_postcode = self.location.adr_hood.nh_post_code
-        self.proposal_slug = slugify("{self.item_name}-{self.proposal_postcode}-{self.timestamp}-".format(self=self))
+
+       # self.proposal_submitter = kwargs['submitter']
+        self.proposal_hood = self.proposal_submitter.hood
+        self.proposal_postcode = self.proposal_hood.nh_post_code
+        self.proposal_slug = slugify("{self.proposal_item_name}-{self.proposal_hood.nh_post_code}-"
+                                     "{self.proposal_timestamp}-".format(self=self))
         super(PurchaseProposal, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return "this is a proposal to buy : {}".format(self.proposal_item_name)
 
 class BaseNotification(models.Model):
     date_sent = models.DateField(default=default_time)

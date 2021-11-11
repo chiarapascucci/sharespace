@@ -52,7 +52,7 @@ Your Items:
   Your Notifications
         {% if notifications %}
             {% for n in notifications %}
-                {{n.notification_slug}}
+
                 <li> <a href="{% url 'sharespace:this' n.notification_slug %}">{{ n }}</a></li>
             {% endfor %}
         {% else %}
@@ -60,7 +60,17 @@ Your Items:
             No notifications at the moment
         {% endif %}
 </ul>
+<ul>
+  Purchase Proposal You Suscribe To:
+        {% if subscriptions %}
+            {% for s in subscriptions %}
+                <li> <a href="{% url 'sharespace:proposal_page' s.proposal_slug %}">{{ s }}</a></li>
+            {% endfor %}
+        {% else %}
 
+            No subs at the moment
+        {% endif %}
+</ul>
     <p>
         you can edit your bio and picture here: <a href="{% url 'sharespace:edit_user_info' slug %}"> Edit your info </a>
     </p>

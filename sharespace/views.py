@@ -4,11 +4,13 @@ from django.http.response import HttpResponse
 from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse
 from django.template.defaultfilters import slugify
+from django.views.generic import FormView
 
-from sharespace.models import Image, Item, Category, Sub_Category, CustomUser, UserProfile, Neighbourhood, Loan, Address, \
-    LoanCompleteNotification
+from sharespace.models import Image, Item, Category, Sub_Category, CustomUser, UserProfile, Neighbourhood, Loan, \
+    Address, \
+    LoanCompleteNotification, PurchaseProposal
 from sharespace.forms import AddItemForm, BorrowItemForm, ImageForm, UserForm, UserProfileForm, AddItemFormWithAddress, \
-    SubmitReportForm, EditUserProfileBasicForm
+    SubmitReportForm, EditUserProfileBasicForm, SubmitPurchaseProposalForm
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.urls import reverse
@@ -395,15 +397,15 @@ def user_profile_view(request, user_slug):
             user_profile_context['owned_items'] = user_profile.owned.all()
             user_profile_context['slug'] = user_profile.user_slug
             notif_list = get_user_notification(user_profile)
+            user_profile_context['subscriptions'] = user_profile.interested.all()
             if notif_list:
                 user_profile_context['notifications'] = notif_list
             try:
                 loan_list = user_profile.loans.exclude(status = 'com')
 
-
                 user_profile_context['borrowing_items'] = loan_list
 
-                #print("this is the name of the item on loan ", user_profile.loans.all().item_on_loan.name)
+                # print("this is the name of the item on loan ", user_profile.loans.all().item_on_loan.name)
             except Loan.DoesNotExist:
                 print("no item on loan exception")
                 user_profile_context['borrowing_items'] = None
@@ -574,7 +576,8 @@ class LoanCompleteNotificationView (View):
             'complete' : notif.complete_status,
         }
         if notif.complete_status:
-            context['msg'] =  "thank you for actioning this notification \n if you submitted a report please see your reports page for any updates "
+            context['msg'] = "thank you for actioning this notification \n " \
+                             "if you submitted a report please see your reports page for any updates "
 
         else:
             context['msg'] = "please select an action for this notification"
@@ -629,7 +632,6 @@ class SubmitReportView(View):
 
         return render(request, 'sharespace/report.html', context=context)
 
-
     def post(self, request, subject_slug):
 
         print(request.POST)
@@ -647,7 +649,111 @@ class SubmitReportView(View):
             print("there are report form errors: ", form.errors)
 
 
+class SubmitPurchaseProposal(View):
+    @method_decorator(login_required)
+    def get(self, request):
+        form = SubmitPurchaseProposalForm()
+        return render(request, 'sharespace/submit_purchase_proposal.html', {'form':form})
+
+    @method_decorator(login_required)
+    def post(self, request):
+        form = SubmitPurchaseProposalForm(request.POST)
+        if form.is_valid():
+            proposal = form.save(commit=False)
+            up_dict = extract_us_up(request)
+            submitter = up_dict['up']
+            proposal.proposal_submitter = submitter
+            print("in submit purch prop view: ", submitter)
+            kwargs = {'submitter' : submitter}
+            print("still in views ", kwargs)
+            proposal.save()
+
+            #return HttpResponse("proposal created")
+
+            return redirect(reverse('sharespace:proposal_page', kwargs={'proposal_slug' : proposal.proposal_slug}))
+
+        else:
+            print(form.errors, "there are errors in proposal form")
+
+@login_required
+def purchase_proposal_list_view(request):
+    context = {}
+    up_dict = extract_us_up(request)
+    if up_dict['up'] is not None:
+        hood = up_dict['up'].hood
+        purch_prop_list = PurchaseProposal.objects.filter(proposal_hood=hood)
+        context['list'] = purch_prop_list
+    return render(request, 'sharespace/purchase_proposal_list.html', context=context)
+
+class PurchaseProposalPage(View):
+    @method_decorator(login_required)
+    def get(self, request, proposal_slug):
+        print("for some reason this is getting called")
+        proposal = PurchaseProposal.objects.get(proposal_slug = proposal_slug)
+        up_dict = extract_us_up(request)
+        submitter_flag = up_dict['up'] == proposal.proposal_submitter
+
+        subscriber_flag = proposal.proposal_subscribers.filter(user_slug=up_dict['up'].user_slug).exists()
+
+        print("subs flag value :", subscriber_flag)
+        return render(request, 'sharespace/purchase_proposal_page.html', {'proposal':proposal,
+                                            'subs_flag':subscriber_flag, 'subm_flag':submitter_flag})
+
+
+def ajax_sub_prop_view(request):
+    print("in sub ajax view")
+    username = request.GET.get('username')
+    print(username)
+    proposal_slug = request.GET.get('proposal_slug')
+    print("printing proposal slug --- ", proposal_slug)
+    try:
+        us = CustomUser.objects.get(username=username)
+        try:
+            up = UserProfile.objects.get(user=us)
+            try:
+                prop = PurchaseProposal.objects.get(proposal_slug=proposal_slug)
+                prop.proposal_subscribers.add(up)
+                prop.save()
+            except PurchaseProposal.DoesNotExist:
+                return HttpResponse("proposal not found")
+        except UserProfile.DoesNotExist:
+            return HttpResponse("user profile not found")
+    except CustomUser.DoesNotExist:
+        return HttpResponse("user not found")
+
+    return HttpResponse("all done")
+
+def ajax_unsub_prop_view(request):
+    print("in UNsub ajax view")
+    username = request.GET.get('username')
+    print(username)
+    proposal_slug = request.GET.get('proposal_slug')
+    print("printing proposal slug in un sub--- ", proposal_slug)
+    try:
+        us = CustomUser.objects.get(username=username)
+        try:
+            up = UserProfile.objects.get(user=us)
+            try:
+                prop = PurchaseProposal.objects.get(proposal_slug=proposal_slug)
+                qset = prop.proposal_subscribers.filter(user_slug=up.user_slug)
+
+                if qset.exists():
+                    print("removing user")
+                    prop.proposal_subscribers.remove(up)
+                else:
+                    HttpResponse("not a sub")
+
+                return HttpResponse("all done")
+            except PurchaseProposal.DoesNotExist:
+                return HttpResponse("proposal not found")
+        except UserProfile.DoesNotExist:
+            return HttpResponse("user profile not found")
+    except CustomUser.DoesNotExist:
+        return HttpResponse("user not found")
+
+   # return HttpResponse("all done")
 # ---------------- HELPER FUNCTIONS --------------
+
 
 def unpack_slug_for_report(slug):
     tokens = slug.split("_")
@@ -659,6 +765,7 @@ def unpack_slug_for_report(slug):
     else:
         print("no object to extract when unpacking slug")
         return None
+
 
 def get_user_notification(up):
     try:
@@ -722,30 +829,5 @@ def extract_us_up (request):
         except CustomUser.DoesNotExist:
             print("no user here (views)")
             return {}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

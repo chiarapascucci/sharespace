@@ -1,0 +1,28 @@
+{% extends 'sharespace/base.html' %}
+{%  load static %}
+
+{% block title_block %}
+    Purchase Proposal
+{% endblock %}
+
+{% block body_block %}
+<p>{{ proposal }}</p>
+    <p>{{ flag }}</p>
+    <br>
+    <p> in purchase proposal page </p>
+
+    {% if subm_flag %}
+        <button id="edit-prop-btn" onclick="" value="Edit proposal">Edit Proposal</button>
+        <br>
+        <button id="delete-prop-btn" onclick="" value="Delete proposal">Delete Proposal</button>
+        <br>
+        <button id="purchased-prop-btn" onclick="" value="Purchased">Purchased</button>
+    {% else %}
+        {% if subs_flag %}
+        {% else %}
+            <button id="subscribe-btn" onclick="subscribe_to_proposal()"  data-url-action="{% url 'sharespace:ajax_sub_to_prop' %}" value="Subscribe" data-prop-slug = "{{ proposal.proposal_slug }}">Subscribe</button>
+        {% endif %}
+            <button id="subscribe-btn" onclick="subscribe_to_proposal()"  data-url-action="{% url 'sharespace:ajax_unsub_from_prop' %}" value="Unsubscribe" data-prop-slug = "{{ proposal.proposal_slug }}">Unsubscribe</button>
+    {% endif %}
+
+{% endblock %}

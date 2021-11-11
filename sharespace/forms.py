@@ -2,7 +2,9 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.forms.widgets import EmailInput, HiddenInput, SelectMultiple
 from registration.forms import RegistrationForm
-from sharespace.models import Image, Item, Loan, CustomUser, UserProfile, Category, Sub_Category, UserToAdminReportNotAboutUser
+from sharespace.models import Image, Item, Loan, CustomUser, UserProfile, Category, Sub_Category, \
+    UserToAdminReportNotAboutUser, PurchaseProposal
+
 
 class UserForm(UserCreationForm):
    # required_css_class = 'required'
@@ -88,3 +90,11 @@ class SubmitReportForm(forms.ModelForm):
                    'report_receiver': forms.HiddenInput(),
                    'report_date_out' : forms.HiddenInput(),
                     }
+
+
+class SubmitPurchaseProposalForm(forms.ModelForm):
+
+    class Meta:
+        model = PurchaseProposal
+        fields = ('proposal_item_name', 'proposal_cat', 'proposal_sub_cat',
+                  'proposal_item_description', 'proposal_price',)

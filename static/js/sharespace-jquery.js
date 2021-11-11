@@ -18,6 +18,21 @@ $(document).ready(function() {
 		});
 	});
 
+    $("#id_proposal_cat").change(function (){
+        const url = $("#purchase_proposal_form").attr("data-sub-cat-url");
+        const catID = $(this).val();
+        console.log("cat element selected")
+
+        $.ajax({
+            url : url,
+            data: {'main_category_id' : catID},
+            success : function(data){
+                $("#id_proposal_sub_cat").html(data);
+            }
+
+        });
+
+    });
 
 	$('#returned-item-btn').click(function(){
 	    console.log("button in loan page clicked")
@@ -36,8 +51,6 @@ $(document).ready(function() {
 
 	});
 
-
-      $("#add_item_postcode").on(lookup_func())
 
      $('p').hover(
         function() {
@@ -166,4 +179,39 @@ function populate_address(){
 
 }
 
+function subscribe_to_proposal(){
+    console.log("you pressed subs button")
+    // get the user - same way as in get user ajax function
+    console.log("getting user")
+        const full_data = $("#profile-link").attr("data-username-url");
+        const btn = $("#subscribe-btn");
+        const url = btn.attr("data-url-action");
+        console.log("printing url of request");
+        console.log(url);
+        const elems = full_data.split('-');
+        // console.log(elems[0], elems[1]);
+        username = elems[1];
+        const proposal_slug = btn.attr("data-prop-slug");
+         $.ajax({
+             //type : "POST",
+             url : url,
+             data : {'username': username, 'proposal_slug':proposal_slug },
+             success : function(){
+                 console.log(this);
+                 if (btn.attr("value") === "Unsubscribe") {
+                     btn.html("Subscribe");
+                     btn.attr("value", "Subscribe");
+                     btn.attr("data-url-action","/sharespace/ajax/sub_proposal/");
+                 }else{
+                     btn.html("Unsubscribe");
+                     btn.attr("value", "Unsubscribe");
+                     btn.attr("data-url-action","/sharespace/ajax/unsub_proposal/");
+                 }
 
+                 console.log("subs request complete");
+
+            }
+        });
+
+
+}
