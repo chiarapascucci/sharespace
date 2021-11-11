@@ -561,14 +561,14 @@ class LoanCompleteNotificationView (View):
         if not notif.read_status:
             notif.read_status = True
         print(notif)
-        sender = notif.sender
-        receiver = notif.receiver
+        sender = notif.from_user
+        receiver = notif.to_user
         title = notif.title
         body = notif.body
         context = {
             'notification': notif,
-            'sender': sender,
-            'receiver': receiver,
+            'from_user': sender,
+            'to_user': receiver,
             'title': title,
             'body': body,
             'notification_slug': notification_slug,

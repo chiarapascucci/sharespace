@@ -17,6 +17,8 @@ from sharespace.managers import MyUserManager
 
 from sharespace.model_fields import EmailFieldLowerCase
 
+
+
 MAX_LENGTH_TITLES = 55
 MAX_LENGTH_TEXT = 240
 
@@ -298,7 +300,7 @@ class PurchaseProposal(models.Model):
 
     def save(self, *args, **kwargs):
 
-       # self.proposal_submitter = kwargs['submitter']
+        # self.proposal_submitter = kwargs['submitter']
         self.proposal_hood = self.proposal_submitter.hood
         self.proposal_postcode = self.proposal_hood.nh_post_code
         self.proposal_slug = slugify("{self.proposal_item_name}-{self.proposal_hood.nh_post_code}-"
@@ -308,11 +310,16 @@ class PurchaseProposal(models.Model):
     def __str__(self):
         return "this is a proposal to buy : {}".format(self.proposal_item_name)
 
+
 class BaseNotification(models.Model):
     date_sent = models.DateField(default=default_time)
     read_status = models.BooleanField(default=False)
     complete_status = models.BooleanField(default=False)
     notification_slug = models.SlugField(unique=True, default=uuid.uuid4)
+
+    title = models.CharField(max_length=MAX_LENGTH_TITLES)
+    body = models.CharField(editable=False, max_length=400)
+    subject = None
 
     class Meta:
         abstract = True
@@ -320,9 +327,9 @@ class BaseNotification(models.Model):
 
 
 class LoanCompleteNotification(BaseNotification):
-    sender = models.ForeignKey(UserProfile, null=True, on_delete=models.SET_NULL, related_name="sent_notifications")
-    receiver = models.ForeignKey(UserProfile, null=False, on_delete=models.CASCADE,
-                                 related_name="received_notifications")
+    from_user = models.ForeignKey(UserProfile, null=True, on_delete=models.SET_NULL, related_name="sent_loan_comp_notifications")
+    to_user = models.ForeignKey(UserProfile, null=False, on_delete=models.CASCADE,
+                                related_name="received_loan_comp_notifications")
     title = models.CharField(max_length=MAX_LENGTH_TITLES, default="Your item has been returned")
     body = models.CharField(editable=False, max_length=400,
                             default="Please ensure that you action this notification: your item has been marked as returned")
@@ -338,8 +345,18 @@ class LoanCompleteNotification(BaseNotification):
     def __str__(self):
         return "noticication: {} was returned".format(self.subject.item_on_loan)
 
+
 class LoanActiveNotification(BaseNotification):
-    pass
+    from_user = models.ForeignKey(UserProfile, null=True, on_delete=models.SET_NULL,
+                                  related_name="sent_loan_act_notifications")
+    to_user = models.ForeignKey(UserProfile, null=False, on_delete=models.CASCADE,
+                                related_name="received_loan_act_notifications")
+    title = models.CharField(max_length=MAX_LENGTH_TITLES, default="Your item has been booked")
+    body = models.CharField(editable=False, max_length=400,
+                            default="Please ensure that your item is ready for collection")
+    subject = models.ForeignKey(Loan, null=False, on_delete=models.CASCADE)
+
+
 
 
 class UserToUserItemReport(models.Model):
