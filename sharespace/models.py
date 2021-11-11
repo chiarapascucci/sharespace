@@ -1,4 +1,3 @@
-
 import uuid
 from django.db import models
 
@@ -16,8 +15,6 @@ from django.contrib.contenttypes.models import ContentType
 from sharespace.managers import MyUserManager
 
 from sharespace.model_fields import EmailFieldLowerCase
-
-
 
 MAX_LENGTH_TITLES = 55
 MAX_LENGTH_TEXT = 240
@@ -39,29 +36,30 @@ class Neighbourhood(models.Model):
 
 
 class Address(models.Model):
-    address_line_1 = models.CharField(max_length = MAX_LENGTH_TITLES, blank = False)
-    address_line_2 = models.CharField(max_length = MAX_LENGTH_TITLES, default = '')
-    address_line_3 = models.CharField(max_length = MAX_LENGTH_TITLES, default = '')
-    address_line_4 = models.CharField(max_length=MAX_LENGTH_TITLES, default = '')
+    address_line_1 = models.CharField(max_length=MAX_LENGTH_TITLES, blank=False)
+    address_line_2 = models.CharField(max_length=MAX_LENGTH_TITLES, default='')
+    address_line_3 = models.CharField(max_length=MAX_LENGTH_TITLES, default='')
+    address_line_4 = models.CharField(max_length=MAX_LENGTH_TITLES, default='')
     locality = models.CharField(max_length=MAX_LENGTH_TITLES, default='')
-    city = models.CharField(max_length = MAX_LENGTH_TITLES, default = '')
-    county = models.CharField(max_length=MAX_LENGTH_TITLES, default = '')
-    country = models.CharField(max_length = MAX_LENGTH_TITLES, default = 'United Kingdom')
+    city = models.CharField(max_length=MAX_LENGTH_TITLES, default='')
+    county = models.CharField(max_length=MAX_LENGTH_TITLES, default='')
+    country = models.CharField(max_length=MAX_LENGTH_TITLES, default='United Kingdom')
 
-    adr_hood = models.ForeignKey(Neighbourhood, blank = False, on_delete = models.CASCADE)
+    adr_hood = models.ForeignKey(Neighbourhood, blank=False, on_delete=models.CASCADE)
 
     def __str__(self):
-        address_str = str(self.address_line_1) + "\n" + str(self.address_line_2) + "\n" + str(self.city) + "\n" + self.adr_hood.nh_post_code
+        address_str = str(self.address_line_1) + "\n" + str(self.address_line_2) + "\n" + str(
+            self.city) + "\n" + self.adr_hood.nh_post_code
         return address_str
 
 
-#class Reportable(models.Model):
- #   pass
+# class Reportable(models.Model):
+#   pass
 
 
 class Category(models.Model):
     name = models.CharField(primary_key=True, max_length=MAX_LENGTH_TITLES)
-    description = models.TextField(max_length=MAX_LENGTH_TEXT, blank = True)
+    description = models.TextField(max_length=MAX_LENGTH_TEXT, blank=True)
     point_value = models.IntegerField(default=1)
     cat_slug = models.SlugField(unique=True)
 
@@ -84,8 +82,8 @@ class Sub_Category(models.Model):
     sub_cat_slug = models.SlugField(unique=True)
 
     def save(self, *args, **kwargs):
-       self.sub_cat_slug = slugify(self.name)
-       super(Sub_Category, self).save(*args, **kwargs)
+        self.sub_cat_slug = slugify(self.name)
+        super(Sub_Category, self).save(*args, **kwargs)
 
     class Meta:
         verbose_name_plural = 'Secondary Categories'
@@ -94,41 +92,41 @@ class Sub_Category(models.Model):
         return self.name
 
 
-
-
-
 class CustomUser(AbstractUser):
     username = models.CharField(max_length=MAX_LENGTH_TITLES, unique=True)
     email = EmailFieldLowerCase('email address', unique=True)
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username',]
+    REQUIRED_FIELDS = ['username', ]
 
     objects = MyUserManager()
 
     def __str__(self):
         return self.email
 
+
 class UserProfile(models.Model):
     user = OneToOneField(CustomUser, on_delete=models.CASCADE)
     bio = models.CharField(max_length=MAX_LENGTH_TEXT, blank=True)
-    picture = models.ImageField(upload_to='profile_images', blank = True, default='profile_images/default_profile_image.png')
+    picture = models.ImageField(upload_to='profile_images', blank=True,
+                                default='profile_images/default_profile_image.png')
     user_slug = models.SlugField(unique=True)
     user_post_code = CharField(max_length=8)
-    max_no_of_items = models.PositiveIntegerField(default = 1)
-    curr_no_of_items = models.PositiveIntegerField(default = 0)
-    can_borrow = models.BooleanField(default = True)
-    hood = models.ForeignKey(Neighbourhood, on_delete=models.CASCADE) #will need to manage or prevent situation where a neighbourhood is deleted
+    max_no_of_items = models.PositiveIntegerField(default=1)
+    curr_no_of_items = models.PositiveIntegerField(default=0)
+    can_borrow = models.BooleanField(default=True)
+    hood = models.ForeignKey(Neighbourhood,
+                             on_delete=models.CASCADE)  # will need to manage or prevent situation where a neighbourhood is deleted
 
     def set_hood(self, user_post_code):
-        f_user_post_code = user_post_code.strip().replace(' ','').lower()
-        self.hood = Neighbourhood.objects.get_or_create(nh_post_code = f_user_post_code)[0]
+        f_user_post_code = user_post_code.strip().replace(' ', '').lower()
+        self.hood = Neighbourhood.objects.get_or_create(nh_post_code=f_user_post_code)[0]
         return self
 
     def save(self, *args, **kwargs):
         self.user_slug = slugify(self.user.username)
-        self.user_post_code = self.user_post_code.strip().replace(' ','').lower()
-        print("curr no of items" , self.curr_no_of_items)
+        self.user_post_code = self.user_post_code.strip().replace(' ', '').lower()
+        print("curr no of items", self.curr_no_of_items)
         if self.curr_no_of_items >= self.max_no_of_items:
             self.can_borrow = False
         else:
@@ -138,6 +136,32 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return self.user.username
+
+
+class Notification(models.Model):
+    notif_time_stamp = models.DateTimeField(default=default_time)
+    notif_read = models.BooleanField(default=False)
+    notif_action_needed = models.BooleanField(default=False)
+    notif_complete = models.BooleanField(default=False)
+    notif_slug = models.SlugField(unique=True, default=uuid.uuid4)
+    notif_origin = models.ForeignKey(CustomUser, null=False, on_delete=models.CASCADE, related_name='sent')
+    notif_target = models.ForeignKey(UserProfile, null=False, on_delete=models.CASCADE, related_name='received')
+    notif_title = models.CharField(max_length=MAX_LENGTH_TITLES, default="you have a notification")
+    notif_body = models.TextField(max_length=MAX_LENGTH_TEXT,
+                                  default="please ensure you action this notification if necessary")
+
+    # content type relation
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.CharField(max_length=200)
+    content_object = GenericForeignKey()
+
+    def __str__(self):
+        return "notification: from {} to {}, title: {}".format(self.notif_origin, self.notif_target, self.notif_title)
+
+
+# helpef function (factory)
+
+
 
 
 class UserToAdminReportNotAboutUser(models.Model):
@@ -157,12 +181,12 @@ class UserToAdminReportNotAboutUser(models.Model):
 
 
 class HoodGroup(models.Model):
-    group_name = models.CharField(blank = False, null=False, max_length=MAX_LENGTH_TITLES, primary_key=True)
-    group_description = models.TextField(blank = True, max_length=MAX_LENGTH_TEXT)
-    group_founder = models.ForeignKey(UserProfile, null=False, on_delete=models.CASCADE, related_name = 'founded')
-    group_members = models.ManyToManyField(UserProfile, blank=True, related_name = 'member_of')
-    group_hood = models.ForeignKey(Neighbourhood, blank = False, null = False, on_delete=models.CASCADE)
-    group_slug = models.SlugField(null = False)
+    group_name = models.CharField(blank=False, null=False, max_length=MAX_LENGTH_TITLES, primary_key=True)
+    group_description = models.TextField(blank=True, max_length=MAX_LENGTH_TEXT)
+    group_founder = models.ForeignKey(UserProfile, null=False, on_delete=models.CASCADE, related_name='founded')
+    group_members = models.ManyToManyField(UserProfile, blank=True, related_name='member_of')
+    group_hood = models.ForeignKey(Neighbourhood, blank=False, null=False, on_delete=models.CASCADE)
+    group_slug = models.SlugField(null=False)
     group_reported = GenericRelation(UserToAdminReportNotAboutUser)
 
     def save(self, *args, **kwargs):
@@ -177,25 +201,26 @@ class Item(models.Model):
         (3, '3 weeks'),
         (4, '4 weeks'),
     ]
-    item_id = models.UUIDField(primary_key=True, default= uuid.uuid4, editable = False)
+    item_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=MAX_LENGTH_TITLES)
     description = models.CharField(max_length=MAX_LENGTH_TEXT, blank=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2, default = 10.00)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=10.00)
     main_category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    sec_category = models.ForeignKey(Sub_Category, on_delete=models.SET_NULL, null = True)
+    sec_category = models.ForeignKey(Sub_Category, on_delete=models.SET_NULL, null=True)
     available = models.BooleanField(default=True)
-    owner = models.ManyToManyField(UserProfile, related_name = "owned", blank = False)
+    owner = models.ManyToManyField(UserProfile, related_name="owned", blank=False)
     # borrowed_by = models.ForeignKey(UserProfile, related_name = "borrowed", blank = True,  on_delete=models.SET_NULL, null = True)
     item_slug = models.SlugField(unique=True)
-    location = models.ForeignKey(Address, on_delete = models.CASCADE, blank = False)
-    max_loan_len = models.PositiveIntegerField(choices=max_len_of_loan_choices, default=4, validators = [MaxValueValidator(4)] )
+    location = models.ForeignKey(Address, on_delete=models.CASCADE, blank=False)
+    max_loan_len = models.PositiveIntegerField(choices=max_len_of_loan_choices, default=4,
+                                               validators=[MaxValueValidator(4)])
     item_post_code = CharField(max_length=8)
     item_reported_to_admin = GenericRelation(UserToAdminReportNotAboutUser)
 
     def save(self, *args, **kwargs):
-        #self.id = uuid.uuid4()
+        # self.id = uuid.uuid4()
         self.item_slug = slugify(self.item_id)
-        #print(self.owner)
+        # print(self.owner)
         self.item_post_code = self.location.adr_hood.nh_post_code
         super(Item, self).save(*args, **kwargs)
 
@@ -213,16 +238,18 @@ class Loan(models.Model):
         (COMPLETED, 'Completed'),
     ]
     loan_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    requestor = models.ForeignKey(UserProfile, blank = False, related_name = "loans", on_delete=models.CASCADE)
-    item_on_loan = models.ForeignKey(Item, blank = False, on_delete=models.CASCADE)
+    requestor = models.ForeignKey(UserProfile, blank=False, related_name="loans", on_delete=models.CASCADE)
+    item_on_loan = models.ForeignKey(Item, blank=False, on_delete=models.CASCADE)
     overdue = models.BooleanField(default=False)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=ACTIVE)
     # active = models.BooleanField(default = True)
     out_date = models.DateTimeField(null=False)
     due_date = models.DateTimeField(null=True)
-    len_of_loan = models.PositiveIntegerField(default=1, validators = [MaxValueValidator(4)] )
+    len_of_loan = models.PositiveIntegerField(default=1, validators=[MaxValueValidator(4)])
     loan_slug = models.SlugField(unique=True)
-    loan_reported = GenericRelation (UserToAdminReportNotAboutUser)
+    loan_reported = GenericRelation(UserToAdminReportNotAboutUser)
+
+    loan_notification = GenericRelation(Notification)
 
     def __str__(self):
         my_str = "{} borrowing {} for {} weeks".format(self.requestor, self.item_on_loan, self.len_of_loan)
@@ -255,11 +282,8 @@ class Loan(models.Model):
     def mark_as_complete_by_borrower(self):
         self.status = self.PENDING
         self.save()
-        receiver = self.item_on_loan.owner.first()
-        print("creating notification in loan model")
-        notif = LoanCompleteNotification.objects.create(receiver = receiver, sender = self.requestor,
-                                                               subject = self)
-        print(notif, type(notif))
+
+
 
     def mark_as_complete_by_lender(self):
         self.status = self.COMPLETED
@@ -269,8 +293,7 @@ class Loan(models.Model):
         self.requestor.save()
         self.save()
 
-    def mark_as_compelete_by_lender(self, subject):
-        pass
+
 
 
 def upload_gallery_image(instance, filename):
@@ -278,28 +301,27 @@ def upload_gallery_image(instance, filename):
 
 
 class Image(models.Model):
-    image = models.ImageField(upload_to = upload_gallery_image)
-    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name = "images")
+    image = models.ImageField(upload_to=upload_gallery_image)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="images")
 
 
 class PurchaseProposal(models.Model):
     proposal_submitter = models.ForeignKey(UserProfile, blank=False, on_delete=models.CASCADE, related_name="proposals")
-    proposal_subscribers = models.ManyToManyField(UserProfile, blank=True, default = None, related_name="interested")
+    proposal_subscribers = models.ManyToManyField(UserProfile, blank=True, default=None, related_name="interested")
     proposal_item_name = models.TextField(blank=False, max_length=MAX_LENGTH_TITLES)
-    proposal_cat = models.ForeignKey(Category, null = False, on_delete=models.CASCADE)
-    proposal_sub_cat = models.ForeignKey(Sub_Category, null = True, on_delete=models.SET_NULL)
-    proposal_item_description = models.TextField(blank= False, max_length=MAX_LENGTH_TEXT)
+    proposal_cat = models.ForeignKey(Category, null=False, on_delete=models.CASCADE)
+    proposal_sub_cat = models.ForeignKey(Sub_Category, null=True, on_delete=models.SET_NULL)
+    proposal_item_description = models.TextField(blank=False, max_length=MAX_LENGTH_TEXT)
     proposal_price = models.DecimalField(max_digits=10, decimal_places=2, blank=False)
-    proposal_hood = models.ForeignKey(Neighbourhood, null = False, on_delete=models.CASCADE)
+    proposal_hood = models.ForeignKey(Neighbourhood, null=False, on_delete=models.CASCADE)
     proposal_slug = models.SlugField(primary_key=True)
-    proposal_active = models.BooleanField(default = True)
-    proposal_purchased = models.BooleanField(default = False)
+    proposal_active = models.BooleanField(default=True)
+    proposal_purchased = models.BooleanField(default=False)
     proposal_timestamp = models.DateTimeField(blank=False, default=default_time)
     # proposal_postcode = models.CharField(max_length=8)
     proposal_reported = GenericRelation(UserToAdminReportNotAboutUser)
 
     def save(self, *args, **kwargs):
-
         # self.proposal_submitter = kwargs['submitter']
         self.proposal_hood = self.proposal_submitter.hood
         self.proposal_postcode = self.proposal_hood.nh_post_code
@@ -311,6 +333,7 @@ class PurchaseProposal(models.Model):
         return "this is a proposal to buy : {}".format(self.proposal_item_name)
 
 
+"""
 class BaseNotification(models.Model):
     date_sent = models.DateField(default=default_time)
     read_status = models.BooleanField(default=False)
@@ -357,19 +380,24 @@ class LoanActiveNotification(BaseNotification):
     subject = models.ForeignKey(Loan, null=False, on_delete=models.CASCADE)
 
 
+"""
 
 
 class UserToUserItemReport(models.Model):
     pass
 
+
 class UserToAdminReportAboutUser(models.Model):
     pass
+
 
 class UserProfileReport(UserToAdminReportNotAboutUser):
     pass
 
+
 class ItemReportToAdmin(UserToAdminReportNotAboutUser):
     pass
+
 
 class ItemReportToOwner(UserToAdminReportNotAboutUser):
     pass
@@ -377,6 +405,7 @@ class ItemReportToOwner(UserToAdminReportNotAboutUser):
 
 class GeneralReport(UserToAdminReportNotAboutUser):
     pass
+
 
 class PurchaseProposalReport(UserToAdminReportNotAboutUser):
     pass

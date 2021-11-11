@@ -53,7 +53,7 @@ Your Items:
         {% if notifications %}
             {% for n in notifications %}
 
-                <li> <a href="{% url 'sharespace:this' n.notification_slug %}">{{ n }}</a></li>
+                <li> <a href="{% url 'sharespace:notification_page' n.notif_slug %}">{{ n }}</a></li>
             {% endfor %}
         {% else %}
 

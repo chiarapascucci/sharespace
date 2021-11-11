@@ -7,8 +7,7 @@ from django.template.defaultfilters import slugify
 from django.views.generic import FormView
 
 from sharespace.models import Image, Item, Category, Sub_Category, CustomUser, UserProfile, Neighbourhood, Loan, \
-    Address, \
-    LoanCompleteNotification, PurchaseProposal
+    Address, PurchaseProposal, Notification
 from sharespace.forms import AddItemForm, BorrowItemForm, ImageForm, UserForm, UserProfileForm, AddItemFormWithAddress, \
     SubmitReportForm, EditUserProfileBasicForm, SubmitPurchaseProposalForm
 from django.contrib.auth.decorators import login_required
@@ -519,6 +518,7 @@ class MarkItemAsReturnedPendingApproval(View):
             print("trying loan")
             loan = Loan.objects.get(loan_slug=loan_slug)
             loan.mark_as_complete_by_borrower()
+
         except Loan.DoesNotExist:
             print("no loan")
 
@@ -557,14 +557,15 @@ class LoanCompleteNotificationView (View):
         # coded form manually
         # form = None
 
-        notif = LoanCompleteNotification.objects.get(notification_slug = notification_slug)
-        if not notif.read_status:
-            notif.read_status = True
+        notif = Notification.objects.get(notif_slug = notification_slug)
+        if not notif.notif_read:
+            notif.notif_read = True
+            notif.save()
         print(notif)
-        sender = notif.from_user
-        receiver = notif.to_user
-        title = notif.title
-        body = notif.body
+        sender = notif.notif_origin
+        receiver = notif.notif_target
+        title = notif.notif_title
+        body = notif.notif_body
         context = {
             'notification': notif,
             'from_user': sender,
@@ -572,12 +573,14 @@ class LoanCompleteNotificationView (View):
             'title': title,
             'body': body,
             'notification_slug': notification_slug,
-            'read': notif.read_status,
-            'complete' : notif.complete_status,
+            'read': notif.notif_read,
+            'complete' : notif.notif_complete,
         }
-        if notif.complete_status:
+        # NEED TO LOOK INTO THIS BETTER - 3 WAY LOGIC
+        if notif.notif_complete or (not notif.notif_action_needed):
             context['msg'] = "thank you for actioning this notification \n " \
                              "if you submitted a report please see your reports page for any updates "
+            context['complete'] = True
 
         else:
             context['msg'] = "please select an action for this notification"
@@ -587,7 +590,7 @@ class LoanCompleteNotificationView (View):
     def post(self, request, notification_slug):
         print(request)
         input_value = request.POST['action-desired-selection']
-        notification = LoanCompleteNotification.objects.get(notification_slug=notification_slug)
+        notification = Notification.objects.get(notif_slug=notification_slug)
         if input_value == 'returned-ok':
             message = """ Thank you for confirming that your item was returned correctly
                             and thank you for sharing something with your neighbours
@@ -769,14 +772,14 @@ def unpack_slug_for_report(slug):
 
 def get_user_notification(up):
     try:
-        notification_list = up.received_notifications.all().filter(complete_status=False)
+        notification_list = up.received.all().filter(notif_complete=False)
         print("got notification list, print:")
         for n in notification_list:
             print("something? Anything??!!")
             print("not: ", n)
         return notification_list
 
-    except LoanCompleteNotification.DoesNotExist:
+    except Notification.DoesNotExist:
         print("no notification to pass")
         return []
 

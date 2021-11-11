@@ -13,8 +13,8 @@
 <ul>
     <li>{{ title }}</li>
     <li>{{ body }}</li>
-    <li>From: {{ sender }}</li>
-    <li>To: {{ receiver }}</li>
+    <li>From: {{ from_user }}</li>
+    
     <li>read: {{ read }}</li>
     <li>actioned: {{ complete }}</li>
 </ul>
@@ -22,7 +22,7 @@
     <p>{{ msg }}</p>
     {% else %}
         {{ msg }}
-    <form id="loan_complete_notification_form" method="post" action="{% url 'sharespace:this' notification_slug %}" enctype = 'multipart/form-data'>
+    <form id="loan_complete_notification_form" method="post" action="{% url 'sharespace:notification_page' notification_slug %}" enctype = 'multipart/form-data'>
         {% csrf_token %}
         Choose an action:
         <select id="action-desired-selection" name="action-desired-selection" required>
