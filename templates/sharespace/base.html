@@ -12,59 +12,67 @@
         <title> ShareSpace - {% block title_block %}{% endblock %}</title>
 
             <!-- Bootstrap core CSS -->
-        <link href="https://getbootstrap.com/docs/4.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
-    
-            <!-- Custom styles for this template -->
-        <link href="https://getbootstrap.com/docs/4.2/examples/dashboard/dashboard.css" rel="stylesheet">
+        <link href="{% static 'bootstrap/bootstrap.min.css' %}" rel="stylesheet" >
+        <link rel="canonical" href="https://getbootstrap.com/docs/5.1/examples/headers/">
+         <style>
+      .bd-placeholder-img {
+        font-size: 1.125rem;
+        text-anchor: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        user-select: none;
+      }
+
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
+      }
+    </style>
+
     </head>
+<header class="p-3 mb-3 border-bottom">
+    <div class="container">
+      <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+        <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 text-dark text-decoration-none">
+          <svg class="bi me-2" width="40" height="32" role="img" aria-label="Bootstrap"><use xlink:href="#bootstrap"/></svg>
+        </a>
 
-    <header>
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <a class="navbar-brand" href="{% url 'sharespace:index' %}">ShareSpace</a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+        <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+          <li><a href="{% url 'sharespace:index' %}" class="nav-link px-2 link-secondary">ShareSpace</a></li>
+          <li><a href="{% url 'sharespace:about' %}" class="nav-link px-2 link-dark">About</a></li>
+          <li><a href="{% url 'sharespace:category_list' %}" class="nav-link px-2 link-dark">Categories</a></li>
+          <li><a href="#" class="nav-link px-2 link-dark">FAQ</a></li>
+        </ul>
+        <form action = "{% url 'sharespace:search' %}" class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3" method="GET" id ="search_form" name="search_form">
+            {% csrf_token %}
+            <input class="form-control mr-sm-2" id="search_input" name = "search_input" type="search" placeholder="Search" aria-label="Search">
+            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+        </form>
 
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav mr-auto" id="navbar-link-list">
-                    {% if user.is_authenticated %}
-                     <li class="nav-item active">
-                        <a class="nav-link" href="{% url 'auth_logout' %}?next={% url 'sharespace:index'%}">Logout <span class="sr-only">(current)</span></a>
-                    </li>
-                    <li class="nav-item active">
-
-                         <a class="nav-link" id="profile-link"  data-username-url="{% url 'sharespace:load_user_profile' %}-{{user.username}}" href="#">Your Profile</a>
-                    </li>
-
-                    {% else %}
-                    <li class="nav-item active">
-                        <a class="nav-link" href="{% url 'auth_login' %}">Login <span class="sr-only">(current)</span></a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'registration_register' %}">Register</a>
-                    </li>
-                    {% endif %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            More Actions
-                        </a>
-                        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <a class="dropdown-item" href="{% url 'sharespace:category_list' %}">Categories</a>
-                            <a class="dropdown-item" href="{% url 'sharespace:about' %}">About</a>
-                            <a class="dropdown-item" href="#">FAQ</a>
-                        </div>
-                    </li>
-
+        {% if user.is_authenticated %}
+            <div class="dropdown text-end">
+                <a href="#" class="d-block link-dark text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img id="profile-icon" src="#" alt="mdo" width="32" height="32" class="rounded-circle">
+                </a>
+                <ul class="dropdown-menu text-small" aria-labelledby="dropdownUser1">
+                    <li><a class="dropdown-item" href="{% url 'sharespace:add_item' %}">Add Item</a></li>
+                    <li><a class="dropdown-item" href="{% url 'sharespace:submit_proposal' %}">Add Purchase Proposal</a></li>
+                    <li><a id="profile-link" class="dropdown-item"  data-username-url="{% url 'sharespace:load_user_profile' %}-{{user.username}}" href="#">Profile</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{% url 'auth_logout' %}?next={% url 'sharespace:index'%}">Sign out</a></li>
                 </ul>
-                <form action = "{% url 'sharespace:search' %}" class="form-inline my-2 my-lg-0" method="GET" id ="search_form" name="search_form">
-                    {% csrf_token %}
-                    <input class="form-control mr-sm-2" id="search_input" name = "search_input" type="search" placeholder="Search" aria-label="Search">
-                    <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
-                </form>
             </div>
-        </nav>
+        {% else %}
+            <div class="col-md-3 text-end">
+                <a href="{% url 'auth_login' %}" class="nav-link px-2 link-secondary">Login</a>
+                <a href="{% url 'registration_register' %}" class="nav-link px-2 link-secondary">Sign-up</a>
+            </div>
+        {% endif %}
+      </div>
+    </div>
+</header>
 
-    </header>
 
     <h1> {% block welcome_message %} {% endblock %} </h1>
 
@@ -76,6 +84,7 @@
         <script src="{% static 'js/jquery-3.3.1.min.js' %}" crossorigin="anonymous"></script>
         <script src="https://code.jquery.com/jquery-migrate-1.4.1.min.js"></script>
         <script src= "{% static 'js/sharespace-jquery.js' %}" crossorigin="anonymous"></script>
+        <script src= "{% static 'js/bootstrap.bundle.min.js' %}" crossorigin="anonymous"></script>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>

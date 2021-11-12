@@ -256,14 +256,19 @@ def load_user_profile_view(request):
         user = CustomUser.objects.get(username=username)
         try:
             user_profile = UserProfile.objects.get(user = user)
-            user_url = reverse('sharespace:user_profile', kwargs={'user_slug': user_profile.user_slug})
-            print(type(user_url))
+            profile_url = reverse('sharespace:user_profile', kwargs={'user_slug': user_profile.user_slug})
+
             add_item_url = reverse('sharespace:add_item')
-            return JsonResponse({'user_url' : user_url , 'add_item_url' : add_item_url})
+            pic_path = str(user_profile.picture)
+            pic_path = "/media/"+pic_path
+            print(type(pic_path), "---", pic_path, "--- type of user url: ", type(profile_url))
+
         except UserProfile.DoesNotExist:
 
             profile_url = reverse('sharespace:complete_profile')
-            return JsonResponse({ 'profile_url' : profile_url})
+            pic_path = "/media/profile_images/default_profile_image.png"
+
+        return JsonResponse({ 'user_url' : profile_url, 'img_path':pic_path})
     except CustomUser.DoesNotExist:
         print("user does not exist - views 253")
         return JsonResponse({})

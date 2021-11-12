@@ -1,7 +1,7 @@
 $(document).ready(function() {
-    console.log("page ready")
-    ajax_user_query();
 
+    ajax_user_query();
+    console.log("page ready")
 
 
 
@@ -69,6 +69,7 @@ function isEmpty(obj) {
 function ajax_user_query(){
     console.log("profile link func")
         const full_data = $("#profile-link").attr("data-username-url");
+        console.log(full_data)
         const elems = full_data.split('-')
         console.log(elems[0], elems[1])
         url = elems[0]
@@ -78,6 +79,7 @@ function ajax_user_query(){
             data : {'username': username},
             success : function(data){
                 console.log(data);
+
                 set_elements(data);
 
             }
@@ -91,39 +93,27 @@ function set_elements(data) {
     }
 
     else{
-        if (Object.keys(data).length === 2){
+
             console.log(data);
-            console.log("in here")
-            const profile_url = data['user_url'];
+            console.log("in here");
+            console.log(typeof data);
+            console.log(data.img_path);
+            console.log(data.user_url);
+
+            const img_path = data.img_path;
+            const profile_url = data.user_url;
+
+            console.log(img_path);
+            console.log(profile_url);
 
             var profile_link = document.getElementById("profile-link");
             profile_link.setAttribute("href", profile_url);
 
-            //add item logic
-            const add_item_url = data['add_item_url'];
-            var item_link = document.createElement("a");
-            item_link.setAttribute("href", add_item_url);
-            item_link.setAttribute("id", "add-item-link");
-            item_link.setAttribute("class", "nav-item active");
-            item_link.innerHTML = "Add Item"
-            console.log(item_link)
+            var profile_icon = document.getElementById("profile-icon");
+            console.log(profile_icon)
+            profile_icon.setAttribute("src", img_path);
 
-            var list_item = document.createElement("li");
-            list_item.appendChild(item_link);
-            console.log(list_item)
 
-            var elem = document.getElementById("navbar-link-list");
-            elem.appendChild(list_item);
-            console.log(elem)
-
-        }
-        else{
-            console.log(data)
-            var link = document.getElementById("profile-link");
-            const value = data['profile_url'];
-            link.setAttribute("href", value);
-            link.innerHTML = "Profile";
-        }
     }
 }
 

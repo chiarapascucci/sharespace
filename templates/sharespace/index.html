@@ -1,16 +1,76 @@
 {% extends 'sharespace/base.html' %}
 {%  load static %}
+    <style>
+      .bd-placeholder-img {
+        font-size: 1.125rem;
+        text-anchor: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        user-select: none;
+      }
 
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
+      }
+    </style>
 {% block title_block %}
     Home
 {% endblock %}
 
 {% block body_block %}
-<br>
-<br>
-<br>
-<br>
+    <main>
+  <div class="container py-4">
+    <header class="pb-3 mb-4 border-bottom">
+      <a href="/" class="d-flex align-items-center text-dark text-decoration-none">
 
-<h1> Home </h1>
+        <span class="fs-4">Welcome To ShareSpace</span>
+      </a>
+    </header>
 
+    <div class="p-5 mb-4 bg-light rounded-3">
+      <div class="container-fluid py-5">
+        <h1 class="display-5 fw-bold">ShareSpace</h1>
+        <p class="col-md-8 fs-4">Bah balha blah blah ablha blha</p>
+        <button class="btn btn-primary btn-lg" type="button">Sign-up</button>
+      </div>
+    </div>
+
+    <div class="row align-items-md-stretch">
+      <div class="col-md-6">
+        <div class="h-100 p-5 bg-light border rounded-3">
+          <h2>Sharing is Caring</h2>
+          <p>Blah bahah blhahh</p>
+          <button class="btn btn-outline-secondary" type="button">Add an Item</button>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="h-100 p-5 bg-light border rounded-3">
+          <h2>Explore</h2>
+          <p>Blahbhhdhb agfohjdsvjbsvbsjbv</p>
+          <button class="btn btn-outline-secondary" type="button">About</button>
+        </div>
+      </div>
+    </div>
+    <br>
+      <div class="row align-items-md-stretch">
+      <div class="col-md-6">
+        <div class="h-100 p-5 bg-light border rounded-3">
+          <h2>Categories</h2>
+          <p>Blah bahah blhahh</p>
+          <button class="btn btn-outline-secondary" type="button">Categories List</button>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="h-100 p-5 bg-light border rounded-3">
+          <h2>Hear from the members</h2>
+          <p>Blahbhhdhb agfohjdsvjbsvbsjbv</p>
+          <button class="btn btn-outline-secondary" type="button">Testimonials</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
 {% endblock %}

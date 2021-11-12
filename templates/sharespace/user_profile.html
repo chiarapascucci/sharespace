@@ -6,81 +6,107 @@
 {% endblock %}
 
 {% block body_block %}
-<br>
-<br>
-<br>
-<br>
-<h1> Hi {{ slug }} </h1>
-<h2>Welcome to your profile</h2>
-<br>
+      <div class="container py-4">
 
-<br>
-Your info:
-<ul>
-    <li> <img src = "{{MEDIA_URL}}{{ picture }}" style="height:300px; width:300px" alt="user profile picture" class="rounded-circle" ></li>
-    <li>post code : {{ post_code }}</li>
-    <li> bio : {{ bio }}</li>
-</ul>
-<br>
-<br>
-Your Items:
+          <div class="p-5 mb-4 bg-light rounded-3">
+              <div class="container-fluid py-5">
+                  <div class="row">
+                      <div class="col-md-4">
+                          <h1 class="display-5 fw-bold">Hi {{ slug }}</h1>
+                          <p class="col-md-8 fs-4"><img src = "{{MEDIA_URL}}{{ picture }}" style="height:300px; width:300px" alt="user profile picture" class="rounded-circle" ></p>
 
-<ul>
-  Your Owned Items
-        {% if owned_items%}
-            {% for item in owned_items.all%}
-                <li> {{ item.name }}</li>
-            {% endfor %}
-        {% else %}
+                      </div>
+                      <div class="col-md-4">
+                          <h2 class="display-5 fw-bold">Your Info</h2>
+                          <p class="col-md-8 fs-4">user name: {{ slug }}</p>
+                          <p class="col-md-8 fs-4">email: {{ email }}</p>
+                          <p class="col-md-8 fs-4">bio: {{ bio }}</p>
+                          <p> <a href="{% url 'sharespace:edit_user_info' slug %}"> Edit your info </a></p>
+                          <p><a href = "{% url 'sharespace:change_password'  %}" >Change Password</a></p>
+                      </div>
+                      <div class="col-md-4">
+                          <h2 class="display-5 fw-bold">Your Items</h2>
+                          <ul class="col-md-8 fs-4">
+                              {% if owned_items%}
+                                  {% for item in owned_items.all%}
+                                      <li> {{ item.name }}</li>
+                                  {% endfor %}
+                              {% else %}
 
-            you do not own any items
-        {% endif %}
-</ul>
-<br>
-<ul>
-  You are borrowing:
-        {% if borrowing_items %}
-            {% for loan in borrowing_items.all %}
-                    <a href="{% url 'sharespace:loan_page' loan.loan_slug %}"> {{ loan.item_on_loan }} </a>
-            {% endfor %}
-        {% else %}
-            no items on loan atm
-        {% endif %}
-</ul>
+                                  you do not own any items
+                              {% endif %}
+                          </ul>
+                          <p><a href = "#" >Manage Your Items</a></p>
+                      </div>
+                  </div>
+              </div>
+          </div>
+          <div class="row align-items-md-stretch">
 
-<ul>
-  Your Notifications
-        {% if notifications %}
-            {% for n in notifications %}
+              <div class="col-md-6">
+                  <div class="h-100 p-5 bg-light border rounded-3">
+                      <h2>Your Active and Pending Loans</h2>
 
-                <li> <a href="{% url 'sharespace:notification_page' n.notif_slug %}">{{ n }}</a></li>
-            {% endfor %}
-        {% else %}
+                      <ul>
 
-            No notifications at the moment
-        {% endif %}
-</ul>
-<ul>
-  Purchase Proposal You Suscribe To:
-        {% if subscriptions %}
-            {% for s in subscriptions %}
-                <li> <a href="{% url 'sharespace:proposal_page' s.proposal_slug %}">{{ s }}</a></li>
-            {% endfor %}
-        {% else %}
+                          {% if borrowing_items %}
+                              {% for loan in borrowing_items.all %}
+                                  <li><a href="{% url 'sharespace:loan_page' loan.loan_slug %}"> {{ loan.item_on_loan }} </a></li>
+                              {% endfor %}
+                          {% else %}
+                              no items on loan atm
+                          {% endif %}
+                      </ul>
 
-            No subs at the moment
-        {% endif %}
-</ul>
-    <p>
-        you can edit your bio and picture here: <a href="{% url 'sharespace:edit_user_info' slug %}"> Edit your info </a>
-    </p>
-    <p>
-        you can change your password here: <a href = "{% url 'sharespace:change_password'  %}" >Change Password</a>
-    </p>
-    <p>
-        you can change your email and username here:
-    </p>
-    <p>
-        you can change your Neighbourhood here:
-    </p>
+
+                  </div>
+              </div>
+
+              <div class="col-md-6">
+                  <div class="h-100 p-5 bg-light border rounded-3">
+                      <h2>Proposal You Subscribe to</h2>
+                      <ul>
+                          Purchase Proposal You Suscribe To:
+                          {% if subscriptions %}
+                              {% for s in subscriptions %}
+                                  <li> <a href="{% url 'sharespace:proposal_page' s.proposal_slug %}">{{ s }}</a></li>
+                              {% endfor %}
+                          {% else %}
+
+                              No subs at the moment
+                          {% endif %}
+                      </ul>
+                  </div>
+              </div>
+          </div>
+          <div class="row align-items-md-stretch">
+
+              <div class="col-md-6">
+                  <div class="h-100 p-5 bg-light border rounded-3">
+                      <h2>Your Notifications</h2>
+                      <ul>
+
+                          {% if notifications %}
+                              {% for n in notifications %}
+
+                                  <li> <a href="{% url 'sharespace:notification_page' n.notif_slug %}">{{ n }}</a></li>
+                              {% endfor %}
+                          {% else %}
+
+                              No notifications at the moment
+                          {% endif %}
+                      </ul>
+                  </div>
+              </div>
+
+              <div class="col-md-6">
+                  <div class="h-100 p-5 bg-light border rounded-3">
+                      <h2>Your Groups and Proposals</h2>
+                      <p>Here you'll see the groups you have created or are a member of, or the purchase proposal you have posted</p>
+
+                  </div>
+              </div>
+          </div>
+      </div>
+
 {% endblock %}
