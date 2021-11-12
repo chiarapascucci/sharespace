@@ -218,13 +218,24 @@ def item_page_view(request, item_slug):
         item_page_context['item'] = item
         item_page_context['owners'] = item.owner.all()
         item_page_context['gallery'] = item.images.all()
+        if not request.user.is_anonymous:
+
+            up_dict = extract_us_up(request)
+            if not up_dict['up'] is None:
+                item_page_context['up'] = up_dict['up']
+                flags = up_dict['up'].can_borrow_check()
+                item_page_context['notif_flag'] = flags['unactioned_notif']
+                item_page_context['max_item_flag'] = flags['max_no_of_items']
+
+                if item.owner.filter(user_slug=up_dict['up'].user_slug).exists():
+                    item_page_context['owner_flag'] = True
 
     except Item.DoesNotExist:
         item_page_context['item'] = None
 
-    up_dict = extract_us_up(request)
-    if up_dict:
-        item_page_context['up'] = up_dict['up']
+
+
+
 
     return render(request, 'sharespace/item_page.html', context=item_page_context)
 
@@ -600,12 +611,9 @@ class LoanCompleteNotificationView (View):
             if up_dict['up'] is not None:
                 context['profile_slug']= up_dict['up'].user_slug
 
-            notification.read_status = True
-            notification.complete_status = True
-            notification.save()
-            notification.subject.mark_as_complete_by_lender()
-            item = notification.subject.item_on_loan
-            borrower = notification.subject.requestor
+            notification.complete_notif()
+            notification.content_object.mark_as_complete_by_lender()
+
 
             return render(request, 'sharespace/waiting_page.html', context)
         else:

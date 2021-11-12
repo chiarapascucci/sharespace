@@ -10,10 +10,10 @@
 
 {% block body_block %}
     {% if item %}
-    <br>
-    <br>
-    <br>
-    <br>
+        <br>
+        <br>
+        <br>
+        <br>
 
         <h1> {{ item.name }} </h1>
         <h2> Item's details: </h2>
@@ -36,19 +36,30 @@
         </ul>
 
         {% if user.is_authenticated %}
-
-            {{ up.can_borrow }}
-            {% if up.can_borrow %}
-
-                    {% if item.available %}
-                        <a href="{% url 'sharespace:borrow_item' item.item_slug  %}">Borrow this item</a>
-                    {% else %}
-                        this item is currently not available
-                    {% endif %}
-
+            {% if owner_flag %}
+                this if your own item - you can manage this item here
             {% else %}
-                you are already borrowing your max number of items
+                {% if notif_flag or max_item_flag %}
+                    {% if notif_flag %}
+                        <p> you have unactioned notifications that require your attention -
+                            please complete those</p>
+                    {% endif %}
+                    {% if max_item_flag %}
+                        <p>you are already borrowing your max number of items</p>
+                    {% endif %}
+                {% else %}
+                    {% if not up.can_borrow %}
+                        you cannot borrow this item - please contact the admin for further information
+                    {% else %}
+                        {% if item.available %}
+                            <a href="{% url 'sharespace:borrow_item' item.item_slug  %}">Borrow this item</a>
+                        {% else %}
+                            this item is currently not available
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
             {% endif %}
         {% endif %}
     {% endif %}
+
 {% endblock %}

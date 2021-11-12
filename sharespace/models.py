@@ -112,6 +112,7 @@ class UserProfile(models.Model):
                                 default='profile_images/default_profile_image.png')
     user_slug = models.SlugField(unique=True)
     user_post_code = CharField(max_length=8)
+    has_unactioned_notif = models.BooleanField(default=False)
     max_no_of_items = models.PositiveIntegerField(default=1)
     curr_no_of_items = models.PositiveIntegerField(default=0)
     can_borrow = models.BooleanField(default=True)
@@ -123,16 +124,31 @@ class UserProfile(models.Model):
         self.hood = Neighbourhood.objects.get_or_create(nh_post_code=f_user_post_code)[0]
         return self
 
+    def can_borrow_check(self):
+        flags = {}
+        if self.curr_no_of_items >= self.max_no_of_items:
+            flags['max_no_of_items'] = True
+        else:
+            flags['max_no_of_items'] = False
+
+        notif_list = self.received.filter(notif_action_needed=True, notif_complete=False)
+        if notif_list.exists():
+            flags['unactioned_notif'] = True
+        else:
+            flags['unactioned_notif'] = False
+
+        return flags
+
+
     def save(self, *args, **kwargs):
         self.user_slug = slugify(self.user.username)
         self.user_post_code = self.user_post_code.strip().replace(' ', '').lower()
-        print("curr no of items", self.curr_no_of_items)
-        if self.curr_no_of_items >= self.max_no_of_items:
-            self.can_borrow = False
-        else:
-            self.can_borrow = True
-            print(self.can_borrow)
+        print("in profile save method curr no of items", self.curr_no_of_items)
+        flags = self.can_borrow_check()
+        self.can_borrow = not (flags['unactioned_notif'] or flags['max_no_of_items'])
+        self.has_unactioned_notif = flags['unactioned_notif']
         super(UserProfile, self).save(*args, **kwargs)
+
 
     def __str__(self):
         return self.user.username
@@ -154,7 +170,12 @@ class Notification(models.Model):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.CharField(max_length=200)
     content_object = GenericForeignKey()
-
+    def complete_notif(self):
+        self.notif_complete=True
+        self.notif_action_needed=False
+        self.notif_read=True
+        self.save()
+        self.notif_target.save()
     def __str__(self):
         return "notification: from {} to {}, title: {}".format(self.notif_origin, self.notif_target, self.notif_title)
 
@@ -283,7 +304,7 @@ class Loan(models.Model):
         self.status = self.PENDING
         self.save()
 
-
+# need to consider where to have the item available and change to curr no of item for lender
 
     def mark_as_complete_by_lender(self):
         self.status = self.COMPLETED
