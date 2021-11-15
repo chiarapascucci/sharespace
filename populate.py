@@ -11,6 +11,7 @@ import random
 from sharespace.models import CustomUser as User
 from django.core.files import File
 import sharespace_project.settings as Psettings
+from populate_categories import create_categories
 
 
 def add_category(name):
@@ -126,18 +127,24 @@ def populate():
 
 # define loops to execute population
 # start with creating categories
+    """
     cat_list = []
     for cat_name in categories:
         cat_list.append(add_category(cat_name))
         print(cat_list[-1])
     print("total number of categories created: ", len(cat_list))
+    """
+    cat_list = create_categories()
 
     # use created categories to create associated sub-categories
-    for cat in cat_list:
+    """
+      for cat in cat_list:
         sub_cat = sub_categories[cat.name]
         for sc in sub_cat:
             add_sub_cat(sc, cat)
             print(sc)
+
+    """
 
     user_list = []
 

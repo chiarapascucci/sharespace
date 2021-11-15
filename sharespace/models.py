@@ -1,5 +1,10 @@
 import uuid
+from operator import attrgetter
+
+import django.utils.timezone
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 
 from django.db.models.fields import CharField
 from django.db.models.fields.related import ForeignKey, OneToOneField
@@ -8,6 +13,8 @@ from django.contrib.auth.models import AbstractUser
 from datetime import datetime, date, time, timedelta
 from django.core.validators import MaxValueValidator
 from django.utils.timezone import now as default_time
+from collections import namedtuple
+
 
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
@@ -17,7 +24,8 @@ from sharespace.managers import MyUserManager
 from sharespace.model_fields import EmailFieldLowerCase
 
 MAX_LENGTH_TITLES = 55
-MAX_LENGTH_TEXT = 240
+MAX_LENGTH_TEXT = 500
+AVAILABILITY_RANGE = 90
 
 
 class Neighbourhood(models.Model):
@@ -62,6 +70,8 @@ class Category(models.Model):
     description = models.TextField(max_length=MAX_LENGTH_TEXT, blank=True)
     point_value = models.IntegerField(default=1)
     cat_slug = models.SlugField(unique=True)
+    cat_img = models.URLField(blank=True)
+
 
     def save(self, *args, **kwargs):
         self.cat_slug = slugify(self.name)
@@ -248,6 +258,30 @@ class Item(models.Model):
     def __str__(self):
         return self.name
 
+    def check_availability_from_to(self, date_from, date_to):
+        bookings_set = self.availability.filter(
+            Q(booking_from__range=[date_from, date_to]) |
+            Q(booking_to__range=[date_from, date_to])).order_by('booking_from')
+        if bookings_set.exists():
+            return False
+        else:
+            return True
+
+    def get_availability(self, today):
+
+        lim = today + timedelta(days=AVAILABILITY_RANGE)
+        bookings_set = self.availability.filter(Q(booking_from__range=[today, lim]) |
+                                                Q(booking_to__range=[today, lim])).order_by('booking_from')
+
+        print(bookings_set)
+        if not bookings_set.exists():
+            print("no bookings found on this obj for the next 3 months")
+            return []
+        else:
+            return list(bookings_set)
+
+
+
 
 class Loan(models.Model):
     ACTIVE = 'act'
@@ -352,6 +386,81 @@ class PurchaseProposal(models.Model):
 
     def __str__(self):
         return "this is a proposal to buy : {}".format(self.proposal_item_name)
+
+
+    # would work only on a sorted list, where we know for sure that r1 start date < r2 start date
+def overlap(r1, r2):
+    if r1.end_date >= r2.start_date:
+            return True
+    else:
+            return False
+
+
+    # get list of bookings, convert that in a list of date ranges
+    # check if overlap
+    # if overlap return true, else false
+def range_overlap_check(booking_list):
+    """
+    :param booking_list: parameter that it takes
+    :return: what it returns
+    """
+    MyDateRange = namedtuple('MyDateRange', ['start_date', 'end_date'])
+    ranges_list = []
+
+    for b in booking_list:
+        r = MyDateRange(start_date=b.booking_from, end_date=b.booking_to)
+        ranges_list.append(r)
+
+    sorted_list = sorted(ranges_list, key=attrgetter('start_date'))
+
+    print("printing sorted list: ", sorted_list)
+
+    for i in range(0, len(sorted_list)-1):
+        if overlap(sorted_list[i], sorted_list[i+1]):
+            return True
+
+    return False
+
+
+class ItemBooking(models.Model):
+    booking_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    booking_from = models.DateField(blank=False)
+    booking_to = models.DateField(blank=False)
+    booking_requestor = models.ForeignKey(UserProfile, on_delete=models.CASCADE, blank = False, related_name='bookings')
+    booking_item = models.ForeignKey(Item, on_delete=models.CASCADE, blank=False, related_name='availability')
+    booking_active = models.BooleanField(default=True)
+    booking_countdown = models.PositiveIntegerField(null=True)
+
+    def __str__(self):
+        return "booking - item: {}, req: {}, from {} - to {}".format(self.booking_item, self.booking_requestor, self.booking_from, self.booking_to)
+
+    def clean(self):
+        today = django.utils.timezone.now().date()
+        max_len_of_booking = timedelta(days=self.booking_item.max_loan_len * 7)
+
+        min_start = today + timedelta(days=1)
+        max_start = today + timedelta(days=AVAILABILITY_RANGE-2)
+
+        if not min_start > self.booking_from > max_start:
+            raise ValidationError
+
+        if not timedelta(days=3) > self.booking_to - self.booking_from > max_len_of_booking :
+            raise ValidationError
+
+    # check availability --> need helper function in item
+    # helper function returns all bookings on the item between today and 90 days (as per gloabally set limit)
+        bookings_list = self.booking_item.get_availability(today)
+
+        if bookings_list:
+            range_overlap_check(bookings_list)
+
+    # check if user can borrow
+        # if not, return error
+        # if yes, check if any pre-existing booking in the period (even just partially overlapping)
+            # if none, terminate (no error raise)
+                # if other bookings, get max number of would be booking (including current)
+                    # if thi number > user's borrowing limit
+                        # return error
 
 
 """

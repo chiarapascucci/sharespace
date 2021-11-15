@@ -20,7 +20,7 @@ class NeighbourhoodAdmin(admin.ModelAdmin):
 
 
 class CategoryAdmin (admin.ModelAdmin):
-    fields = ('name', 'description', 'point_value', 'cat_slug')
+    fields = ('name', 'description', 'point_value', 'cat_slug', 'cat_img')
     prepopulated_fields = {'cat_slug' : ('name',)}
 
 
