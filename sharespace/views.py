@@ -8,8 +8,8 @@ from django.views.generic import FormView
 
 from sharespace.models import Image, Item, Category, Sub_Category, CustomUser, UserProfile, Neighbourhood, Loan, \
     Address, PurchaseProposal, Notification
-from sharespace.forms import AddItemForm, BorrowItemForm, ImageForm, UserForm, UserProfileForm, AddItemFormWithAddress, \
-    SubmitReportForm, EditUserProfileBasicForm, SubmitPurchaseProposalForm
+from sharespace.forms import AddItemForm, BorrowItemForm, ImageForm, UserForm, UserProfileForm,  \
+    SubmitReportForm, EditUserProfileBasicForm, SubmitPurchaseProposalForm, BookItemForm
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.urls import reverse
@@ -22,6 +22,8 @@ from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from datetime import datetime, date, time, timedelta
 from django.http import JsonResponse
+from sharespace.utils import get_booking_calendar_for_item_for_month
+
 
 # ------- FUNCTION BASED VIEWS (alph sorted) -------
 # --- most views check if there is a logged in user (server side)
@@ -505,6 +507,24 @@ class BorrowItemView(View):
             return render(request, 'sharespace/index.html', {})
 
         return redirect(reverse('sharespace:loan_page', kwargs={'loan_slug': loan_slug}))
+
+class BookItemView(View):
+    @method_decorator(login_required)
+    def get(self, request, item_slug):
+        month = datetime.today().month
+        item = Item.objects.get(item_slug=item_slug)
+        cal = get_booking_calendar_for_item_for_month(item, month)
+        print(cal)
+
+        context={'form' : BookItemForm() , 'item_slug' : item_slug,'cal':cal}
+
+        return render(request, 'sharespace/book_item.html', context=context)
+
+    @method_decorator(login_required)
+    def post(self, request, item_slug):
+        context = {}
+
+        return redirect(reverse('sharespace:index'))
 
 
 class LoanView(View):

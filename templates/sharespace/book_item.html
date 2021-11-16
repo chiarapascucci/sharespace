@@ -1,0 +1,39 @@
+{% extends 'sharespace/base.html' %}
+{%  load static %}
+
+{% block title_block %}
+    Book this item
+{% endblock %}
+
+{% block body_block %}
+
+
+    <form id="book-item-form" method="post" action="{% url 'sharespace:book_item' item_slug %}" enctype = 'multipart/form-data'>
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="item-to-book">Item</label>
+            <input type="text" class="form-control" id="item-to-book"  >
+            <small id="item-to-book" class="form-text text-muted">You are booking this item:</small>
+        </div>
+        <div class="form-group">
+            <label for="date-book-from">From</label>
+            <input type="date" class="form-control" id="date-book-from" placeholder="Start date of booking">
+        </div>
+        <div class="form-group">
+            <label for="date-book-until">Until</label>
+            <input type="date" class="form-control" id="date-book-until" placeholder="End date of booking">
+        </div>
+        <input type ="submit" name="submit" value="Book Item"/>
+    </form>
+    <div class="container" id="cont-for-cal">{{ cal | safe }}</div>
+
+    {% autoescape off %}
+        {{ call }}
+    {% endautoescape %}
+
+{% endblock %}
+{% block  extra_script%}
+<script> const elem = document.getElementById("cont-for-cal")
+        elem.innerHTML= {{ cal }}</script>
+{% endblock %}
+

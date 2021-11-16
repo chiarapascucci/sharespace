@@ -149,6 +149,34 @@ class UserProfile(models.Model):
 
         return flags
 
+    # given the dates of a possible booking (user has submitted a form)
+    # method checks how many overlaps from existing bookings the user has
+    # that number must not exceed max_no_of_items -1
+    def can_book_check(self, date_from, date_to):
+        # getting all bookings for this user over the relevant period
+        bookings_for_period = self.bookings.filter(
+            Q(booking_from__range=[date_from, date_to]) |
+            Q(booking_to__range=[date_from, date_to])).order_by('booking_from')
+
+        # converting query set to a list for easier manipulation
+        list_of_bookings_for_period = list(bookings_for_period)
+
+        # getting the max number of overlaps for existing bookings over the period
+        # anything that overlaps in that period will also overlap with the requested booking
+        # as the overlaps are being evaluated over the lifetime of the requested booking
+        num_overlaps = bookings_overlap_check_and_count(list_of_bookings_for_period)
+
+        if num_overlaps == 0:
+            return True
+
+        if num_overlaps >= (self.max_no_of_items - 1) :
+            return False
+        else:
+            return True
+
+
+
+
 
     def save(self, *args, **kwargs):
         self.user_slug = slugify(self.user.username)
@@ -258,6 +286,7 @@ class Item(models.Model):
     def __str__(self):
         return self.name
 
+    # given the dates the user want to book the item for, checking that the item is available for the whole duration
     def check_availability_from_to(self, date_from, date_to):
         bookings_set = self.availability.filter(
             Q(booking_from__range=[date_from, date_to]) |
@@ -267,8 +296,9 @@ class Item(models.Model):
         else:
             return True
 
-    def get_availability(self, today):
-
+    # helper method to be used in booking view (when submitting the form) not related to form validation
+    def get_availability(self):
+        today = default_time()
         lim = today + timedelta(days=AVAILABILITY_RANGE)
         bookings_set = self.availability.filter(Q(booking_from__range=[today, lim]) |
                                                 Q(booking_to__range=[today, lim])).order_by('booking_from')
@@ -280,7 +310,23 @@ class Item(models.Model):
         else:
             return list(bookings_set)
 
+    def get_availability_for_month(self, month:int):
+        bookings_set = self.availability.filter(booking_from__month=month)
+        bookings_list = list(bookings_set)
+        return bookings_list
 
+    def get_days_booked_in_month(self, month:int):
+        bk_list = self.get_availability_for_month(month)
+        set_days = set()
+        for bk in bk_list:
+            mylist = bk.get_list_of_days()
+            for e in mylist:
+                if e.month == month:
+                    set_days.add(e.day)
+                else:
+                    pass
+
+        return set_days
 
 
 class Loan(models.Model):
@@ -399,7 +445,7 @@ def overlap(r1, r2):
     # get list of bookings, convert that in a list of date ranges
     # check if overlap
     # if overlap return true, else false
-def range_overlap_check(booking_list):
+def range_overlap_check_true_false(booking_list):
     """
     :param booking_list: parameter that it takes
     :return: what it returns
@@ -422,8 +468,31 @@ def range_overlap_check(booking_list):
     return False
 
 
+# this method takes a list of bookings
+# returns the max number of overlaps between bookings in the list
+# list is sorted
+def bookings_overlap_check_and_count(booking_list):
+
+    if not booking_list or len(booking_list)==1:
+        return 0
+
+    booking_list.sort(key=lambda x: x.booking_from, reverse=False)
+    print("in models, booking overlap check and count, printin sorted list: ", booking_list)
+
+    num_list = []
+    for i in range(0, len(booking_list)-2):
+        overlap_count = 0
+        for k in range(1, len(booking_list)-1):
+            if booking_list[i].booking_to >= booking_list[k].booking_from:
+                overlap_count += 1
+        num_list.append(overlap_count)
+
+    return max(num_list)
+
+
 class ItemBooking(models.Model):
     booking_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    booking_slug = models.SlugField()
     booking_from = models.DateField(blank=False)
     booking_to = models.DateField(blank=False)
     booking_requestor = models.ForeignKey(UserProfile, on_delete=models.CASCADE, blank = False, related_name='bookings')
@@ -434,7 +503,20 @@ class ItemBooking(models.Model):
     def __str__(self):
         return "booking - item: {}, req: {}, from {} - to {}".format(self.booking_item, self.booking_requestor, self.booking_from, self.booking_to)
 
+    def get_list_of_days(self):
+        day_list = []
+        day_list.append(self.booking_from)
+        delta = int((self.booking_to - self.booking_from).days)
+        for i in range(1, delta+1):
+            day = self.booking_from + timedelta(days=i)
+            # print(day)
+            day_list.append(day)
+
+        return day_list
+
     def clean(self):
+        # checking that entered dates make sense
+        # and that the requested len of the booking does not exceed the max len of loan for this item
         today = django.utils.timezone.now().date()
         max_len_of_booking = timedelta(days=self.booking_item.max_loan_len * 7)
 
@@ -447,20 +529,24 @@ class ItemBooking(models.Model):
         if not timedelta(days=3) > self.booking_to - self.booking_from > max_len_of_booking :
             raise ValidationError
 
-    # check availability --> need helper function in item
-    # helper function returns all bookings on the item between today and 90 days (as per gloabally set limit)
-        bookings_list = self.booking_item.get_availability(today)
+        # check item availability
+        # helper function takes the requested booking date and checks that there are no bookings during those dates on the item
+        item_is_available = self.booking_item.check_availability_from_to(self.booking_from, self.booking_to)
+        if not item_is_available:
+            raise ValidationError
 
-        if bookings_list:
-            range_overlap_check(bookings_list)
+        # check if user can borrow
+        # i.e. during the requested period the user cannot exceed their max num of items
+        user_can_book = self.booking_requestor.can_book_check(self.booking_from, self.booking_to)
 
-    # check if user can borrow
-        # if not, return error
-        # if yes, check if any pre-existing booking in the period (even just partially overlapping)
-            # if none, terminate (no error raise)
-                # if other bookings, get max number of would be booking (including current)
-                    # if thi number > user's borrowing limit
-                        # return error
+        if not user_can_book:
+            raise ValidationError
+
+    def save(self, *args, **kwargs):
+        self.booking_slug = slugify(self.booking_id)
+        count_down_day = timedelta(self.booking_from.day - django.utils.timezone.now().date().day).days
+        self.booking_countdown = int(count_down_day)
+        super(ItemBooking, self).save(*args, **kwargs)
 
 
 """

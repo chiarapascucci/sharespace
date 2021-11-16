@@ -168,6 +168,26 @@ function populate_address(){
     document.getElementById("id_county").value = tokens[6];
 
 }
+function load_calendar() {
+    console.log("load cal called")
+    $(document).ready(function (){
+        const elem = $("#availability-calendar");
+        const url = elem.attr("data-ajax-url");
+        const item_slug = elem.attr("data-item-slug");
+        console.log(url)
+        $.ajax({
+            url : url,
+            data : {'item_slug' : item_slug},
+            success: function (){
+
+            }
+
+        });
+
+
+    });
+
+}
 
 function subscribe_to_proposal(){
     console.log("you pressed subs button")

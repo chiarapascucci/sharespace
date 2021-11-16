@@ -1,6 +1,6 @@
 from django.urls import path 
 from sharespace import views
-from sharespace.views import BorrowItemView
+from sharespace.views import BorrowItemView, BookItemView
 
 app_name = 'sharespace'
 
@@ -20,6 +20,7 @@ urlpatterns = [
     path('add_item/', views.add_item_view, name = 'add_item'),
     path('item/<slug:item_slug>/', views.item_page_view, name = 'item_page'),
     path('item/<slug:item_slug>/borrow/', BorrowItemView.as_view(), name='borrow_item'),
+    path('item/<slug:item_slug>/book/', BookItemView.as_view(), name = 'book_item' ),
     path('user/complete-profile/', views.CompleteProfileView.as_view(), name = 'complete_profile'),
     path('user/<slug:user_slug>/', views.user_profile_view, name='user_profile'),
     path('user/<slug:user_slug>/edit/', views.edit_profile, name = 'edit_user_info'),

@@ -1,9 +1,10 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from django.forms.widgets import EmailInput, HiddenInput, SelectMultiple
+from django.forms.widgets import EmailInput, HiddenInput, SelectMultiple, SelectDateWidget
 from registration.forms import RegistrationForm
 from sharespace.models import Image, Item, Loan, CustomUser, UserProfile, Category, Sub_Category, \
-    UserToAdminReportNotAboutUser, PurchaseProposal
+    UserToAdminReportNotAboutUser, PurchaseProposal, ItemBooking
+from sharespace.utils import get_booking_calendar_for_item_for_month
 
 
 class UserForm(UserCreationForm):
@@ -37,6 +38,15 @@ class ImageForm(forms.ModelForm):
     class Meta:
         model = Image
         fields = ('image',)
+
+class BookItemForm(forms.ModelForm):
+   # booking_from = forms.DateField(widget=SelectDateWidget)
+   # booking_to = forms.DateField(widget=SelectDateWidget)
+
+    class Meta:
+        model = ItemBooking
+        fields = ('booking_requestor', 'booking_item', 'booking_from', 'booking_to')
+
 
 class AddItemForm(forms.ModelForm):
     class Meta:
