@@ -1,6 +1,6 @@
 from django.urls import path 
 from sharespace import views
-from sharespace.views import BorrowItemView, BookItemView
+from sharespace.views import BorrowItemView
 
 app_name = 'sharespace'
 
@@ -20,10 +20,10 @@ urlpatterns = [
     path('add_item/', views.add_item_view, name = 'add_item'),
     path('item/<slug:item_slug>/', views.item_page_view, name = 'item_page'),
     path('item/<slug:item_slug>/borrow/', BorrowItemView.as_view(), name='borrow_item'),
-    path('item/<slug:item_slug>/book/', BookItemView.as_view(), name = 'book_item' ),
     path('user/complete-profile/', views.CompleteProfileView.as_view(), name = 'complete_profile'),
     path('user/<slug:user_slug>/', views.user_profile_view, name='user_profile'),
     path('user/<slug:user_slug>/edit/', views.edit_profile, name = 'edit_user_info'),
+    path('user/<slug:user_slug>/your-items/', views.your_items_list_view, name = 'your_items_list'),
 
     path('submit-report/<slug:subject_slug>', views.SubmitReportView.as_view(), name = 'submit_report'),
 
@@ -45,5 +45,6 @@ urlpatterns = [
     path('ajax/load_sub_cat', views.load_sub_cat_view, name = "ajax_load_sub_cat"),
     path('ajax/load_user_profile', views.load_user_profile_view, name = 'load_user_profile'),
     path('ajax/sub_proposal/', views.ajax_sub_prop_view, name = 'ajax_sub_to_prop'),
+    path('ajax/request_loan/', views.ajax_borrow_item_view, name = 'ajax_request_loan'),
     path('ajax/unsub_proposal/', views.ajax_unsub_prop_view, name = 'ajax_unsub_from_prop'),
 ]

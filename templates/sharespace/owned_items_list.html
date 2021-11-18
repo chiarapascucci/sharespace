@@ -1,0 +1,22 @@
+{% extends 'sharespace/base.html' %}
+{%  load static %}
+
+{% block title_block %}
+Your Items
+{% endblock %}
+
+{% block body_block %}
+<h1>Here are the items that you own</h1>
+
+    {% if owned_items %}
+        <ul>
+            {% for item in owned_items.all %}
+                <li>{{ item.name }} -- available: {{ item.available }}</li>
+            {% endfor %}
+        </ul>
+
+    {% else %}
+    {% endif %}
+
+
+{% endblock %}

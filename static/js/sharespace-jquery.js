@@ -34,6 +34,47 @@ $(document).ready(function() {
 
     });
 
+    $('#submit-loan-btn').click(function (){
+        console.log("button to submit loan clicked")
+        const url = $('#borrow-item-form').attr('data-req-url');
+        const dateOut = $('#date-borrow-from').val();
+        const dateIn = $('#date-borrow-until').val();
+        const itemSlug = $('#item-to-borrow').attr('data-item');
+        const csrftoken = getCookie('csrftoken')
+
+        console.log("formulating request to server");
+        console.log(url);
+        console.log(dateIn);
+        console.log(dateOut);
+        console.log(itemSlug);
+        console.log(csrftoken)
+
+        $.ajax({
+            url : url,
+            type : 'POST',
+            headers : {'X-CSRFToken' : csrftoken},
+            data : {
+                'date_in': dateIn,
+                'date_out': dateOut,
+                'item_slug': itemSlug
+            },
+            success : function (data){
+                console.log("ajax request done");
+                console.log("printing data received (if any)");
+                console.log(data);
+                $('#msg-p').html(data);
+                if (data==="loan created"){
+                    $('#borrow-item-form').toggle();
+                }
+
+            }
+
+
+        });
+
+
+    });
+
 	$('#returned-item-btn').click(function(){
 	    console.log("button in loan page clicked")
 	    var loanSlugVar;
@@ -61,6 +102,22 @@ $(document).ready(function() {
         }
     );
 });
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
 
 function isEmpty(obj) {
     return Object.keys(obj).length === 0;

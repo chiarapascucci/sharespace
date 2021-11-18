@@ -1,3 +1,4 @@
+import pytz
 from django.db.models import Subquery, Q
 from django.forms.models import modelformset_factory
 from django.http.response import HttpResponse
@@ -6,10 +7,12 @@ from django.http import HttpRequest, HttpResponse
 from django.template.defaultfilters import slugify
 from django.views.generic import FormView
 
+
+from sharespace.form_validation import  validate_borrowing_form
 from sharespace.models import Image, Item, Category, Sub_Category, CustomUser, UserProfile, Neighbourhood, Loan, \
     Address, PurchaseProposal, Notification
-from sharespace.forms import AddItemForm, BorrowItemForm, ImageForm, UserForm, UserProfileForm,  \
-    SubmitReportForm, EditUserProfileBasicForm, SubmitPurchaseProposalForm, BookItemForm
+from sharespace.forms import AddItemForm,  ImageForm, UserForm, UserProfileForm, \
+    SubmitReportForm, EditUserProfileBasicForm, SubmitPurchaseProposalForm
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.urls import reverse
@@ -22,9 +25,9 @@ from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from datetime import datetime, date, time, timedelta
 from django.http import JsonResponse
-from sharespace.utils import get_booking_calendar_for_item_for_month
+from sharespace.utils import get_booking_calendar_for_item_for_month, extract_us_up
 
-
+utc = pytz.UTC
 # ------- FUNCTION BASED VIEWS (alph sorted) -------
 # --- most views check if there is a logged in user (server side)
 
@@ -37,7 +40,7 @@ def about_view(request):
 def add_item_view(request):
     ImageFormSet = modelformset_factory(Image, form=ImageForm, extra=3)
 
-#   handling POST type request (forms is used to create item entity in DB)
+    #   handling POST type request (forms is used to create item entity in DB)
     if request.method == 'POST':
 
         # extracting relevant data and handling manually
@@ -62,9 +65,9 @@ def add_item_view(request):
         item_address = create_address(request)
 
         # creating item instance in DB
-        item_added = Item.objects.create(name=name, description=description, main_category = main_cat,
+        item_added = Item.objects.create(name=name, description=description, main_category=main_cat,
                                          sec_category=sec_category, location=item_address,
-                                         max_loan_len = max_loan_len)
+                                         max_loan_len=max_loan_len)
 
         # handling setting owners for the item
 
@@ -98,7 +101,7 @@ def add_item_view(request):
 
         return redirect(reverse('sharespace:item_page', kwargs={'item_slug': item_added.item_slug}))
 
-# handling GET type requests
+    # handling GET type requests
     else:
         item_context = {'formset': ImageFormSet(queryset=Image.objects.none())}
         up_dict = extract_us_up(request)
@@ -110,33 +113,25 @@ def add_item_view(request):
             item_context['hood'] = hood.nh_post_code
             print(hood)
             poss_coowners = UserProfile.objects.filter(hood=hood).exclude(user=user)
-            item_context['owners']=poss_coowners
+            item_context['owners'] = poss_coowners
             print(poss_coowners)
 
         item_context['categories'] = Category.objects.all()
 
-        return render(request, 'sharespace/add_item.html', context= item_context)
+        return render(request, 'sharespace/add_item.html', context=item_context)
 
 
 def address_lookup_view(request):
     return render(request, 'sharespace/post_code_lookup.html', {})
 
 
-@login_required()
-def borrow_item_view(request, item_slug):
-    if request.method == 'POST':
-        print("post request")
-
-    else:
-        form = BorrowItemForm()
-        return render(request, 'sharespace/borrow_item.html', {'form': form})
 
 
 def category_list_view(request):
     print("in cat list view")
     cat_list_context = {}
     cat_list_context['all_cat'] = Category.objects.all().order_by('name')
-    #print(cat_list_context['all_cat'])
+    # print(cat_list_context['all_cat'])
     return render(request, 'sharespace/category_list.html', context=cat_list_context)
 
 
@@ -145,19 +140,19 @@ def category_page_view(request, cat_slug):
     up_cont = extract_us_up(request)
     cat = Category.objects.get(cat_slug=cat_slug)
     cat_context = {'name': cat.name}
-    #if dict is empty
+    # if dict is empty
     if not up_cont:
         print("dict is empty")
         cat_context['all_items'] = Item.objects.filter(main_category=cat).order_by('name')
     else:
         up_post_code = up_cont['up'].user_post_code
         print(up_post_code)
-        hood = Neighbourhood.objects.get(nh_post_code = up_post_code)
-        hood_list = Address.objects.filter(adr_hood = hood)
-        items_available_in_hood = Item.objects.filter(location__in = Subquery(hood_list.values('pk'))).filter(main_category = cat)
+        hood = Neighbourhood.objects.get(nh_post_code=up_post_code)
+        hood_list = Address.objects.filter(adr_hood=hood)
+        items_available_in_hood = Item.objects.filter(location__in=Subquery(hood_list.values('pk'))).filter(
+            main_category=cat)
         print(items_available_in_hood)
         cat_context['all_items'] = items_available_in_hood
-
 
     return render(request, 'sharespace/category_page.html', context=cat_context)
 
@@ -178,9 +173,6 @@ def change_password_view(request):
     return render(request, 'sharespace/change_password.html', {
         'form': form
     })
-
-
-
 
 
 def gallery_view(request, item_slug):
@@ -235,10 +227,6 @@ def item_page_view(request, item_slug):
     except Item.DoesNotExist:
         item_page_context['item'] = None
 
-
-
-
-
     return render(request, 'sharespace/item_page.html', context=item_page_context)
 
 
@@ -246,8 +234,8 @@ def item_page_view(request, item_slug):
 def load_sub_cat_view(request):
     cat = request.GET.get('main_category_id')
     print(cat)
-    sub_cat_list = Sub_Category.objects.filter(parent = cat)
-    return render(request, 'sharespace/sub_cat_dropdown_list.html', {'list' : sub_cat_list})
+    sub_cat_list = Sub_Category.objects.filter(parent=cat)
+    return render(request, 'sharespace/sub_cat_dropdown_list.html', {'list': sub_cat_list})
 
 
 # ajax view
@@ -257,20 +245,21 @@ def load_user_profile_view(request):
     try:
         user = CustomUser.objects.get(username=username)
         try:
-            user_profile = UserProfile.objects.get(user = user)
+            user_profile = UserProfile.objects.get(user=user)
             profile_url = reverse('sharespace:user_profile', kwargs={'user_slug': user_profile.user_slug})
 
             add_item_url = reverse('sharespace:add_item')
             pic_path = str(user_profile.picture)
-            pic_path = "/media/"+pic_path
+            pic_path = "/media/" + pic_path
             print(type(pic_path), "---", pic_path, "--- type of user url: ", type(profile_url))
+
 
         except UserProfile.DoesNotExist:
 
             profile_url = reverse('sharespace:complete_profile')
             pic_path = "/media/profile_images/default_profile_image.png"
 
-        return JsonResponse({ 'user_url' : profile_url, 'img_path':pic_path})
+        return JsonResponse({'user_url': profile_url, 'img_path': pic_path})
     except CustomUser.DoesNotExist:
         print("user does not exist - views 253")
         return JsonResponse({})
@@ -348,15 +337,15 @@ class CompleteProfileView(View):
         profile_form = UserProfileForm()
         profile_dict = extract_us_up(request)
         if profile_dict['up'] is not None:
-            print("you already have a profile") # need to handle this
+            print("you already have a profile")  # need to handle this
             return redirect(reverse('sharespace:index'))
         else:
-            return render(request, 'sharespace/complete_profile.html', {'form' : profile_form})
+            return render(request, 'sharespace/complete_profile.html', {'form': profile_form})
 
     def post(self, request):
         profile_dict = extract_us_up(request)
         if profile_dict['up'] is not None:
-            print("you already have a profile") # need to handle this
+            print("you already have a profile")  # need to handle this
             return redirect(reverse('sharespace:index'))
         else:
             profile_form = UserProfileForm(request.POST)
@@ -415,10 +404,11 @@ def user_profile_view(request, user_slug):
             user_profile_context['slug'] = user_profile.user_slug
             notif_list = get_user_notification(user_profile)
             user_profile_context['subscriptions'] = user_profile.interested.all()
+
             if notif_list:
                 user_profile_context['notifications'] = notif_list
             try:
-                loan_list = user_profile.loans.exclude(status = 'com')
+                loan_list = user_profile.loans.exclude(status='com')
 
                 user_profile_context['borrowing_items'] = loan_list
 
@@ -437,24 +427,34 @@ def user_profile_view(request, user_slug):
 
     return render(request, 'sharespace/user_profile.html', context=user_profile_context)
 
+
 @login_required
 def edit_profile(request, user_slug):
     form = EditUserProfileBasicForm()
     if request.method == 'POST':
         print("in edit profile view, post request")
         print(request.POST)
-        form = EditUserProfileBasicForm(request.POST, request.FILES, instance=UserProfile.objects.get(user_slug=user_slug))
+        form = EditUserProfileBasicForm(request.POST, request.FILES,
+                                        instance=UserProfile.objects.get(user_slug=user_slug))
         if form.is_valid():
-           form.save(commit=True)
-           return redirect(reverse('sharespace:user_profile', kwargs= {'user_slug': user_slug}))
+            form.save(commit=True)
+            return redirect(reverse('sharespace:user_profile', kwargs={'user_slug': user_slug}))
         else:
             print(form.errors)
-        return redirect(reverse('sharespace:user_profile', kwargs= {'user_slug': user_slug}))
+        return redirect(reverse('sharespace:user_profile', kwargs={'user_slug': user_slug}))
     else:
         form = EditUserProfileBasicForm(instance=UserProfile.objects.get(user_slug=user_slug))
         context_dict = {}
         context_dict['form'] = form
         return render(request, ('sharespace/edit_user_info.html'), context=context_dict)
+
+
+def your_items_list_view(request, user_slug):
+
+    up = UserProfile.objects.get(user_slug=user_slug)
+    item_list = up.owned.all()
+    context = {'owned_items': item_list}
+    return render(request, 'sharespace/owned_items_list.html', context = context)
 
 
 # ---------- CLASS BASED VIEWS ------------
@@ -465,66 +465,65 @@ class BorrowItemView(View):
 
     @method_decorator(login_required)
     def get(self, request, item_slug):
+        month = datetime.today().month
+        year = datetime.today().year
+        item = Item.objects.get(item_slug=item_slug)
+        cal_list = [get_booking_calendar_for_item_for_month(item, month, year)]
+        for i in range(1,3):
+            month += 1
+            if month > 12:
+                month = 1
+                year += 1
 
-        try:
-            item = Item.objects.get(item_slug=item_slug)
-            print(item.max_loan_len)
-            max_len = item.max_loan_len
-            choices = []
-            for i in range(1, max_len + 1):
-                choices.append(i)
-        except Item.DoesNotExist:
-            print("no item here (views/360")
-        return render(request, 'sharespace/borrow_item.html',
-                      {'item': item, 'item_slug': item_slug, 'choices': choices})
+            cal_list.append(get_booking_calendar_for_item_for_month(item, month, year))
+
+
+        context = {'item_slug': item_slug, 'cal_list':cal_list, 'item':item}
+
+        return render(request, 'sharespace/borrow_item.html', context=context)
 
     @method_decorator(login_required)
     def post(self, request, item_slug):
-        print("printing post request : ", request.POST)
+        print("wrong place for post request")
+        return HttpResponse("took a wrong turn?")
 
-        user_dict = extract_us_up(request)
+def ajax_borrow_item_view(request):
+    response =  'wrong request type, user not found, or no item found'
+    if request.method == 'GET':
+        return HttpResponse(response)
+    else:
+        print("views - 520 - log : printing request received (ajax) ", request.POST)
+        due_date = request.POST['date_in']
+        out_date = request.POST['date_out']
         item_slug = request.POST['item_slug']
-        len_of_loan = int(request.POST['len_of_loan'])
-        out_date = datetime.now()
-
+        user_dict = extract_us_up(request)
         if user_dict:
             up = user_dict['up']
             user_slug = up.user_slug
 
         else:
             print("no user found")
-            return render(request, 'sharespace/index.html', {})
+            return HttpResponse(response)
 
         try:
             item = Item.objects.get(item_slug=item_slug)
-            loan = Loan.objects.create(requestor=up, item_on_loan=item, len_of_loan=len_of_loan, out_date=out_date)
-            print(loan)
-            loan_slug = loan.loan_slug
-            loan.apply_loan(len_of_loan)
+            form_is_valid = validate_borrowing_form(item, up, out_date, due_date)
+            if form_is_valid['form_valid']:
+                due_date = f"{due_date}-19:00"
+                due_date = datetime.strptime(due_date, "%Y-%m-%d-%H:%M").replace(tzinfo=utc)
+                out_date = datetime.strptime(out_date, "%Y-%m-%d").replace(tzinfo=utc)
+                print(f"views - 500 - log: printing requested out date: {out_date} - and due date: {due_date}")
+                loan = Loan.objects.create(requestor=up, item_on_loan=item, due_date=due_date, out_date=out_date)
+                print("views - 500 - log : printing loan - ",loan)
+                return HttpResponse("loan created")
+            else:
+                print(
+                    f"views - 500 - log: borrow item form did no pass validation form valid: {form_is_valid['form_valid']} -- message: {form_is_valid['msg']}")
+                return HttpResponse(form_is_valid['msg'])
 
         except Item.DoesNotExist:
-            print("no item retrived")
-            return render(request, 'sharespace/index.html', {})
-
-        return redirect(reverse('sharespace:loan_page', kwargs={'loan_slug': loan_slug}))
-
-class BookItemView(View):
-    @method_decorator(login_required)
-    def get(self, request, item_slug):
-        month = datetime.today().month
-        item = Item.objects.get(item_slug=item_slug)
-        cal = get_booking_calendar_for_item_for_month(item, month)
-        print(cal)
-
-        context={'form' : BookItemForm() , 'item_slug' : item_slug,'cal':cal}
-
-        return render(request, 'sharespace/book_item.html', context=context)
-
-    @method_decorator(login_required)
-    def post(self, request, item_slug):
-        context = {}
-
-        return redirect(reverse('sharespace:index'))
+            print("no item retrieved")
+            return HttpResponse(response)
 
 
 class LoanView(View):
@@ -533,8 +532,8 @@ class LoanView(View):
         loan = Loan.objects.get(loan_slug=loan_slug)
         btn_flag = False
         if loan.status == 'act':
-            btn_flag=True
-        loan_context = {'loan': loan, 'btn_flag' : btn_flag }
+            btn_flag = True
+        loan_context = {'loan': loan, 'btn_flag': btn_flag}
 
         return render(request, 'sharespace/loan_page.html', context=loan_context)
 
@@ -564,7 +563,7 @@ class MarkItemAsReturnedPendingApproval(View):
         return HttpResponse(loan.status)
 
 
-class SearchView (View):
+class SearchView(View):
 
     def get(self, request):
         search_context = {}
@@ -572,7 +571,8 @@ class SearchView (View):
         search = request.GET['search_input'].strip().lower()
         search_context['search'] = search
         search_context['category'] = Category.objects.filter(Q(name__contains=search) | Q(description__contains=search))
-        search_context['sub_category'] = Sub_Category.objects.filter(Q(name__contains=search) | Q(description__contains=search))
+        search_context['sub_category'] = Sub_Category.objects.filter(
+            Q(name__contains=search) | Q(description__contains=search))
         search_context['items'] = Item.objects.filter(Q(name__contains=search) | Q(description__contains=search))
 
         up_dict = extract_us_up(request)
@@ -587,13 +587,13 @@ class SearchView (View):
         return render(request, 'sharespace/search_result_page.html', context=search_context)
 
 
-class LoanCompleteNotificationView (View):
+class LoanCompleteNotificationView(View):
     @method_decorator(login_required)
     def get(self, request, notification_slug):
         # coded form manually
         # form = None
 
-        notif = Notification.objects.get(notif_slug = notification_slug)
+        notif = Notification.objects.get(notif_slug=notification_slug)
         if not notif.notif_read:
             notif.notif_read = True
             notif.save()
@@ -610,7 +610,7 @@ class LoanCompleteNotificationView (View):
             'body': body,
             'notification_slug': notification_slug,
             'read': notif.notif_read,
-            'complete' : notif.notif_complete,
+            'complete': notif.notif_complete,
         }
         # NEED TO LOOK INTO THIS BETTER - 3 WAY LOGIC
         if notif.notif_complete or (not notif.notif_action_needed):
@@ -631,19 +631,18 @@ class LoanCompleteNotificationView (View):
             message = """ Thank you for confirming that your item was returned correctly
                             and thank you for sharing something with your neighbours
                             hold on tight while we redirect you"""
-            context={'message' : message}
+            context = {'message': message}
             up_dict = extract_us_up(request)
             if up_dict['up'] is not None:
-                context['profile_slug']= up_dict['up'].user_slug
+                context['profile_slug'] = up_dict['up'].user_slug
 
             notification.complete_notif()
             notification.content_object.mark_as_complete_by_lender()
 
-
             return render(request, 'sharespace/waiting_page.html', context)
         else:
             slug = slugify("_".join(("loan", notification.subject.loan_slug)))
-            return redirect(reverse('sharespace:submit_report', kwargs ={'subject_slug' : slug}) )
+            return redirect(reverse('sharespace:submit_report', kwargs={'subject_slug': slug}))
 
 
 class SubmitReportView(View):
@@ -659,11 +658,11 @@ class SubmitReportView(View):
 
         bound_form_data = {
             'report_sender': up,
-            'report_subject' : report_subject,
-            'report_date_out' : date.today(),
+            'report_subject': report_subject,
+            'report_date_out': date.today(),
         }
         form = SubmitReportForm(bound_form_data)
-        context = {'form' : form,
+        context = {'form': form,
                    'subject_slug': subject_slug}
 
         return render(request, 'sharespace/report.html', context=context)
@@ -689,7 +688,7 @@ class SubmitPurchaseProposal(View):
     @method_decorator(login_required)
     def get(self, request):
         form = SubmitPurchaseProposalForm()
-        return render(request, 'sharespace/submit_purchase_proposal.html', {'form':form})
+        return render(request, 'sharespace/submit_purchase_proposal.html', {'form': form})
 
     @method_decorator(login_required)
     def post(self, request):
@@ -700,16 +699,17 @@ class SubmitPurchaseProposal(View):
             submitter = up_dict['up']
             proposal.proposal_submitter = submitter
             print("in submit purch prop view: ", submitter)
-            kwargs = {'submitter' : submitter}
+            kwargs = {'submitter': submitter}
             print("still in views ", kwargs)
             proposal.save()
 
-            #return HttpResponse("proposal created")
+            # return HttpResponse("proposal created")
 
-            return redirect(reverse('sharespace:proposal_page', kwargs={'proposal_slug' : proposal.proposal_slug}))
+            return redirect(reverse('sharespace:proposal_page', kwargs={'proposal_slug': proposal.proposal_slug}))
 
         else:
             print(form.errors, "there are errors in proposal form")
+
 
 @login_required
 def purchase_proposal_list_view(request):
@@ -721,19 +721,21 @@ def purchase_proposal_list_view(request):
         context['list'] = purch_prop_list
     return render(request, 'sharespace/purchase_proposal_list.html', context=context)
 
+
 class PurchaseProposalPage(View):
     @method_decorator(login_required)
     def get(self, request, proposal_slug):
         print("for some reason this is getting called")
-        proposal = PurchaseProposal.objects.get(proposal_slug = proposal_slug)
+        proposal = PurchaseProposal.objects.get(proposal_slug=proposal_slug)
         up_dict = extract_us_up(request)
         submitter_flag = up_dict['up'] == proposal.proposal_submitter
 
         subscriber_flag = proposal.proposal_subscribers.filter(user_slug=up_dict['up'].user_slug).exists()
 
         print("subs flag value :", subscriber_flag)
-        return render(request, 'sharespace/purchase_proposal_page.html', {'proposal':proposal,
-                                            'subs_flag':subscriber_flag, 'subm_flag':submitter_flag})
+        return render(request, 'sharespace/purchase_proposal_page.html', {'proposal': proposal,
+                                                                          'subs_flag': subscriber_flag,
+                                                                          'subm_flag': submitter_flag})
 
 
 def ajax_sub_prop_view(request):
@@ -758,6 +760,7 @@ def ajax_sub_prop_view(request):
         return HttpResponse("user not found")
 
     return HttpResponse("all done")
+
 
 def ajax_unsub_prop_view(request):
     print("in UNsub ajax view")
@@ -787,7 +790,8 @@ def ajax_unsub_prop_view(request):
     except CustomUser.DoesNotExist:
         return HttpResponse("user not found")
 
-   # return HttpResponse("all done")
+
+# return HttpResponse("all done")
 # ---------------- HELPER FUNCTIONS --------------
 
 
@@ -822,7 +826,7 @@ def find_owners(request):
     for key in request:
         if request[key] == 'on':
             print(key)
-            us = CustomUser.objects.get(username = key)
+            us = CustomUser.objects.get(username=key)
             up = UserProfile.objects.get(user=us)
             list.append(up)
             print(up)
@@ -831,39 +835,14 @@ def find_owners(request):
 
 
 def create_address(adr_dict):
-    hood = Neighbourhood.objects.get_or_create(nh_post_code = adr_dict.POST['postcode'])[0]
-    item_adr = Address.objects.get_or_create(address_line_1 = adr_dict.POST['adr_line_1'],
-                                             address_line_2 = adr_dict.POST['adr_line_2'],
-                                             address_line_3 = adr_dict.POST['adr_line_3'],
-                                             address_line_4 = adr_dict.POST['adr_line_4'],
-                                             city = adr_dict.POST['city'],
-                                             locality = adr_dict.POST['locality'],
-                                             county = adr_dict.POST['county'],
-                                             adr_hood = hood)[0]
+    hood = Neighbourhood.objects.get_or_create(nh_post_code=adr_dict.POST['postcode'])[0]
+    item_adr = Address.objects.get_or_create(address_line_1=adr_dict.POST['adr_line_1'],
+                                             address_line_2=adr_dict.POST['adr_line_2'],
+                                             address_line_3=adr_dict.POST['adr_line_3'],
+                                             address_line_4=adr_dict.POST['adr_line_4'],
+                                             city=adr_dict.POST['city'],
+                                             locality=adr_dict.POST['locality'],
+                                             county=adr_dict.POST['county'],
+                                             adr_hood=hood)[0]
 
     return item_adr
-
-
-def extract_us_up (request):
-    if request.user.is_anonymous:
-        print("anonymous user")
-        return {}
-    else:
-        try:
-            username = request.user.get_username()
-            print("in extract user method. this is the result of get_username ", username)
-            us = CustomUser.objects.get(email = username)
-
-            try:
-                up = UserProfile.objects.get(user = us)
-                return {'us': us, 'up' : up}
-
-            except UserProfile.DoesNotExist:
-                print("no user profile here (views/200")
-                return {'us' : us, 'up' : None}
-
-        except CustomUser.DoesNotExist:
-            print("no user here (views)")
-            return {}
-
-

@@ -1,5 +1,6 @@
 from django.contrib import admin
-from sharespace.models import Item, Category, Sub_Category, UserProfile, Neighbourhood, Image, UserToAdminReportNotAboutUser, UserProfileReport, CustomUser, PurchaseProposal, Loan, Notification
+from sharespace.models import Item, Category, Sub_Category, UserProfile, Neighbourhood, Image, \
+    UserToAdminReportNotAboutUser, UserProfileReport, CustomUser, PurchaseProposal, Loan, Notification
 
 
 class ImageInLIneAdmin (admin.TabularInline):
@@ -37,7 +38,6 @@ admin.site.register(CustomUser)
 admin.site.register(UserProfile)
 admin.site.register(PurchaseProposal)
 admin.site.register(Loan)
-admin.site.register(Notification)
 
 admin.site.register(UserToAdminReportNotAboutUser)
 admin.site.register(UserProfileReport)

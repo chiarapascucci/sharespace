@@ -15,8 +15,8 @@ def create_notification_to_owners(sender, instance, created, **kwargs):
         if instance.status == 'pen':
             notif = loan_complete_notif_factory(instance)
             print("new loan return notification created by signal :", notif)
-        else:
-            pass
+        elif instance.status == 'act':
+            notif = loan_active_notif_factory(instance)
 
 
 

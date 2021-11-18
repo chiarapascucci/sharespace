@@ -1,90 +1,107 @@
+from collections import namedtuple
+from datetime import timedelta, datetime, date
+from operator import attrgetter
+
+from django.core.exceptions import ValidationError
+from django.db.models import Q
+from django.utils.timezone import now
+import pytz
+from sharespace.models import Item
+from sharespace.utils import extract_us_up
+
+BOOKING_RANGE = 90
+
+utc = pytz.UTC
+
+def validate_borrowing_form(item, up, out_date, due_date):
+    date_out = datetime.strptime(out_date, "%Y-%m-%d").replace(tzinfo=utc)
+    date_due = datetime.strptime(due_date, "%Y-%m-%d").replace(tzinfo=utc)
+
+    max_loan_len = timedelta(days=(item.max_loan_len * 7))
+
+    outcome = {'form_valid': False}
+
+    # validate dates
+    if not validate_dates_loan(date_out, date_due, max_loan_len):
+        # raise error
+        outcome['msg'] = "the dates entered are not valid"
+        return outcome
+
+    if not item.location.adr_hood == up.hood :
+        outcome['msg'] = "you do not have access to this item"
+        return outcome
+
+    if not validate_item(item, date_out, date_due):
+        outcome['msg'] = 'this item is not available for the selected dates'
+        return outcome
+
+    outcome['form_valid'] = True
+    outcome['msg']= "loan created"
+    print("form validation successful")
+    return outcome
+
+def validate_dates_loan(out_date, due_date, max_len):
+    if out_date < now():
+        return False
+    if timedelta(days=0) <  due_date - out_date  <= max_len and due_date<= (now()+timedelta(days=90)):
+        print(f"form validation - 40 - log : out on {out_date}, back on {due_date}, delta (loan duration) {(due_date - out_date)}, max len {max_len}")
+        return True
+    else:
+        return False
+
+def validate_item(item, date_from, date_to):
+
+    if date_from.date() == now().date():
+        if not item.available:
+            return False
+        item_q_set = item.on_loan.filter(Q(status = 'pen') | Q(status = 'act'))
+        if item_q_set.exists():
+            return False
+    else:
+        item_q_set = item.on_loan.filter(Q(out_date__lte = date_to, due_date__gte = date_from))
+        if item_q_set.exists():
+            return False
+
+    return True
 
 
+def validate_user(up, date_out, date_due):
+    status_dict = up.can_book_check
+    if status_dict['unactioned_notif']:
+        return False
 
-def get_list_of_days(self):
-    day_list = []
-    day_list.append(self.booking_from)
-    delta = int((self.booking_to - self.booking_from).days)
-    for i in range(1, delta + 1):
-        day = self.booking_from + timedelta(days=i)
-        # print(day)
-        day_list.append(day)
+    if date_out.date() == now().date():
+        if status_dict['max_no_of_items'] or not up.can_borrow:
+            return False
 
-    return day_list
+    loan_q_set = up.loans.filter(Q(out_date__lte=date_due, due_date__gte=date_out, status__in=['fut', 'act']))
+    if loan_q_set.exists():
+        loans_list = list(loan_q_set)
+        overlaps = count_loans_overlap(loans_list)
+        if overlaps > up.max_no_of_items:
+            return False
 
+    return True
 
-def clean(self):
-    # checking that entered dates make sense
-    # and that the requested len of the booking does not exceed the max len of loan for this item
-    today = django.utils.timezone.now().date()
-    max_len_of_booking = timedelta(days=self.booking_item.max_loan_len * 7)
-
-    min_start = today + timedelta(days=1)
-    max_start = today + timedelta(days=AVAILABILITY_RANGE - 2)
-
-    if not min_start > self.booking_from > max_start:
-        raise ValidationError
-
-    if not timedelta(days=3) > self.booking_to - self.booking_from > max_len_of_booking:
-        raise ValidationError
-
-    # check item availability
-    # helper function takes the requested booking date and checks that there are no bookings during those dates on the item
-    item_is_available = self.booking_item.check_availability_from_to(self.booking_from, self.booking_to)
-    if not item_is_available:
-        raise ValidationError
-
-    # check if user can borrow
-    # i.e. during the requested period the user cannot exceed their max num of items
-    user_can_book = self.booking_requestor.can_book_check(self.booking_from, self.booking_to)
-
-    if not user_can_book:
-        raise ValidationError
-
-
-    # get list of bookings, convert that in a list of date ranges
-    # check if overlap
-    # if overlap return true, else false
-def range_overlap_check_true_false(booking_list):
-    """
-    :param booking_list: parameter that it takes
-    :return: what it returns
-    """
-    MyDateRange = namedtuple('MyDateRange', ['start_date', 'end_date'])
-    ranges_list = []
-
-    for b in booking_list:
-        r = MyDateRange(start_date=b.booking_from, end_date=b.booking_to)
-        ranges_list.append(r)
-
-    sorted_list = sorted(ranges_list, key=attrgetter('start_date'))
-
-    print("printing sorted list: ", sorted_list)
-
-    for i in range(0, len(sorted_list)-1):
-        if overlap(sorted_list[i], sorted_list[i+1]):
-            return True
-
-    return False
-
-
-# this method takes a list of bookings
-# returns the max number of overlaps between bookings in the list
-# list is sorted
-def bookings_overlap_check_and_count(booking_list):
-
-    if not booking_list or len(booking_list)==1:
+def count_loans_overlap(loan_list):
+    if not loan_list or len(loan_list)==1:
         return 0
 
-    booking_list.sort(key=lambda x: x.booking_from, reverse=False)
-    print("in models, booking overlap check and count, printin sorted list: ", booking_list)
+    loan_list.sort(key=lambda x : x.out_date, reversed=False)
+    print("in form val, booking overlap check and count, printin sorted list: ", loan_list)
 
-    num_list = []
-    for i in range(0, len(booking_list)-2):
+    num_list=[0]
+
+    for i in range(0, len(loan_list)-2):
         overlap_count = 0
-        for k in range(1, len(booking_list)-1):
-            if booking_list[i].booking_to >= booking_list[k].booking_from:
-                overlap_count += 1
-        num_list.append(overlap_count)
+        for k in range(1, len(loan_list)-1):
+            if loan_list[i].due_date >= loan_list[k].booking_from:
+                overlap_count +=1
+            num_list.append(overlap_count)
 
-    return max(num_list)
+    return max(loan_list)
+
+
+
+
+

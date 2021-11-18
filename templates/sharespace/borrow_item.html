@@ -6,25 +6,35 @@
 {% endblock %}
 
 {% block body_block %}
-<br>
-<br>
-<br>
-<br>
-<form id="borrow_item_form" method="post" action="{% url 'sharespace:borrow_item' item_slug %}" enctype = 'multipart/form-data'>
-    {% csrf_token %}
 
-     You are borrowing : <input type="text" id = "item_name" name = "item_name" value = "{{ item.name }}" readonly required>
-    <input type="text" id = "item_slug" name = "item_slug" value = "{{ item.item_slug }}" readonly required>
-
-    {% if choices %}
-        {% for choice in choices %}
-            <input type="radio" id="len_of_loan" name="len_of_loan" value="{{choice}}">
-            <label for="len_of_loan"> {{ choice }} weeks </label><br>
+    {% if cal_list %}
+        {% for month in cal_list %}
+             <div class="container" id="cont-for-cal">{{ month | safe }}</div>
         {% endfor %}
     {% endif %}
 
-   
 
-    <input type ="submit" name="submit" value="Borrow Item"/>
-</form>
+    <p>Max length of loan for this item: {{ item.max_loan_len }} weeks </p>
+
+    {% if msg %}
+        <p>!!! {{ msg }} !!!</p>
+    {% endif %}
+    <p id="msg-p"></p>
+    <form id="borrow-item-form" method="post" data-req-url="{% url 'sharespace:ajax_request_loan' %}"  enctype = 'multipart/form-data'>
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="item-to-borrow">Item</label>
+            <input type="text" class="form-control" id="item-to-borrow" data-item= "{{ item.item_slug }}" name="item-to-borrow" value="{{ item.name }}" readonly>
+            <small id="item-to-borrow" class="form-text text-muted">You are borrowing this item:</small>
+        </div>
+        <div class="form-group">
+            <label for="date-borrow-from">From</label>
+            <input type="date" class="form-control" id="date-borrow-from" name="date-borrow-from" placeholder="Start date of booking" required>
+        </div>
+        <div class="form-group">
+            <label for="date-borrow-until">Until</label>
+            <input type="date" class="form-control" id="date-borrow-until" name="date-borrow-until" placeholder="End date of booking" required>
+        </div>
+        <buttton id="submit-loan-btn" name = "submit-loan-btn" type ="submit" value="Borrow Item">Submit</buttton>
+    </form>
 {% endblock %}

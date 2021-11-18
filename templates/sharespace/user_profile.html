@@ -36,7 +36,7 @@
                                   you do not own any items
                               {% endif %}
                           </ul>
-                          <p><a href = "#" >Manage Your Items</a></p>
+                          <p><a href = "{% url 'sharespace:your_items_list' slug %}" >Manage Your Items</a></p>
                       </div>
                   </div>
               </div>
@@ -98,6 +98,18 @@
                       </ul>
                   </div>
               </div>
+
+              <div class="col-md-6">
+                  <div class="h-100 p-5 bg-light border rounded-3">
+                      <h2>Your Groups and Proposals</h2>
+                      <p>Here you'll see the groups you have created or are a member of, or the purchase proposal you have posted</p>
+
+                  </div>
+              </div>
+          </div>
+          <div class="row align-items-md-stretch">
+
+
 
               <div class="col-md-6">
                   <div class="h-100 p-5 bg-light border rounded-3">

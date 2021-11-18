@@ -1,5 +1,7 @@
 import uuid
 from operator import attrgetter
+from calendar import monthrange
+from pprint import pprint
 
 import django.utils.timezone
 from django.core.exceptions import ValidationError
@@ -22,6 +24,7 @@ from django.contrib.contenttypes.models import ContentType
 from sharespace.managers import MyUserManager
 
 from sharespace.model_fields import EmailFieldLowerCase
+
 
 MAX_LENGTH_TITLES = 55
 MAX_LENGTH_TEXT = 500
@@ -102,6 +105,22 @@ class Sub_Category(models.Model):
         return self.name
 
 
+
+def get_list_of_days_as_dates(date_from, date_to):
+    day_list = []
+    day_list.append(date_from)
+    delta = int((date_to - date_from).days)
+    for i in range(1, delta + 1):
+        day = date_from + timedelta(days=i)
+        day_list.append(day)
+    return day_list
+
+def get_list_of_days_as_ints(date_from, date_to):
+    day_list = get_list_of_days_as_dates(date_from, date_to)
+    day_int_list = []
+    for d in day_list:
+        day_int_list.append(d.days)
+
 class CustomUser(AbstractUser):
     username = models.CharField(max_length=MAX_LENGTH_TITLES, unique=True)
     email = EmailFieldLowerCase('email address', unique=True)
@@ -148,34 +167,6 @@ class UserProfile(models.Model):
             flags['unactioned_notif'] = False
 
         return flags
-
-    # given the dates of a possible booking (user has submitted a form)
-    # method checks how many overlaps from existing bookings the user has
-    # that number must not exceed max_no_of_items -1
-    def can_book_check(self, date_from, date_to):
-        # getting all bookings for this user over the relevant period
-        bookings_for_period = self.bookings.filter(
-            Q(booking_from__range=[date_from, date_to]) |
-            Q(booking_to__range=[date_from, date_to])).order_by('booking_from')
-
-        # converting query set to a list for easier manipulation
-        list_of_bookings_for_period = list(bookings_for_period)
-
-        # getting the max number of overlaps for existing bookings over the period
-        # anything that overlaps in that period will also overlap with the requested booking
-        # as the overlaps are being evaluated over the lifetime of the requested booking
-        num_overlaps = bookings_overlap_check_and_count(list_of_bookings_for_period)
-
-        if num_overlaps == 0:
-            return True
-
-        if num_overlaps >= (self.max_no_of_items - 1) :
-            return False
-        else:
-            return True
-
-
-
 
 
     def save(self, *args, **kwargs):
@@ -286,107 +277,134 @@ class Item(models.Model):
     def __str__(self):
         return self.name
 
-    # given the dates the user want to book the item for, checking that the item is available for the whole duration
-    def check_availability_from_to(self, date_from, date_to):
-        bookings_set = self.availability.filter(
-            Q(booking_from__range=[date_from, date_to]) |
-            Q(booking_to__range=[date_from, date_to])).order_by('booking_from')
-        if bookings_set.exists():
-            return False
+
+
+    # checking that the item is currently available
+    # if not checking status of the loan
+    # if loan is active due date is returned (item can be booked from then)
+    # if loan is pending booking is not permitted (false and None date are returned)
+    def check_curr_on_loan_status(self):
+        if self.available:
+            return {'available' : True, 'due_date': None}
         else:
-            return True
+            loan_q_set = self.on_loan.filter(Q(item_on_loan__item_id=self.item_id), status ='act')
+            print(len(loan_q_set), "len of loan q set (checking when item is due back")
+            if loan_q_set.exist():
+                loan = loan_q_set.first()
+                return {'available' : False, 'due_date': loan.due_date}
+            else:
+                loan_q_set = self.on_loan.filter(Q(item_on_loan__item_id=self.item_id), status='pen')
+                if loan_q_set.exists():
+                    return {'available': False, 'due_date': None}
 
-    # helper method to be used in booking view (when submitting the form) not related to form validation
-    def get_availability(self):
-        today = default_time()
-        lim = today + timedelta(days=AVAILABILITY_RANGE)
-        bookings_set = self.availability.filter(Q(booking_from__range=[today, lim]) |
-                                                Q(booking_to__range=[today, lim])).order_by('booking_from')
+    # returns a list of bookings on this item for a given month
+    def get_loans_for_month(self, month:int, year:int):
+        first_day = datetime.strptime("1-{}-{}".format(month, year), "%d-%m-%Y")
+        delta = monthrange(year, month)[1]-1
+        last_day = first_day + timedelta(days=delta)
+        print("models - 300 - log: month {}, year {}, first day {}, last day {}".format(month, year, first_day, last_day))
+        loan_q_set = self.on_loan.filter(out_date__lte=last_day, due_date__gte=first_day, status__in=['act', 'fut'])
+        loans_list = list(loan_q_set)
+        print("models - 300 - log : printing list of loans retrieved for {} on month {}".format(self, month))
+        pprint(loans_list)
+        return loans_list
 
-        print(bookings_set)
-        if not bookings_set.exists():
-            print("no bookings found on this obj for the next 3 months")
-            return []
-        else:
-            return list(bookings_set)
-
-    def get_availability_for_month(self, month:int):
-        bookings_set = self.availability.filter(booking_from__month=month)
-        bookings_list = list(bookings_set)
-        return bookings_list
-
-    def get_days_booked_in_month(self, month:int):
-        bk_list = self.get_availability_for_month(month)
+    def get_days_unavailable_in_month_as_days(self, month:int, year:int):
+        loan_list = self.get_loans_for_month(month, year)
         set_days = set()
-        for bk in bk_list:
-            mylist = bk.get_list_of_days()
-            for e in mylist:
-                if e.month == month:
-                    set_days.add(e.day)
-                else:
-                    pass
-
+        if loan_list:
+            for l in loan_list:
+                days_list = l.get_list_of_days()
+                for d in days_list:
+                    if d.month == month:
+                        set_days.add(d)
+                    else:
+                        pass
+        print("models - 300 - log: set of days item unavail: ", set_days)
         return set_days
+
+    # returns list of ints representing the days when the item is not available
+    # because of active/pending loan or booking in a given month
+    def get_days_unavailable_in_month_as_ints(self, month:int, year:int):
+        day_set = self.get_days_unavailable_in_month_as_days(month, year)
+        days_int_set = set()
+        if day_set:
+            for day in day_set:
+                days_int_set.add(day.date().day)
+        print("models - 300 - log : ", days_int_set)
+        print("models - 300 - log : ", day_set)
+        return days_int_set
 
 
 class Loan(models.Model):
     ACTIVE = 'act'
     PENDING = 'pen'
     COMPLETED = 'com'
+    FUTURE = 'fut'
     STATUS_CHOICES = [
         (ACTIVE, 'Active'),
         (PENDING, 'Pending'),
         (COMPLETED, 'Completed'),
+        (FUTURE, 'Future')
     ]
     loan_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     requestor = models.ForeignKey(UserProfile, blank=False, related_name="loans", on_delete=models.CASCADE)
-    item_on_loan = models.ForeignKey(Item, blank=False, on_delete=models.CASCADE)
+    item_on_loan = models.ForeignKey(Item, blank=False, on_delete=models.CASCADE, related_name="on_loan")
     overdue = models.BooleanField(default=False)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=ACTIVE)
     # active = models.BooleanField(default = True)
     out_date = models.DateTimeField(null=False)
-    due_date = models.DateTimeField(null=True)
-    len_of_loan = models.PositiveIntegerField(default=1, validators=[MaxValueValidator(4)])
+    due_date = models.DateTimeField(null=False)
+    len_of_loan = models.PositiveIntegerField(default=1)
     loan_slug = models.SlugField(unique=True)
     loan_reported = GenericRelation(UserToAdminReportNotAboutUser)
+    applied_effects_flag = models.BooleanField(default=False)
 
     loan_notification = GenericRelation(Notification)
 
     def __str__(self):
-        my_str = "{} borrowing {} for {} weeks".format(self.requestor, self.item_on_loan, self.len_of_loan)
+        my_str = "{} borrowing {} for {} days".format(self.requestor, self.item_on_loan, self.len_of_loan)
         return my_str
 
     def save(self, *args, **kwargs):
         self.loan_slug = slugify(
             "{self.requestor.user.username}-loan-{self.loan_id}".format(self=self))
+        self.len_of_loan = (self.due_date-self.out_date).days
+
+        # if the requested date out is later than current date, then status set to future
+        # no effects of loan are applied
+        if self.out_date.date() > default_time().date():
+            self.status = self.FUTURE
+        else:
+            self.status = self.ACTIVE
+            if not self.applied_effects_flag:
+                self.apply_loan_effects()
+            else:
+                pass
+
         print("\n in save method in loan model \n out time: {} \n due time: {} ".format(self.out_date, self.due_date))
         super(Loan, self).save(*args, **kwargs)
 
-    def apply_loan(self, len_of_loan):
-        # setting loan's due date
-        due_date = self.out_date + timedelta(days=(len_of_loan * 7))
-        self.due_date = due_date
-        self.save()
-
-        # updating requestor's status
-        self.requestor.curr_no_of_items = self.requestor.curr_no_of_items + 1
-        if self.requestor.curr_no_of_items >= self.requestor.max_no_of_items:
-            self.requestor.can_borrow = False
-            self.requestor.save()
-        else:
-            self.requestor.save()
-
-        # updating item's status
+    def apply_loan_effects(self):
         self.item_on_loan.available = False
         self.item_on_loan.save()
+        self.requestor.curr_no_of_items += 1
+        self.requestor.save()
+        self.applied_effects_flag = True
 
     def mark_as_complete_by_borrower(self):
+        """
+            act --> pen
+        """
         self.status = self.PENDING
         self.save()
 
 # need to consider where to have the item available and change to curr no of item for lender
 
     def mark_as_complete_by_lender(self):
+        """
+            pen --> com
+        """
         self.status = self.COMPLETED
         self.item_on_loan.available = True
         self.item_on_loan.save()
@@ -394,7 +412,16 @@ class Loan(models.Model):
         self.requestor.save()
         self.save()
 
-
+    def get_list_of_days(self):
+        day_list = []
+        day_list.append(self.out_date)
+        delta = int((self.due_date - self.out_date).days)
+        print("models - 400 - log: delta = {}".format(delta))
+        for i in range(1, delta+1):
+            day = self.out_date + timedelta(days=i)
+            print("models 400 -log: day = {}".format(day))
+            day_list.append(day)
+        return day_list
 
 
 def upload_gallery_image(instance, filename):
@@ -432,122 +459,6 @@ class PurchaseProposal(models.Model):
 
     def __str__(self):
         return "this is a proposal to buy : {}".format(self.proposal_item_name)
-
-
-    # would work only on a sorted list, where we know for sure that r1 start date < r2 start date
-def overlap(r1, r2):
-    if r1.end_date >= r2.start_date:
-            return True
-    else:
-            return False
-
-
-    # get list of bookings, convert that in a list of date ranges
-    # check if overlap
-    # if overlap return true, else false
-def range_overlap_check_true_false(booking_list):
-    """
-    :param booking_list: parameter that it takes
-    :return: what it returns
-    """
-    MyDateRange = namedtuple('MyDateRange', ['start_date', 'end_date'])
-    ranges_list = []
-
-    for b in booking_list:
-        r = MyDateRange(start_date=b.booking_from, end_date=b.booking_to)
-        ranges_list.append(r)
-
-    sorted_list = sorted(ranges_list, key=attrgetter('start_date'))
-
-    print("printing sorted list: ", sorted_list)
-
-    for i in range(0, len(sorted_list)-1):
-        if overlap(sorted_list[i], sorted_list[i+1]):
-            return True
-
-    return False
-
-
-# this method takes a list of bookings
-# returns the max number of overlaps between bookings in the list
-# list is sorted
-def bookings_overlap_check_and_count(booking_list):
-
-    if not booking_list or len(booking_list)==1:
-        return 0
-
-    booking_list.sort(key=lambda x: x.booking_from, reverse=False)
-    print("in models, booking overlap check and count, printin sorted list: ", booking_list)
-
-    num_list = []
-    for i in range(0, len(booking_list)-2):
-        overlap_count = 0
-        for k in range(1, len(booking_list)-1):
-            if booking_list[i].booking_to >= booking_list[k].booking_from:
-                overlap_count += 1
-        num_list.append(overlap_count)
-
-    return max(num_list)
-
-
-class ItemBooking(models.Model):
-    booking_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    booking_slug = models.SlugField()
-    booking_from = models.DateField(blank=False)
-    booking_to = models.DateField(blank=False)
-    booking_requestor = models.ForeignKey(UserProfile, on_delete=models.CASCADE, blank = False, related_name='bookings')
-    booking_item = models.ForeignKey(Item, on_delete=models.CASCADE, blank=False, related_name='availability')
-    booking_active = models.BooleanField(default=True)
-    booking_countdown = models.PositiveIntegerField(null=True)
-
-    def __str__(self):
-        return "booking - item: {}, req: {}, from {} - to {}".format(self.booking_item, self.booking_requestor, self.booking_from, self.booking_to)
-
-    def get_list_of_days(self):
-        day_list = []
-        day_list.append(self.booking_from)
-        delta = int((self.booking_to - self.booking_from).days)
-        for i in range(1, delta+1):
-            day = self.booking_from + timedelta(days=i)
-            # print(day)
-            day_list.append(day)
-
-        return day_list
-
-    def clean(self):
-        # checking that entered dates make sense
-        # and that the requested len of the booking does not exceed the max len of loan for this item
-        today = django.utils.timezone.now().date()
-        max_len_of_booking = timedelta(days=self.booking_item.max_loan_len * 7)
-
-        min_start = today + timedelta(days=1)
-        max_start = today + timedelta(days=AVAILABILITY_RANGE-2)
-
-        if not min_start > self.booking_from > max_start:
-            raise ValidationError
-
-        if not timedelta(days=3) > self.booking_to - self.booking_from > max_len_of_booking :
-            raise ValidationError
-
-        # check item availability
-        # helper function takes the requested booking date and checks that there are no bookings during those dates on the item
-        item_is_available = self.booking_item.check_availability_from_to(self.booking_from, self.booking_to)
-        if not item_is_available:
-            raise ValidationError
-
-        # check if user can borrow
-        # i.e. during the requested period the user cannot exceed their max num of items
-        user_can_book = self.booking_requestor.can_book_check(self.booking_from, self.booking_to)
-
-        if not user_can_book:
-            raise ValidationError
-
-    def save(self, *args, **kwargs):
-        self.booking_slug = slugify(self.booking_id)
-        count_down_day = timedelta(self.booking_from.day - django.utils.timezone.now().date().day).days
-        self.booking_countdown = int(count_down_day)
-        super(ItemBooking, self).save(*args, **kwargs)
-
 
 """
 class BaseNotification(models.Model):
