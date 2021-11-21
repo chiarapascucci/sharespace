@@ -186,29 +186,38 @@ function lookup_func() {
 			console.log("full url " + full_url)
 			var request = new XMLHttpRequest();
 			request.onreadystatechange = function(){
-			    if(this.readyState == 4 && this.status == 200){
+			    if(this.readyState === 4 && this.status === 200){
 				    var myData = JSON.parse(this.responseText);
 				    console.log("here is the data retrieved");
 				    console.log(myData);
 				    populate_list(myData);
 			    }
 			    else { console.log("error at request point" + request.status);
+                    if (this.readyState ===4 && request.status === 400){
+                        const new_elem = document.createElement("p");
+                        const text = document.createTextNode("No address was found, please enter address manually");
+                        new_elem.append(text);
+                        var elem = document.getElementById("address_list");
+                        elem.after(new_elem);
+                    }
+
 			    }
 			};
 			request.open("GET", full_url);
 			request.send();
+
 }
 
 function populate_list(data) {
     const address_list = data['addresses'];
     var selection = document.getElementById("address_list");
-    for (let i = 0; i< address_list.length; i++){
+    for (let i = 0; i < address_list.length; i++) {
         var option = document.createElement("option");
         option.text = address_list[i];
         selection.add(option);
     }
-}
 
+}
 function populate_address(){
     const sel_adr = document.getElementById("address_list");
     console.log(sel_adr.selectedIndex)
@@ -241,11 +250,29 @@ function load_calendar() {
 
         });
 
-
     });
 
 }
+function delete_item(str_url){
+    console.log(str_url);
+    const csrftoken = getCookie('csrftoken');
+    var tokens = str_url.split('/');
+    console.log(tokens);
+    var item_slug = tokens[tokens.length-3];
 
+    console.log(item_slug);
+
+    $.ajax({
+        url : str_url,
+        type : 'POST',
+        headers : {'X-CSRFToken' : csrftoken},
+        data : {'item_slug' : item_slug},
+        success: function (){
+          
+            location.reload()
+        }
+    })
+}
 function subscribe_to_proposal(){
     console.log("you pressed subs button")
     // get the user - same way as in get user ajax function

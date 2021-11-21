@@ -42,7 +42,7 @@
           <li><a href="{% url 'sharespace:index' %}" class="nav-link px-2 link-secondary">ShareSpace</a></li>
           <li><a href="{% url 'sharespace:about' %}" class="nav-link px-2 link-dark">About</a></li>
           <li><a href="{% url 'sharespace:category_list' %}" class="nav-link px-2 link-dark">Categories</a></li>
-          <li><a href="#" class="nav-link px-2 link-dark">FAQ</a></li>
+          <li><a href="{% url 'sharespace:info_page' %}" class="nav-link px-2 link-dark">FAQ</a></li>
         </ul>
         <form action = "{% url 'sharespace:search' %}" class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3" method="GET" id ="search_form" name="search_form">
             {% csrf_token %}
@@ -74,13 +74,16 @@
 </header>
 
 
+
     <h1> {% block welcome_message %} {% endblock %} </h1>
 
 
     <body>
+    <div class="container">
         {% block body_block %}
 
         {% endblock %}
+    </div>
         <script src="{% static 'js/jquery-3.3.1.min.js' %}" crossorigin="anonymous"></script>
         <script src="https://code.jquery.com/jquery-migrate-1.4.1.min.js"></script>
         <script src= "{% static 'js/sharespace-jquery.js' %}" crossorigin="anonymous"></script>

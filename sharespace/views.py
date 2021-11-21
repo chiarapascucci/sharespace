@@ -7,11 +7,10 @@ from django.http import HttpRequest, HttpResponse
 from django.template.defaultfilters import slugify
 from django.views.generic import FormView
 
-
-from sharespace.form_validation import  validate_borrowing_form
+from sharespace.form_validation import validate_borrowing_form
 from sharespace.models import Image, Item, Category, Sub_Category, CustomUser, UserProfile, Neighbourhood, Loan, \
     Address, PurchaseProposal, Notification
-from sharespace.forms import AddItemForm,  ImageForm, UserForm, UserProfileForm, \
+from sharespace.forms import AddItemForm, ImageForm, UserForm, UserProfileForm, \
     SubmitReportForm, EditUserProfileBasicForm, SubmitPurchaseProposalForm
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
@@ -25,15 +24,26 @@ from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from datetime import datetime, date, time, timedelta
 from django.http import JsonResponse
+
+from sharespace.text_data import get_filler_paragraph
 from sharespace.utils import get_booking_calendar_for_item_for_month, extract_us_up
 
 utc = pytz.UTC
+
+
 # ------- FUNCTION BASED VIEWS (alph sorted) -------
 # --- most views check if there is a logged in user (server side)
 
 def about_view(request):
     print("in the about view")
-    return render(request, 'sharespace/about.html', context={})
+    fill = get_filler_paragraph()
+    return render(request, 'sharespace/about.html', context={'fill': fill})
+
+
+def info_view(request):
+    print("in faq page")
+    fill = get_filler_paragraph()
+    return render(request, 'sharespace/information.html', context={'fill': fill})
 
 
 @login_required
@@ -54,9 +64,9 @@ def add_item_view(request):
         main_cat_name = request.POST['main_category']
         main_cat = Category.objects.get(name=main_cat_name)
         print(type(main_cat))
-        sec_category_name = request.POST['sec_category']
-        sec_category = Sub_Category.objects.get(name=sec_category_name)
-        print(type(sec_category))
+        # sec_category_name = request.POST['sec_category']
+        # sec_category = Sub_Category.objects.get(name=sec_category_name)
+        # print(type(sec_category))
 
         # max loan length
         max_loan_len = request.POST['max_loan_len']
@@ -66,7 +76,7 @@ def add_item_view(request):
 
         # creating item instance in DB
         item_added = Item.objects.create(name=name, description=description, main_category=main_cat,
-                                         sec_category=sec_category, location=item_address,
+                                         location=item_address,
                                          max_loan_len=max_loan_len)
 
         # handling setting owners for the item
@@ -75,8 +85,8 @@ def add_item_view(request):
         username = request.user.get_username()
         print(username)
         # getting user profile from username (CHANGE THIS TO HELPER FUNCTION TO MANAGE IF EXCEPTION IS RAISED)
-        us = CustomUser.objects.get(username=username)
-        up = UserProfile.objects.get(user=us)
+        up_dict = extract_us_up(request)
+        up = up_dict['up']
         print("up: ", up)
         item_added.owner.add(up)
         item_added.save()
@@ -121,10 +131,27 @@ def add_item_view(request):
         return render(request, 'sharespace/add_item.html', context=item_context)
 
 
+def delete_item(request, item_slug=None):
+    if request.method == 'POST':
+        print("views - 130 - log : printing post request for item deletion")
+        print(request.POST)
+        item_slug = request.POST['item_slug']
+        item = Item.objects.get(item_slug=item_slug)
+        owner_set = item.owner.all()
+        up = extract_us_up(request)['up']
+        if len(owner_set) <= 1:
+            item.delete()
+        else:
+            item.owner.remove(user_slug=up.user_slug)
+            print("item deleted - multiple owners so only removing ownership for specified user")
+        return HttpResponse("views - 130 - log : item deleted")
+    else:
+        print("wrong request type")
+        return HttpResponse("views - 130 - log: wroooong request type")
+
+
 def address_lookup_view(request):
     return render(request, 'sharespace/post_code_lookup.html', {})
-
-
 
 
 def category_list_view(request):
@@ -450,14 +477,43 @@ def edit_profile(request, user_slug):
 
 
 def your_items_list_view(request, user_slug):
-
     up = UserProfile.objects.get(user_slug=user_slug)
     item_list = up.owned.all()
     context = {'owned_items': item_list}
-    return render(request, 'sharespace/owned_items_list.html', context = context)
+    return render(request, 'sharespace/owned_items_list.html', context=context)
 
 
 # ---------- CLASS BASED VIEWS ------------
+class EditItemView(View):
+    @method_decorator(login_required)
+    def get(self, request, item_slug):
+        ImageFormSet = modelformset_factory(Image, form=ImageForm, extra=3)
+        try:
+            item = Item.objects.get(item_slug=item_slug)
+            up = extract_us_up(request)['up']
+            if not item.owner.filter(user_slug=up.user_slug).exists():
+                return HttpResponse("you do not have permission to edit this item")
+            context = {
+                'categories': Category.objects.all(),
+                'item': item,
+                'name': item.name,
+                'description': item.description,
+                'main_cat': item.main_category,
+                'sec_cat': item.sec_category,
+                'max_len_loan': item.max_loan_len,
+                'imgs': Image.objects.filter(item_id=item.item_id).all(),
+                'formset_two': ImageFormSet(queryset=Image.objects.none())
+            }
+
+        except Item.DoesNotExist:
+            print("view - 470 - log: no item found")
+            return HttpResponse("no item found")
+        return render(request, 'sharespace/edit_item_info.html', context=context)
+
+    @method_decorator(login_required)
+    def post(self, request, item_slug):
+        print(request.POST)
+        return render(request, 'sharespace/edit_item_info.html', context={})
 
 
 class BorrowItemView(View):
@@ -469,7 +525,7 @@ class BorrowItemView(View):
         year = datetime.today().year
         item = Item.objects.get(item_slug=item_slug)
         cal_list = [get_booking_calendar_for_item_for_month(item, month, year)]
-        for i in range(1,3):
+        for i in range(1, 3):
             month += 1
             if month > 12:
                 month = 1
@@ -477,8 +533,7 @@ class BorrowItemView(View):
 
             cal_list.append(get_booking_calendar_for_item_for_month(item, month, year))
 
-
-        context = {'item_slug': item_slug, 'cal_list':cal_list, 'item':item}
+        context = {'item_slug': item_slug, 'cal_list': cal_list, 'item': item}
 
         return render(request, 'sharespace/borrow_item.html', context=context)
 
@@ -487,8 +542,9 @@ class BorrowItemView(View):
         print("wrong place for post request")
         return HttpResponse("took a wrong turn?")
 
+
 def ajax_borrow_item_view(request):
-    response =  'wrong request type, user not found, or no item found'
+    response = 'wrong request type, user not found, or no item found'
     if request.method == 'GET':
         return HttpResponse(response)
     else:
@@ -514,7 +570,7 @@ def ajax_borrow_item_view(request):
                 out_date = datetime.strptime(out_date, "%Y-%m-%d").replace(tzinfo=utc)
                 print(f"views - 500 - log: printing requested out date: {out_date} - and due date: {due_date}")
                 loan = Loan.objects.create(requestor=up, item_on_loan=item, due_date=due_date, out_date=out_date)
-                print("views - 500 - log : printing loan - ",loan)
+                print("views - 500 - log : printing loan - ", loan)
                 return HttpResponse("loan created")
             else:
                 print(

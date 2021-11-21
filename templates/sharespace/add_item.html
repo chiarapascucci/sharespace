@@ -27,7 +27,7 @@
             </select>
 
         <label for="sec_category">Sec category:</label>
-            <select id="sec_category" name="sec_category" required > </select>
+            <select id="sec_category" name="sec_category" > </select>
 
         <p><label for="id_max_loan_len">Max loan len:</label>
             <select name="max_loan_len" id="id_max_loan_len">
@@ -39,15 +39,15 @@
 
         <label for="add_item_postcode">Postcode:</label>
         <input id="add_item_postcode" type="text" name="postcode" value = "{{ hood }}" required readonly >
-
-        <select id="address_list" name = "address_list"  onchange="populate_address()"> </select><br>
+         <label for="address_list">Look Up Address</label>
+        <select id="address_list" name = "address_list"  onclick="lookup_func()" onchange="populate_address()"> </select><br>
         <label for="id_adr_line_1">Adr line 1:</label> <input type="text" name="adr_line_1" required id="id_adr_line_1"><br>
         <label for="id_adr_line_2">Adr line 2:</label> <input type="text" name="adr_line_2"  id="id_adr_line_2"><br>
         <label for="id_adr_line_3">Adr line 3:</label> <input type="text" name="adr_line_3"  id="id_adr_line_3"><br>
         <label for="id_adr_line_4">Adr line 4:</label> <input type="text" name="adr_line_4"  id="id_adr_line_4"><br>
-        <label for="id_locality">Locality:</label> <input type="text" name="locality" required id="id_locality"><br>
-        <label for="id_city">City:</label> <input type="text" name="city" required id="id_city"><br>
-        <label for="id_county">County:</label> <input type="text" name="county" required id="id_county"><br>
+        <label for="id_locality">Locality:</label> <input type="text" name="locality" id="id_locality"><br>
+        <label for="id_city">City:</label> <input type="text" name="city"   id="id_city"><br>
+        <label for="id_county">County:</label> <input type="text" name="county"  id="id_county"><br>
 
 		<!-- FORMSET FOR IMAGES-->
         {{ formset.management_form }}

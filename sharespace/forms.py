@@ -39,7 +39,10 @@ class ImageForm(forms.ModelForm):
         model = Image
         fields = ('image',)
 
-
+class EditItemForm(forms.ModelForm):
+    class Meta:
+        fields = ('name', 'description', 'main_category', 'sec_category', 'max_loan_len')
+        model = Item
 
 class AddItemForm(forms.ModelForm):
     class Meta:

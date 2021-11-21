@@ -1,0 +1,69 @@
+{% extends 'sharespace/base.html' %}
+{%  load static %}
+
+{% block title_block %}
+    Edit your details
+{% endblock %}
+
+{% block body_block %}
+
+<h1> Edit Your Item </h1>
+
+<form id="edit_item_form" method="post" action="{% url 'sharespace:add_item' %}" enctype = 'multipart/form-data' data-sub-cat-url = "{% url 'sharespace:ajax_load_sub_cat' %}">
+    {% csrf_token %}
+    <div>
+		<label for="id_name">Name:</label> <input type="text" name="name" maxlength="55"  id="id_name" value="{{ name }}">
+        <label for="id_description">Description:</label> <input type="text" name="description" maxlength="240" id="id_description" value="{{ description }}">
+        <label for="main_category">Main category:</label>
+            <select id="main_category" name="main_category" required >
+                <option value="{{ main_cat }}">{{ main_cat }}</option>
+                {% for cat in categories %}
+                    <option value="{{ cat.pk }}">{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+
+        <label for="sec_category">Sec category:</label>
+            <select id="sec_category" name="sec_category" > </select>
+                 <option value="{{ sec_cat }}">{{ sec_cat }}</option>
+
+        <p><label for="id_max_loan_len">Max loan len:</label>
+            Currently set at : {{ max_len_loan }} weeks
+            <select name="max_loan_len" id="id_max_loan_len">
+                <option value="1" >1 week</option>
+                <option value="2">2 weeks</option>
+                <option value="3">3 weeks</option>
+                <option value="4">4 weeks</option>
+            </select>
+        </p>
+
+        <br>
+
+        <label for="add_item_postcode">Postcode:</label>
+        <input id="add_item_postcode" type="text" name="postcode" value = "{{ item.location.adr_hood }}" readonly >
+    <br>
+        <label for="address_list">Look Up Address</label>
+        <select id="address_list" name = "address_list"  onclick="lookup_func()" onchange="populate_address()"> </select><br>
+        <label for="id_adr_line_1">Adr line 1:</label> <input type="text" name="adr_line_1"  id="id_adr_line_1" value="{{ item.location.address_line_1 }}"> <br>
+        <label for="id_adr_line_2">Adr line 2:</label> <input type="text" name="adr_line_2"  id="id_adr_line_2" value="{{ item.location.address_line_2 }}"><br>
+        <label for="id_adr_line_3">Adr line 3:</label> <input type="text" name="adr_line_3"  id="id_adr_line_3" value="{{ item.location.address_line_3 }}"><br>
+        <label for="id_adr_line_4">Adr line 4:</label> <input type="text" name="adr_line_4"  id="id_adr_line_4" value="{{ item.location.address_line_4}}"><br>
+        <label for="id_locality">Locality:</label> <input type="text" name="locality"  id="id_locality" value="{{ item.location.locality}}"><br>
+        <label for="id_city">City:</label> <input type="text" name="city"  id="id_city" value="{{ item.location.city }}"><br>
+        <label for="id_county">County:</label> <input type="text" name="county"  id="id_county" value="{{ item.location.county }}"><br>
+
+		<!-- FORMSET FOR IMAGES-->
+        {% for img in imgs %}
+            {{ img }}
+        {% endfor %}
+
+
+        <br>
+        {{ formset_two.management_form }}
+    	{% for form in formset_two %}
+    	{{ form.as_p }}
+    	{% endfor %}
+        <input type ="submit" name="submit" value="Save Changes"/>
+	</div>
+</form>
+
+{% endblock %}

@@ -10,14 +10,11 @@
 
 {% block body_block %}
     {% if item %}
-        <br>
-        <br>
-        <br>
-        <br>
+
 
         <h1> {{ item.name }} </h1>
         <h2> Item's details: </h2>
-        <p><ul>
+        <p>Item owner(s)<ul>
             {% for o in item.owner.all  %}
                 {{ o }}
             {% endfor %}

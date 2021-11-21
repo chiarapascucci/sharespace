@@ -11,7 +11,14 @@ Your Items
     {% if owned_items %}
         <ul>
             {% for item in owned_items.all %}
-                <li>{{ item.name }} -- available: {{ item.available }}</li>
+                <li>{{ item.name }} -- available: {{ item.available }}
+                    <br>
+                    <a class="btn-outline-secondary" href="{% url 'sharespace:item_page' item.item_slug %}">View</a>
+                <br>
+                    <a class="btn-outline-secondary" href="{% url 'sharespace:edit_item' item.item_slug %}">Edit</a>
+                <br>
+                    <button class="btn-danger" onclick="delete_item('{% url 'sharespace:delete_item' item.item_slug %}')" >Delete</button>
+                </li>
             {% endfor %}
         </ul>
 
