@@ -1,0 +1,47 @@
+{% extends 'sharespace/base.html' %}
+{%  load static %}
+
+{% block title_block %}
+    Delete Your Account
+{% endblock %}
+
+{% block body_block %}
+
+<h1> Account Deletion Request </h1>
+<p>Hi {{ up }} we are sorry to see you go <strong>:(</strong></p>
+
+    <p>we had a look at the items you own and this is our approach</p>
+    <ul>
+        <li>for any items that you solely own we are going to assume that you are going to take those items with you and we will remove them from our systems</li>
+        <li>for any items that you own jointly with other users we are going to assume that you'll leave those behind for them to manage </li>
+        <li>please note that if you are the appointed guardian for any jointly own items, we'll ask you to let us know who the next guardian is going to be below</li>
+    </ul>
+    <p><strong>Please let us in the text box below if any of the assumption listed are not correct.</strong> If that's the case we will be in touch via email to process your request</p>
+
+    <form id="delete-account-form" method="post" action="{% url 'sharespace:delete_account' up.user_slug %}" enctype = 'multipart/form-data'>
+        {% csrf_token %}
+        {% if item_list %}
+            {% for item in item_list %}
+                <p>you own this item jointly <strong>{{ item.name }}</strong></p>
+                <input type="text"  name='item-id-info' value="{{ item.item_id }}" hidden readonly required>
+                <p>So please let select the new guardian for this item:</p>
+                {% for o in item.owner.all %}
+                    {% if o.user_slug == up.user_slug %}
+                    {% else %}
+                        <input type="radio" class= "guardian-selector" id="guardian-selector" value ="{{o.user.username}}" name="guardian-selector-nm" required>
+                        <label for="guardian-selector">{{ o.user.username }}</label><br>
+                    {% endif %}
+                {% endfor %}
+            {% endfor %}
+        {% else %}
+            <p>our records show that you do not own any items jointly, so need to provide further information.</p>
+            <p>However, feel free to let us know if anything is incorrect in the box below</p>
+        {% endif %}
+    <br>
+        <input type="text" id="comments" name="comments">
+        <label for="comments"></label>
+    <br>
+    <br>
+        <input class = "btn-danger" type="submit" name="Complete Action" value="Send"/>
+    </form>
+{% endblock %}

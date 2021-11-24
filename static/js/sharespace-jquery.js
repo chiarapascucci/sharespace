@@ -8,11 +8,13 @@ $(document).ready(function() {
     $("#main_category").change(function(){
 		const url = $("#add_item_form").attr("data-sub-cat-url");
 		const catID = $(this).val();
-
+        console.log("main cat selected")
 		$.ajax({
 			url : url,
 			data: { 'main_category_id' : catID },
 			success : function(data) {
+                console.log("ajax request success (cat)")
+                console.log(data)
 				$("#sec_category").html(data);
 			}
 		});
@@ -27,7 +29,8 @@ $(document).ready(function() {
             url : url,
             data: {'main_category_id' : catID},
             success : function(data){
-                $("#id_proposal_sub_cat").html(data);
+                console.log("ajax request success (cat)")
+                console.log(data)
             }
 
         });
@@ -92,6 +95,17 @@ $(document).ready(function() {
 
 	});
 
+    $('.owner-selector').click(function (){
+        console.log("other owners selected");
+        if ($(this).is(':checked')){
+            $('.guardian-selector').prop("disabled", false)
+        }else {
+            $('.guardian-selector').prop("disabled", true)
+            $("input:radio[name=guardian-selector-name]:checked")[0].checked = false
+        }
+
+
+    });
 
      $('p').hover(
         function() {
@@ -253,6 +267,35 @@ function load_calendar() {
     });
 
 }
+function cancel_booking(){
+        console.log("button to cancel booking clicked");
+        let loanSlugVar;
+        let btn = $('#cancel-booking-btn')
+        loanSlugVar = btn.attr('data-loanslug');
+        let req_url = btn.attr('data-ajax-url');
+        console.log("request slug")
+        console.log(req_url)
+        console.log("loan slug")
+        console.log(loanSlugVar)
+        const csrftoken = getCookie('csrftoken');
+
+	    $.ajax({
+            url : req_url,
+            type : 'POST',
+            headers : {'X-CSRFToken' : csrftoken},
+            data : {'loan_slug' : loanSlugVar},
+            success: function (data){
+                alert(data['msg']);
+                setTimeout(function(){
+                    window.location.href = data.redirect_url;
+
+                }, 3000);
+
+        }
+
+        })
+
+}
 function delete_item(str_url){
     console.log(str_url);
     const csrftoken = getCookie('csrftoken');
@@ -267,11 +310,14 @@ function delete_item(str_url){
         type : 'POST',
         headers : {'X-CSRFToken' : csrftoken},
         data : {'item_slug' : item_slug},
-        success: function (){
-          
-            location.reload()
+        success: function (data){
+            alert(data.msg);
+            setTimeout(function(){
+                location.reload();
+            }, 1500);
+
         }
-    })
+    });
 }
 function subscribe_to_proposal(){
     console.log("you pressed subs button")

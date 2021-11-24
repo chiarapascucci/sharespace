@@ -49,7 +49,10 @@
                         you cannot borrow this item - please contact the admin for further information
                     {% else %}
                         {% if item.available %}
-                            <a href="{% url 'sharespace:borrow_item' item.item_slug  %}">Borrow this item</a>
+                            <a href="{% url 'sharespace:borrow_item' item.item_slug %}" class="btn-outline-primary">Borrow this item</a>
+                            <br>
+                            something wrong with this item?
+                            Report it <a href="{% url 'sharespace:submit_report' item.item_slug %}" class="btn-outline-danger">Report this item</a>
                         {% else %}
                             this item is currently not available
                         {% endif %}

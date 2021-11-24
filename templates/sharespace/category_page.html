@@ -7,15 +7,45 @@
 
 {% block body_block %}
 
-<br>
-<br>
-<br>
-<br>
 <h1> {{name}} </h1>
-    <ul>
-        {% for item in all_items.all %}
-            <li> <a href="{% url 'sharespace:item_page' item.item_slug %}"> {{ item.name }} </a></li>
-        {% endfor %}
-    </ul>
+
+        <article class="my-3" id="accordion">
+            <div class="bd-heading sticky-xl-top align-self-start mt-5 mb-3 mt-xl-0 mb-xl-2">
+                <h3>Secondary Categories under {{ name }}</h3>
+            </div>
+
+            <div>
+                <div class="bd-example">
+                    <div class="accordion" id="accordionExample">
+                        {% for key, value in sub_cats.items %}
+                            <div class="accordion-item">
+                                <h4 class="accordion-header" id="heading{{ key }}">
+                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                                        {{key}}
+                                    </button>
+                                </h4>
+                                <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+                                    <div class="accordion-body">
+                                        Items:
+                                        <ul>
+                                            {% for item in value %}
+                                                {% if value.is_empty %}
+                                                    There are no item under this sub-cat in your neighbourhood
+                                                {% else %}
+                                                    <li><a href="{% url 'sharespace:item_page' item.item_slug %}"> {{ item }} </a></li>
+
+                                                {% endif %}
+
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </article>
+
 
 {% endblock %}

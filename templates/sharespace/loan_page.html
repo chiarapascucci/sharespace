@@ -23,11 +23,13 @@
     {% endif %}
 
     {% if btn_flag %}
-        <button id = "returned-item-btn" data-loanslug = "{{ loan.loan_slug }}" class = "btn btn-primary btn-sm" type="button" >button</button>
-        <p id="display-result"></p>
-    {% else %}
-        {{ btn_flag }}
-    {% endif %}
+        <button id = "returned-item-btn" data-loanslug = "{{ loan.loan_slug }}" class = "btn btn-primary btn-sm" type="button" >Item Returned</button>
 
+    {% elif fut_flag %}
+        <button id = "cancel-booking-btn" data-loanslug="{{ loan.loan_slug }}" data-ajax-url="{% url 'sharespace:ajax_cancel_booking' %}" class = "btn btn-primary btn-sm" type="button" onclick="cancel_booking()">Cancel Booking</button>
+
+    {% else %}
+    {% endif %}
+           <p id="display-result"></p>
 
 {% endblock %}

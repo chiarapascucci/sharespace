@@ -8,7 +8,7 @@ class ImageInLIneAdmin (admin.TabularInline):
 
 class ItemAdmin(admin.ModelAdmin):
     list_display = ('name', 'description', 'price', 'main_category', 'sec_category', 'available', )
-    fields = ('owner','item_slug', 'name', 'description', 'price', 'main_category', 'sec_category', 'available', )
+    fields = ('owner','item_slug', 'name', 'description', 'price', 'main_category', 'sec_category', 'available', 'guardian' )
     prepopulated_fields = {'item_slug': ('name',)}
     inlines = [
         ImageInLIneAdmin
@@ -38,7 +38,7 @@ admin.site.register(CustomUser)
 admin.site.register(UserProfile)
 admin.site.register(PurchaseProposal)
 admin.site.register(Loan)
-
+admin.site.register(Notification)
 admin.site.register(UserToAdminReportNotAboutUser)
 admin.site.register(UserProfileReport)
 admin.site.register(Category, CategoryAdmin)

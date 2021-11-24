@@ -27,7 +27,7 @@
             </select>
 
         <label for="sec_category">Sec category:</label>
-            <select id="sec_category" name="sec_category" > </select>
+            <select id="sec_category" name="sec_category" required> </select>
 
         <p><label for="id_max_loan_len">Max loan len:</label>
             <select name="max_loan_len" id="id_max_loan_len">
@@ -66,18 +66,29 @@
 		<label>Owners</label><br>
         {% if owners %}
             {% for o in owners %}
-            <input type="checkbox" id="{{ o.user.username }}" name="{{ o.user.username }}" >
+            <input type="checkbox" class="owner-selector" id="{{ o.user.username }}" name="owner-selector" value = "{{ o.user.username }}">
             <label for="{{ o.user.username }}">{{ o.user.username }}</label><br>
             {% endfor %}
+            <br>
+             <label>Guardian</label>
+            <br>
+            {% for o in owners %}
+            <input type="radio" class= "guardian-selector" id="guardian--{{ o.user.username }}" value ="{{o.user.username}}" name="guardian-selector-nm" disabled>
+            <label for="guardian--{{ o.user.username }}">{{ o.user.username }}</label><br>
+            {% endfor %}
+            <input type="radio" class="guardian-selector" id="guardian--{{ user.username }}" value="{{ user.username }}" name="guardian-selector-nm" disabled>
+             <label for="guardian--{{ user.username }}">{{ user.username }}</label><br>
         {% else %}
             <p>There are no other possible co-owners</p>
         {% endif %}
+    <br>
+    <br>
         <input type ="submit" name="submit" value="Add Item"/>
+
+
 	</div>
 </form>
 
-	<script src="/static/js/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
-	<script src= "/static/js/sharespace-jquery.js" crossorigin="anonymous"></script>
 
 {% endblock %}
 

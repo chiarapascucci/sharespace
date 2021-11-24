@@ -68,7 +68,7 @@ def get_booking_calendar_for_item_for_month(item, month:int, year:int):
 def extract_us_up (request):
     if request.user.is_anonymous:
         print("anonymous user")
-        return {}
+        return {'us': None, 'up': None}
     else:
         try:
             username = request.user.get_username()
@@ -85,6 +85,6 @@ def extract_us_up (request):
 
         except CustomUser.DoesNotExist:
             print("no user here (views)")
-            return {}
+            return {'us': None, 'up': None}
 
 

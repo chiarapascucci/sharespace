@@ -7,7 +7,7 @@ from django.http import HttpRequest, HttpResponse
 from django.template.defaultfilters import slugify
 from django.views.generic import FormView
 
-from sharespace.form_validation import validate_borrowing_form
+from sharespace.form_validation import validate_borrowing_form, validate_add_item_form
 from sharespace.models import Image, Item, Category, Sub_Category, CustomUser, UserProfile, Neighbourhood, Loan, \
     Address, PurchaseProposal, Notification
 from sharespace.forms import AddItemForm, ImageForm, UserForm, UserProfileForm, \
@@ -46,76 +46,15 @@ def info_view(request):
     return render(request, 'sharespace/information.html', context={'fill': fill})
 
 
-@login_required
-def add_item_view(request):
-    ImageFormSet = modelformset_factory(Image, form=ImageForm, extra=3)
 
-    #   handling POST type request (forms is used to create item entity in DB)
-    if request.method == 'POST':
 
-        # extracting relevant data and handling manually
-        # name and description of item
-        name = request.POST['name']
-        print(name)
-        description = request.POST['description']
-        print(description)
-
-        # main category and secondary category
-        main_cat_name = request.POST['main_category']
-        main_cat = Category.objects.get(name=main_cat_name)
-        print(type(main_cat))
-        # sec_category_name = request.POST['sec_category']
-        # sec_category = Sub_Category.objects.get(name=sec_category_name)
-        # print(type(sec_category))
-
-        # max loan length
-        max_loan_len = request.POST['max_loan_len']
-
-        # creating/getting address from data provided on address location
-        item_address = create_address(request)
-
-        # creating item instance in DB
-        item_added = Item.objects.create(name=name, description=description, main_category=main_cat,
-                                         location=item_address,
-                                         max_loan_len=max_loan_len)
-
-        # handling setting owners for the item
-
-        # getting user name of user submitting the request
-        username = request.user.get_username()
-        print(username)
-        # getting user profile from username (CHANGE THIS TO HELPER FUNCTION TO MANAGE IF EXCEPTION IS RAISED)
-        up_dict = extract_us_up(request)
-        up = up_dict['up']
-        print("up: ", up)
-        item_added.owner.add(up)
-        item_added.save()
-
-        # adding possible extra owners added when submitting form
-        owners = find_owners(request)
-        if not owners:
-            for o in owners:
-                item_added.add(o)
-                item_added.save()
-
-        # handling any images attached to the item form
-        formset = ImageFormSet(request.POST, request.FILES)
-
-        if formset.is_valid():
-            for form in formset.cleaned_data:
-                if form:
-                    image = form['image']
-                    Image.objects.create(image=image, item=item_added)
-        else:
-            print("errors in image form")
-
-        return redirect(reverse('sharespace:item_page', kwargs={'item_slug': item_added.item_slug}))
-
-    # handling GET type requests
-    else:
+class AddItemView(View):
+    @method_decorator(login_required)
+    def get(self, request):
+        ImageFormSet = modelformset_factory(Image, form=ImageForm, extra=3)
         item_context = {'formset': ImageFormSet(queryset=Image.objects.none())}
         up_dict = extract_us_up(request)
-        if up_dict:
+        if up_dict['up'] is not None:
             user_profile = up_dict['up']
             user = up_dict['us']
             item_context['user_profile'] = user_profile
@@ -130,25 +69,121 @@ def add_item_view(request):
 
         return render(request, 'sharespace/add_item.html', context=item_context)
 
+    @method_decorator(login_required)
+    def post(self, request):
+        ImageFormSet = modelformset_factory(Image, form=ImageForm, extra=3)
+        dict_form = process_add_item_form(request)
+        if not dict_form['form_valid']:
+            return HttpResponse(f"data entered in form is not correct: {dict_form['msg']} please try again")
+        else:
+            item_added = Item.objects.create(name=dict_form['name'], description=dict_form['description'],
+                                             main_category=dict_form['main_cat'],
+                                             sec_category=dict_form['sec_cat'],
+                                             location=dict_form['address'],
+                                             guardian=dict_form['guardian'],
+                                             max_loan_len=dict_form['max_loan_len'])
+            for o in dict_form['owners']:
+                item_added.owner.add(o)
+            item_added.save()
 
-def delete_item(request, item_slug=None):
+        formset = ImageFormSet(request.POST, request.FILES)
+
+        if formset.is_valid():
+            for form in formset.cleaned_data:
+                if form:
+                    image = form['image']
+                    Image.objects.create(image=image, item=item_added)
+        else:
+            print("errors in image form")
+
+        return redirect(reverse('sharespace:item_page', kwargs={'item_slug': item_added.item_slug}))
+
+
+
+def ajax_cancel_booking(request):
+    up_dict = extract_us_up(request)
+    if up_dict['up'] is not None:
+        redirect_url = reverse('sharespace:user_profile', kwargs={'user_slug': up_dict['up'].user_slug})
+    else:
+        redirect_url = reverse('sharespace:index')
+    if request.method == 'POST':
+        print(request.POST)
+        print("views - 130 - log: ajax request to delete a future loan")
+        loan_slug = request.POST['loan_slug']
+
+        try:
+            loan = Loan.objects.get(loan_slug=loan_slug)
+            loan.delete()
+            return JsonResponse({'loan_deleted': True, 'msg': "your booking has been deleted", 'redirect_url': redirect_url})
+        except Loan.DoesNotExist:
+            return JsonResponse({'loan_deleted': False, 'msg':"no booking found", 'redirect_url': redirect_url})
+    else:
+        return JsonResponse({'loan_deleted': False, 'msg': "wrong request type", 'redirect_url': redirect_url})
+
+
+def ajax_delete_item(request, item_slug):
     if request.method == 'POST':
         print("views - 130 - log : printing post request for item deletion")
         print(request.POST)
-        item_slug = request.POST['item_slug']
+
         item = Item.objects.get(item_slug=item_slug)
         owner_set = item.owner.all()
         up = extract_us_up(request)['up']
         if len(owner_set) <= 1:
-            item.delete()
+            item_status = item.check_curr_on_loan_status()
+            if item_status['available']:
+                item.delete()
+                up.max_no_of_items -= 1
+                up.save()
+                return JsonResponse({'item_deleted': True, 'msg': "this item was removed from our records"})
+            else:
+                if item_status['due_date'] is None:
+                    return JsonResponse({'item_deleted': False, 'msg': "there is a pending loan on this item, please "
+                                                                       "check if you have any unactioned "
+                                                                       "notifications"})
+
         else:
             item.owner.remove(user_slug=up.user_slug)
+            up.max_no_of_items -= 1
+            up.save()
             print("item deleted - multiple owners so only removing ownership for specified user")
-        return HttpResponse("views - 130 - log : item deleted")
+        return JsonResponse({'item_deleted': True, 'msg': "we have removed you as an owner of this item. Our records "
+                                                          "show that there are multiple owner for this item, "
+                                                          "so the item was retained"})
     else:
         print("wrong request type")
-        return HttpResponse("views - 130 - log: wroooong request type")
+        return JsonResponse({'item_deleted': False, 'msg': "something went wrong, please try again (wrong request type"})
 
+
+class AccountDeletionView(View):
+    @method_decorator(login_required)
+    def get(self, request, user_slug):
+        context = {}
+        try:
+            up = UserProfile.objects.get(user_slug=user_slug)
+            items_owned = up.owned.all()
+            items_list = []
+            if items_owned.exists():
+                for item in items_owned:
+                    if len(item.owner.all()) <= 1:
+                        pass
+                    else:
+                        if not item.guardian == up:
+                            pass
+                        else:
+                            items_list.append(item)
+                            context['item_list'] = items_list
+
+            context['up'] = up
+
+        except UserProfile.DoesNotExist:
+            return HttpResponse("something went wrong - no profile retrieved")
+        return render(request, 'sharespace/delete_account.html', context=context)
+
+    @method_decorator(login_required)
+    def post(self, request, user_slug):
+        pp(request.POST)
+        return HttpResponse("your account deletion request has been received. You'll get a confirmation email when the request has been processed")
 
 def address_lookup_view(request):
     return render(request, 'sharespace/post_code_lookup.html', {})
@@ -164,22 +199,25 @@ def category_list_view(request):
 
 def category_page_view(request, cat_slug):
     print("in category page view, trying to extract users")
-    up_cont = extract_us_up(request)
     cat = Category.objects.get(cat_slug=cat_slug)
     cat_context = {'name': cat.name}
-    # if dict is empty
-    if not up_cont:
-        print("dict is empty")
-        cat_context['all_items'] = Item.objects.filter(main_category=cat).order_by('name')
+    sub_cat_list = Sub_Category.objects.filter(parent=cat).all()
+    sub_cat_dict = {}
+
+    up_dict = extract_us_up(request)
+    print(up_dict)
+    if up_dict['up'] is None:
+        for sc in sub_cat_list:
+            item_list = Item.objects.filter(sec_category=sc).all()
+            sub_cat_dict[sc.name] = list(item_list)
     else:
-        up_post_code = up_cont['up'].user_post_code
-        print(up_post_code)
-        hood = Neighbourhood.objects.get(nh_post_code=up_post_code)
-        hood_list = Address.objects.filter(adr_hood=hood)
-        items_available_in_hood = Item.objects.filter(location__in=Subquery(hood_list.values('pk'))).filter(
-            main_category=cat)
-        print(items_available_in_hood)
-        cat_context['all_items'] = items_available_in_hood
+        up = up_dict['up']
+        for sc in sub_cat_list:
+            item_list = Item.objects.filter(sec_category=sc).filter(location__adr_hood=up.hood)
+            sub_cat_dict[sc.name] = list(item_list)
+
+    pp(sub_cat_dict)
+    cat_context['sub_cats'] = sub_cat_dict
 
     return render(request, 'sharespace/category_page.html', context=cat_context)
 
@@ -259,10 +297,14 @@ def item_page_view(request, item_slug):
 
 # ajax view
 def load_sub_cat_view(request):
+    print("ajax request for sub cat")
     cat = request.GET.get('main_category_id')
     print(cat)
-    sub_cat_list = Sub_Category.objects.filter(parent=cat)
-    return render(request, 'sharespace/sub_cat_dropdown_list.html', {'list': sub_cat_list})
+    sub_cat_qset = Sub_Category.objects.filter(parent=cat).all()
+    sub_cat_list = list(sub_cat_qset)
+    print(type(sub_cat_list))
+    print(sub_cat_list)
+    return render(request, 'sharespace/sub_cat_dropdown_list.html', context = {'list': sub_cat_list})
 
 
 # ajax view
@@ -403,7 +445,7 @@ def user_logout(request):
     logout(request)
     return redirect(reverse('sharespace:index'))
 
-
+# need to convert this to a class based view
 def user_profile_view(request, user_slug):
     print("in user profile view")
 
@@ -427,10 +469,10 @@ def user_profile_view(request, user_slug):
                   user_profile.max_no_of_items, "you can still borrow? ", user_profile.can_borrow)
             user_profile_context['bio'] = user_profile.bio
             user_profile_context['post_code'] = user_profile.user_post_code
-            user_profile_context['owned_items'] = user_profile.owned.all()
+            user_profile_context['owned_items'] = user_profile.owned.all()[:5]
             user_profile_context['slug'] = user_profile.user_slug
-            notif_list = get_user_notification(user_profile)
-            user_profile_context['subscriptions'] = user_profile.interested.all()
+            notif_list = get_user_notification(user_profile)[:10]
+            user_profile_context['subscriptions'] = user_profile.interested.all()[:10]
 
             if notif_list:
                 user_profile_context['notifications'] = notif_list
@@ -589,7 +631,11 @@ class LoanView(View):
         btn_flag = False
         if loan.status == 'act':
             btn_flag = True
-        loan_context = {'loan': loan, 'btn_flag': btn_flag}
+            fut_flag = False
+        elif loan.status == 'fut':
+            btn_flag = False
+            fut_flag = True
+        loan_context = {'loan': loan, 'btn_flag': btn_flag, 'fut_flag': fut_flag}
 
         return render(request, 'sharespace/loan_page.html', context=loan_context)
 
@@ -852,14 +898,18 @@ def ajax_unsub_prop_view(request):
 
 
 def unpack_slug_for_report(slug):
-    tokens = slug.split("_")
-    print(len(tokens), "--", tokens[0])
-    if tokens[0] == 'loan':
-        loan = Loan.objects.get(loan_slug=tokens[1])
-        print(tokens[1], "-loan slug   ", loan)
+    print("views - 900 - log: printing slug ", slug)
+
+    if slug.find("loan") >= 0:
+        loan = Loan.objects.get(loan_slug=slug)
+
         return loan
+    elif slug.find("item") >= 0:
+        item = Item.objects.get(item_slug = slug)
+
+        return item
     else:
-        print("no object to extract when unpacking slug")
+        print("submitting report for non-linked enetity")
         return None
 
 
@@ -877,19 +927,6 @@ def get_user_notification(up):
         return []
 
 
-def find_owners(request):
-    list = []
-    for key in request:
-        if request[key] == 'on':
-            print(key)
-            us = CustomUser.objects.get(username=key)
-            up = UserProfile.objects.get(user=us)
-            list.append(up)
-            print(up)
-
-    return list
-
-
 def create_address(adr_dict):
     hood = Neighbourhood.objects.get_or_create(nh_post_code=adr_dict.POST['postcode'])[0]
     item_adr = Address.objects.get_or_create(address_line_1=adr_dict.POST['adr_line_1'],
@@ -902,3 +939,78 @@ def create_address(adr_dict):
                                              adr_hood=hood)[0]
 
     return item_adr
+
+def process_add_item_form(request):
+
+    owner_usernames_list = []
+    for k,v in request.POST.items():
+        print(f"view - 60 - log : printin k v pairs in request.post : {k} - {v}")
+        if request.POST[k] == k or k == 'owner-selector':
+            owner_usernames_list.append(v)
+
+    owners_list = []
+    if owner_usernames_list:
+        for o in owner_usernames_list:
+            try:
+                user = CustomUser.objects.get(username=o)
+                try:
+                    up = UserProfile.objects.get(user=user)
+                    owners_list.append(up)
+                except UserProfile.DoesNotExist:
+                    print("no up")
+                    return {'form_valid': False, 'msg': 'no user profile found'}
+            except CustomUser.DoesNotExist:
+                print("no user")
+                return {'form_valid': False, 'msg': 'no user found'}
+
+        print("views - 70 - log: compiled list of owners for this item: ", owners_list)
+    item_guardian = None
+    if 'guardian-selector-nm' in request.POST:
+        try:
+            user = CustomUser.objects.get(username=request.POST['guardian-selector-nm'])
+            try:
+                item_guardian = UserProfile.objects.get(user=user)
+                owners_list.append(item_guardian)
+
+            except UserProfile.DoesNotExist:
+                print("no up")
+                return {'form_valid': False, 'msg': f"no user profile found for item guardian. selected was: {request.POST['guardian-selector-nm']}"}
+        except CustomUser.DoesNotExist:
+            print("no user")
+            return {'form_valid': False, 'msg': f"no user found for item guardian. selected was: {request.POST['guardian-selector-nm']}"}
+    else:
+        up_dict = extract_us_up(request)
+        if up_dict['up'] is None:
+            return {'form_valid': False, 'msg': 'no user found'}
+        else:
+            item_guardian = up_dict['up']
+            owners_list.append(up_dict['up'])
+
+    item_name = request.POST['name']
+    item_description = request.POST['description']
+    main_cat_name = request.POST['main_category']
+    main_cat = Category.objects.get(name=main_cat_name)
+    sub_cat_name = request.POST['sec_category']
+    sec_cat = Sub_Category.objects.get(name=sub_cat_name)
+    max_loan_len = int(request.POST['max_loan_len'])
+    item_address = create_address(request)
+
+    form_dict = {
+        'owners' : owners_list,
+        'guardian' : item_guardian,
+        'address' : item_address,
+        'main_cat':main_cat,
+        'sec_cat': sec_cat,
+    }
+
+    validation = validate_add_item_form(form_dict)
+
+    if validation['validation']:
+        form_dict['form_valid'] = True
+        form_dict['name'] = item_name
+        form_dict['description'] = item_description
+        form_dict['max_loan_len'] = max_loan_len
+        pp(form_dict)
+        return form_dict
+    else:
+        return {'form_valid': False, 'msg': validation['msg']}

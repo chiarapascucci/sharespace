@@ -1,11 +1,13 @@
 import os
 from pprint import pprint
 
+from sharespace.text_data import get_placeholder
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sharespace_project.settings')
 
 import django
 django.setup()
-from sharespace.models import Category
+from sharespace.models import Category, Sub_Category
 import sharespace_project.settings as Psettings
 
 """
@@ -51,7 +53,7 @@ Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliqu
 other considered but not included: books, consumables, toy (e.g. board games)
 """
 
-default_decr = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et  dolore magna aliqua. Enim diam vulputate ut pharetra sit. Ullamcorper morbi tincidunt ornare massa."
+default_desc = get_placeholder()
 
 main_categories_data = {
     'Kitchen' : {'name': "Kitchen",
@@ -75,33 +77,57 @@ main_categories_data = {
                   'pic':'https://p0.piqsels.com/preview/63/988/932/multicolored-learning-toys.jpg'},
 
     'DIY & Home Improvement' : {'name': 'DIY & Home Improvement',
-                                'description': default_decr,
+                                'description': default_desc,
                                 'pic':'https://p0.piqsels.com/preview/74/701/282/textures-flatlay-craft-diy-sewing.jpg'},
 
     'Garage' : {'name': 'Garage',
-                'description': default_decr,
+                'description': default_desc,
                  'pic':'https://p0.piqsels.com/preview/703/612/852/various-car-car-wash-cars.jpg'},
 
     'Sport' : {'name': 'Sport',
-               'description': default_decr,
+               'description': default_desc,
                'pic':'https://p2.piqsels.com/preview/12/998/321/grey-sport-shoes-sneakers.jpg'},
 
     'Gardening': {'name': 'Gardening',
-              'description': default_decr,
+              'description': default_desc,
               'pic': 'https://p2.piqsels.com/preview/297/325/90/garden-plants-spring-hoe.jpg'},
 
     'Pet Care': {'name': 'Pet Care',
-              'description': default_decr,
+              'description': default_desc,
               'pic': 'https://p0.piqsels.com/preview/731/992/56/dog-pet-animal-cute.jpg'},
 }
 
+sec_cat= {
+    'Kitchen' : ['utensils', 'cookware', 'baking', 'appliances'],
+    'Cleaning': ['bathroom cleaning', 'carpet', 'stains', 'upholstery', 'curtains', 'deep cleaning', 'kitchen cleaning'],
+    'Technology': ['laptop', 'tablet', 'PC', 'screens', 'cables and wires', 'gaming', 'music', 'video recording'],
+    'Health & Beauty': ['blood pressure and heart', 'make-up', 'skincare',  'breathing', 'hair care', 'shaving and waxing'],
+    'Childcare' : ['feeding', 'breast feeding', 'toys', 'sleeping', 'bathing', 'cribs', 'other gadgets'],
+    'DIY & Home Improvement' : ['tools', 'painting', 'wall repair', 'ceiling repair', 'floor repair', 'tiling', 'carpet repair', 'carpentry', 'metal working'],
+    'Garage' : ['air pump', 'tire pressure', 'car engine', 'spare parts'],
+    'Sport' : ['winter sports', 'cycling', 'home workout', 'running', 'water sports', 'gym', 'other outdoor activities' ],
+    'Gardening' : ['potting', 'planting', 'sowing', 'plant cutting', 'irrigation', 'plant care'],
+    'Pet Care' : ['pet beds', 'pet toys', 'pet food', 'pet health', 'pet walking', 'pet training', 'pet activity'],
+
+}
 
 def create_categories():
+    cats_dict = {}
     cat_list = []
+
 
     for cat, cat_data in main_categories_data.items():
         category = Category.objects.create(name = cat, description=cat_data['description'], cat_img=cat_data['pic'])
         cat_list.append(category)
-        print(category)
+        print(f"category created: {category}, its sub categories are: ")
+        sub_cat_list = []
+        sub_cat_list_names = sec_cat[cat]
+        for sc in sub_cat_list_names:
+            sub_category = Sub_Category.objects.create(name = sc, description = default_desc, parent=category)
+            sub_cat_list.append(sub_category)
+            print(f" - {sub_category}")
+        cats_dict[f'{cat}'] = sub_cat_list
 
-    return cat_list
+    return cats_dict
+
+

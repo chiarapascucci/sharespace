@@ -259,6 +259,7 @@ class Item(models.Model):
     sec_category = models.ForeignKey(Sub_Category, on_delete=models.SET_NULL, null=True)
     available = models.BooleanField(default=True)
     owner = models.ManyToManyField(UserProfile, related_name="owned", blank=False)
+    guardian = models.ForeignKey(UserProfile, related_name="manages", null=False, on_delete=models.CASCADE)
     # borrowed_by = models.ForeignKey(UserProfile, related_name = "borrowed", blank = True,  on_delete=models.SET_NULL, null = True)
     item_slug = models.SlugField(unique=True)
     location = models.ForeignKey(Address, on_delete=models.CASCADE, blank=False)
@@ -269,9 +270,15 @@ class Item(models.Model):
 
     def save(self, *args, **kwargs):
         # self.id = uuid.uuid4()
-        self.item_slug = slugify(self.item_id)
+        self.item_slug = slugify("item--{self.item_id}".format(self=self))
         # print(self.owner)
         self.item_post_code = self.location.adr_hood.nh_post_code
+        for o in self.owner.all():
+            o.max_no_of_items +=1
+            o.save()
+        print("models - 280 - log: number of owners this item has : ", len(self.owner.all()))
+        if len(self.owner.all()) == 1:
+            self.guardian = self.owner.first()
         super(Item, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -368,7 +375,7 @@ class Loan(models.Model):
 
     def save(self, *args, **kwargs):
         self.loan_slug = slugify(
-            "{self.requestor.user.username}-loan-{self.loan_id}".format(self=self))
+            "{self.requestor.user.username}--loan--{self.loan_id}".format(self=self))
         self.len_of_loan = (self.due_date-self.out_date).days
 
         # if the requested date out is later than current date, then status set to future

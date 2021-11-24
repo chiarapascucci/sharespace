@@ -13,6 +13,7 @@ BOOKING_RANGE = 90
 
 utc = pytz.UTC
 
+
 def validate_borrowing_form(item, up, out_date, due_date):
     date_out = datetime.strptime(out_date, "%Y-%m-%d").replace(tzinfo=utc)
     date_due = datetime.strptime(due_date, "%Y-%m-%d").replace(tzinfo=utc)
@@ -40,6 +41,7 @@ def validate_borrowing_form(item, up, out_date, due_date):
     print("form validation successful")
     return outcome
 
+
 def validate_dates_loan(out_date, due_date, max_len):
     if out_date < now():
         return False
@@ -48,6 +50,7 @@ def validate_dates_loan(out_date, due_date, max_len):
         return True
     else:
         return False
+
 
 def validate_item(item, date_from, date_to):
 
@@ -83,6 +86,7 @@ def validate_user(up, date_out, date_due):
 
     return True
 
+
 def count_loans_overlap(loan_list):
     if not loan_list or len(loan_list)==1:
         return 0
@@ -102,6 +106,37 @@ def count_loans_overlap(loan_list):
     return max(loan_list)
 
 
+def validate_add_item_form(dict):
+    cat_val = validate_categories(cat=dict['main_cat'], sub_cat=dict['sec_cat'])
+    if not cat_val:
+        return {'validation': False, 'msg': 'cat and sub cat combination is not valid'}
+
+    if dict['guardian'] not in dict['owners']:
+        return {'validation': False, 'msg': 'selected guardian is not an owner'}
+
+    if not validate_location(up_list=dict['owners'], address=dict['address']):
+        return {'validation': False, 'msg': 'one or more of the owners are not part of the right hood'}
+
+    return {'validation': True, 'msg': 'all good'}
 
 
+def validate_categories(cat, sub_cat):
+    if sub_cat.parent == cat:
+        return True
+    else:
+        return False
 
+
+def validate_location(up_list, address=None):
+    if address is None:
+        for i in range(0, len(up_list)-2):
+            if not (up_list[i].hood == up_list[i+1].hood):
+                return False
+
+    else:
+        hood = address.adr_hood
+        for up in up_list:
+            if not (up.hood == hood):
+                return False
+
+    return True
