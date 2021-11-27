@@ -16,7 +16,7 @@
         <li>for any items that you own jointly with other users we are going to assume that you'll leave those behind for them to manage </li>
         <li>please note that if you are the appointed guardian for any jointly own items, we'll ask you to let us know who the next guardian is going to be below</li>
     </ul>
-    <p><strong>Please let us in the text box below if any of the assumption listed are not correct.</strong> If that's the case we will be in touch via email to process your request</p>
+    <p><strong>Please let us know in the text box below if any of the assumption listed are not correct.</strong> If that's the case we will be in touch via email to process your request</p>
 
     <form id="delete-account-form" method="post" action="{% url 'sharespace:delete_account' up.user_slug %}" enctype = 'multipart/form-data'>
         {% csrf_token %}
