@@ -6,23 +6,54 @@
 {% endblock %}
 
 {% block body_block %}
-<p>{{ proposal }}</p>
-    <p>{{ flag }}</p>
-    <br>
-    <p> in purchase proposal page </p>
+    {{ proposal }}
+    <div class="row mb-3">
+      <div class="col-md-4 themed-grid-col">
+          <p>proposal information:</p>
+          <ul>
+              <li>Item name: {{ proposal.proposal_item_name }}</li>
+              <li>Item main category: {{ proposal.proposal_cat }}</li>
+              <li>Item secondary category: {{ proposal.proposal_sub_cat }}</li>
+          </ul>
+      </div>
+      <div class="col-md-4 themed-grid-col">
+          <p>Currently this many of your neighbours want to own this item:</p>
+          <p id="subs-count"><strong>{{ proposal.proposal_subs_count }}</strong></p>
+          <br>
+          <p> this proposal was submitted by: {{ proposal.proposal_submitter }}</p>
+          {% if subs_flag %}
+              <p> you can contact {{ proposal.proposal_submitter }} on {{ proposal.proposal_contact }}</p>
+          {% else %}
+          {% endif %}
+      </div>
+      <div class="col-md-4 themed-grid-col">
+          <p>Available actions</p>
+          {% if subm_flag %}
+              <button id="edit-prop-btn" onclick="" value="Edit proposal">Edit Proposal</button>
+              <br>
+              <button id="delete-prop-btn" onclick="" value="Delete proposal">Delete Proposal</button>
+              <br>
+              <button id="purchased-prop-btn" onclick="" value="Purchased">Purchased</button>
+          {% else %}
+              {% if subs_flag %}
+                   <button id="subscribe-btn" onclick="subscribe_to_proposal()"  data-url-action="{% url 'sharespace:ajax_unsub_from_prop' %}" value="Unsubscribe" data-prop-slug = "{{ proposal.proposal_slug }}">Unsubscribe</button>
+              {% else %}
+                  <button id="subscribe-btn" onclick="subscribe_to_proposal()"  data-url-action="{% url 'sharespace:ajax_sub_to_prop' %}" value="Subscribe" data-prop-slug = "{{ proposal.proposal_slug }}">Subscribe</button>
+              {% endif %}
+          {% endif %}
+      </div>
+    </div>
+    <div class="row mb-3">
+      <div class="col-md-4 themed-grid-col">
+          <p> The price of this item is set at : {{ proposal.proposal_price }}</p>
+          {% if price_per_person %}
+            <p> with the current number of people subscribing this is the current price per person in £: </p>
+            <p id="price-per-person"><strong>{{ price_per_person }}</strong></p>
+          {% endif %}
+      </div>
+      <div class="col-md-4 themed-grid-col"></div>
+      <div class="col-md-4 themed-grid-col"></div>
+    </div>
 
-    {% if subm_flag %}
-        <button id="edit-prop-btn" onclick="" value="Edit proposal">Edit Proposal</button>
-        <br>
-        <button id="delete-prop-btn" onclick="" value="Delete proposal">Delete Proposal</button>
-        <br>
-        <button id="purchased-prop-btn" onclick="" value="Purchased">Purchased</button>
-    {% else %}
-        {% if subs_flag %}
-        {% else %}
-            <button id="subscribe-btn" onclick="subscribe_to_proposal()"  data-url-action="{% url 'sharespace:ajax_sub_to_prop' %}" value="Subscribe" data-prop-slug = "{{ proposal.proposal_slug }}">Subscribe</button>
-        {% endif %}
-            <button id="subscribe-btn" onclick="subscribe_to_proposal()"  data-url-action="{% url 'sharespace:ajax_unsub_from_prop' %}" value="Unsubscribe" data-prop-slug = "{{ proposal.proposal_slug }}">Unsubscribe</button>
-    {% endif %}
 
 {% endblock %}

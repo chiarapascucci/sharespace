@@ -21,7 +21,7 @@
                           <p class="col-md-8 fs-4">user name: {{ slug }}</p>
                           <p class="col-md-8 fs-4">email: {{ email }}</p>
                           <p class="col-md-8 fs-4">bio: {{ bio }}</p>
-                          <p class="col-md-8 fs-4">your neighbourhood: {{ hood.nh_post_code }}</p>
+                          <p class="col-md-8 fs-4">your neighbourhood: {{ post_code }}</p>
                           <p> <a href="{% url 'sharespace:edit_user_info' slug %}" class="btn-outline-primary"> Edit your info </a></p>
                           <p><a href = "{% url 'sharespace:change_password'  %}" class="btn-outline-primary" >Change Password</a></p>
                           <p><a href = "{% url 'sharespace:delete_account' slug %}" class="btn-danger" >Delete Account</a></p>
@@ -105,22 +105,18 @@
                   <div class="h-100 p-5 bg-light border rounded-3">
                       <h2>Your Groups and Proposals</h2>
                       <p>Here you'll see the groups you have created or are a member of, or the purchase proposal you have posted</p>
+                      {% if proposals %}
+                          <ul>
+                          {% for p in proposals.all %}
+                              <li>{{ p }}</li>
+                          {% endfor %}
+                          </ul>
+                     {% endif %}
 
                   </div>
               </div>
           </div>
-          <div class="row align-items-md-stretch">
 
-
-
-              <div class="col-md-6">
-                  <div class="h-100 p-5 bg-light border rounded-3">
-                      <h2>Your Groups and Proposals</h2>
-                      <p>Here you'll see the groups you have created or are a member of, or the purchase proposal you have posted</p>
-
-                  </div>
-              </div>
-          </div>
       </div>
 
     {{ hood.nh_post_code }}

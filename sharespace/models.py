@@ -357,8 +357,9 @@ class Loan(models.Model):
     loan_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     requestor = models.ForeignKey(UserProfile, blank=False, related_name="loans", on_delete=models.CASCADE)
     item_on_loan = models.ForeignKey(Item, blank=False, on_delete=models.CASCADE, related_name="on_loan")
+    item_loan_pick_up = models.BooleanField(default=False)
     overdue = models.BooleanField(default=False)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=ACTIVE)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, null = True)
     # active = models.BooleanField(default = True)
     out_date = models.DateTimeField(null=False)
     due_date = models.DateTimeField(null=False)
@@ -374,30 +375,53 @@ class Loan(models.Model):
         return my_str
 
     def save(self, *args, **kwargs):
-        self.loan_slug = slugify(
-            "{self.requestor.user.username}--loan--{self.loan_id}".format(self=self))
+        self.loan_slug = slugify("loan--{self.loan_id}".format(self=self))
         self.len_of_loan = (self.due_date-self.out_date).days
-
-        # if the requested date out is later than current date, then status set to future
-        # no effects of loan are applied
-        if self.out_date.date() > default_time().date():
-            self.status = self.FUTURE
-        else:
-            self.status = self.ACTIVE
-            if not self.applied_effects_flag:
-                self.apply_loan_effects()
-            else:
-                pass
-
         print("\n in save method in loan model \n out time: {} \n due time: {} ".format(self.out_date, self.due_date))
         super(Loan, self).save(*args, **kwargs)
+
+    def update_loan(self):
+        print("in update loan")
+        print(self.status)
+        if self.status is None:
+            print("loan status is none")
+            if self.out_date > default_time():
+
+                self.status = self.FUTURE
+                self.save()
+                return 1
+            else:
+                self.status = self.PENDING
+                self.apply_loan_effects()
+                self.save()
+                return 1
+        else:
+            if self.status == self.COMPLETED:
+                return 0
+            elif self.status == self.ACTIVE:
+                if default_time() > self.due_date:
+                    self.overdue = True
+                    self.save()
+                    return 1
+                else:
+                    return 0
+            elif self.status == self.FUTURE:
+                if default_time() > self.out_date:
+                    self.status = self.PENDING
+                    self.apply_loan_effects()
+                    self.save()
+                    return 1
 
     def apply_loan_effects(self):
         self.item_on_loan.available = False
         self.item_on_loan.save()
         self.requestor.curr_no_of_items += 1
         self.requestor.save()
-        self.applied_effects_flag = True
+
+    def confirm_item_picked_up(self):
+        self.item_loan_pick_up = True
+        self.status = self.ACTIVE
+        self.save()
 
     def mark_as_complete_by_borrower(self):
         """
@@ -430,6 +454,14 @@ class Loan(models.Model):
             day_list.append(day)
         return day_list
 
+    def get_full_status(self):
+        self.update_loan()
+        full_status = {
+            'status' : self.status,
+            'picked_up': self.item_loan_pick_up,
+            'overdue' : self.overdue
+        }
+        return full_status
 
 def upload_gallery_image(instance, filename):
     return f"images/{instance.item.name}/gallery/{filename}"
@@ -442,6 +474,7 @@ class Image(models.Model):
 
 class PurchaseProposal(models.Model):
     proposal_submitter = models.ForeignKey(UserProfile, blank=False, on_delete=models.CASCADE, related_name="proposals")
+    proposal_contact = models.CharField(max_length=MAX_LENGTH_TITLES, blank=False)
     proposal_subscribers = models.ManyToManyField(UserProfile, blank=True, default=None, related_name="interested")
     proposal_item_name = models.TextField(blank=False, max_length=MAX_LENGTH_TITLES)
     proposal_cat = models.ForeignKey(Category, null=False, on_delete=models.CASCADE)
@@ -453,6 +486,7 @@ class PurchaseProposal(models.Model):
     proposal_active = models.BooleanField(default=True)
     proposal_purchased = models.BooleanField(default=False)
     proposal_timestamp = models.DateTimeField(blank=False, default=default_time)
+    proposal_subs_count = models.PositiveIntegerField(default=1)
     # proposal_postcode = models.CharField(max_length=8)
     proposal_reported = GenericRelation(UserToAdminReportNotAboutUser)
 

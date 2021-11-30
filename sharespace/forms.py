@@ -98,4 +98,4 @@ class SubmitPurchaseProposalForm(forms.ModelForm):
     class Meta:
         model = PurchaseProposal
         fields = ('proposal_item_name', 'proposal_cat', 'proposal_sub_cat',
-                  'proposal_item_description', 'proposal_price',)
+                  'proposal_item_description', 'proposal_price', 'proposal_contact',)

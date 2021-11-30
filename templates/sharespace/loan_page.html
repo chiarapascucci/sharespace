@@ -22,12 +22,15 @@
         <p> {{loan.item_on_loan.location}}</p>
     {% endif %}
 
-    {% if btn_flag %}
+    {% if return_flag %}
         <button id = "returned-item-btn" data-loanslug = "{{ loan.loan_slug }}" class = "btn btn-primary btn-sm" type="button" >Item Returned</button>
-
-    {% elif fut_flag %}
+    {% elif del_flag %}
         <button id = "cancel-booking-btn" data-loanslug="{{ loan.loan_slug }}" data-ajax-url="{% url 'sharespace:ajax_cancel_booking' %}" class = "btn btn-primary btn-sm" type="button" onclick="cancel_booking()">Cancel Booking</button>
+    {% elif up_flag %}
+        <button id = "confirm-pickup-btn" data-loanslug="{{ loan.loan_slug }}" data-ajax-url="" class = "btn btn-primary btn-sm" type="button" onclick="">Confirm Pick-up</button>
 
+        Something wrong with this loan? You went to pick up the object and it wasn't there? Report it to admin
+        <a id = "report-loan" href="{% url 'sharespace:submit_report' loan.loan_slug %}" class = "btn btn-primary btn-sm" type="button" onclick="">Report</a>
     {% else %}
     {% endif %}
            <p id="display-result"></p>

@@ -480,11 +480,17 @@ def user_profile_view(request, user_slug):
                 loan_list = user_profile.loans.exclude(status='com')
 
                 user_profile_context['borrowing_items'] = loan_list
-
-                # print("this is the name of the item on loan ", user_profile.loans.all().item_on_loan.name)
             except Loan.DoesNotExist:
                 print("no item on loan exception")
                 user_profile_context['borrowing_items'] = None
+
+            try:
+                proposal_submitted = user_profile.proposals.filter(proposal_active=True)[:10]
+                user_profile_context['proposals'] = proposal_submitted
+            except PurchaseProposal.DoesNotExist:
+                print("no props for this user")
+
+
 
             user_profile_context['picture'] = user_profile.picture
             print(user_profile_context)
@@ -627,15 +633,27 @@ def ajax_borrow_item_view(request):
 class LoanView(View):
     @method_decorator(login_required)
     def get(self, request, loan_slug):
+
         loan = Loan.objects.get(loan_slug=loan_slug)
-        btn_flag = False
-        if loan.status == 'act':
-            btn_flag = True
-            fut_flag = False
-        elif loan.status == 'fut':
-            btn_flag = False
-            fut_flag = True
-        loan_context = {'loan': loan, 'btn_flag': btn_flag, 'fut_flag': fut_flag}
+        del_flag = False
+        up_flag = False
+        return_flag = False
+        fut_flag = False
+        status_dict = loan.get_full_status()
+        print(status_dict)
+        if status_dict['status'] == 'fut':
+            del_flag = True
+        elif status_dict['status'] == 'act':
+            return_flag = True
+        elif status_dict['status'] == 'pen':
+            if status_dict['picked_up']:
+                pass
+            else:
+                del_flag = True
+                up_flag = True
+        else:
+            pass
+        loan_context = {'loan': loan, 'del_flag': del_flag, 'return_flag': return_flag, 'fut_flag': fut_flag}
 
         return render(request, 'sharespace/loan_page.html', context=loan_context)
 
@@ -833,8 +851,13 @@ class PurchaseProposalPage(View):
         submitter_flag = up_dict['up'] == proposal.proposal_submitter
 
         subscriber_flag = proposal.proposal_subscribers.filter(user_slug=up_dict['up'].user_slug).exists()
-
-        print("subs flag value :", subscriber_flag)
+        if proposal.proposal_subs_count > 0:
+            price_per_person = round(float(proposal.proposal_price / proposal.proposal_subs_count))
+            print("subs flag value :", subscriber_flag)
+            return render(request, 'sharespace/purchase_proposal_page.html', {'proposal': proposal,
+                                                                              'subs_flag': subscriber_flag,
+                                                                              'subm_flag': submitter_flag,
+                                                                              'price_per_person': price_per_person})
         return render(request, 'sharespace/purchase_proposal_page.html', {'proposal': proposal,
                                                                           'subs_flag': subscriber_flag,
                                                                           'subm_flag': submitter_flag})
@@ -853,7 +876,10 @@ def ajax_sub_prop_view(request):
             try:
                 prop = PurchaseProposal.objects.get(proposal_slug=proposal_slug)
                 prop.proposal_subscribers.add(up)
+                prop.proposal_subs_count += 1
                 prop.save()
+                price_per_person = round(float(prop.proposal_price / prop.proposal_subs_count))
+                return JsonResponse({'subs_count': prop.proposal_subs_count, 'price_per_person': price_per_person})
             except PurchaseProposal.DoesNotExist:
                 return HttpResponse("proposal not found")
         except UserProfile.DoesNotExist:
@@ -881,6 +907,10 @@ def ajax_unsub_prop_view(request):
                 if qset.exists():
                     print("removing user")
                     prop.proposal_subscribers.remove(up)
+                    prop.proposal_subs_count -= 1
+                    prop.save()
+                    price_per_person = round(float(prop.proposal_price / prop.proposal_subs_count))
+                    return JsonResponse({'subs_count': prop.proposal_subs_count, 'price_per_person': price_per_person})
                 else:
                     HttpResponse("not a sub")
 

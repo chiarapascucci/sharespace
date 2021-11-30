@@ -20,6 +20,7 @@ $(document).ready(function() {
 		});
 	});
 
+
     $("#id_proposal_cat").change(function (){
         const url = $("#purchase_proposal_form").attr("data-sub-cat-url");
         const catID = $(this).val();
@@ -31,6 +32,7 @@ $(document).ready(function() {
             success : function(data){
                 console.log("ajax request success (cat)")
                 console.log(data)
+                $('#id_proposal_sub_cat').html(data)
             }
 
         });
@@ -336,7 +338,8 @@ function subscribe_to_proposal(){
              //type : "POST",
              url : url,
              data : {'username': username, 'proposal_slug':proposal_slug },
-             success : function(){
+             success : function(data){
+
                  console.log(this);
                  if (btn.attr("value") === "Unsubscribe") {
                      btn.html("Subscribe");
@@ -347,7 +350,9 @@ function subscribe_to_proposal(){
                      btn.attr("value", "Unsubscribe");
                      btn.attr("data-url-action","/sharespace/ajax/unsub_proposal/");
                  }
-
+                 console.log("updating subs count:");
+                 $('#subs-count').html(json.subs_count);
+                 $('#price-per-person').html(json.price_per_person);
                  console.log("subs request complete");
 
             }
