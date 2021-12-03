@@ -1,5 +1,7 @@
 from django.db import models
 
+# cfrom phonenumber_field.modelfields import PhoneNumberField
+
 
 class EmailFieldLowerCase (models.EmailField):
     def to_python(self, value):

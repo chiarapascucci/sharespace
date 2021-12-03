@@ -689,6 +689,9 @@ class SearchView(View):
         search_context = {}
 
         search = request.GET['search_input'].strip().lower()
+        if search == "" or search == " ":
+            return render(request, 'sharespace/search_result_page.html', {})
+        print("in views - 700 - log : search term = ", search)
         search_context['search'] = search
         search_context['category'] = Category.objects.filter(Q(name__contains=search) | Q(description__contains=search))
         search_context['sub_category'] = Sub_Category.objects.filter(
@@ -696,10 +699,15 @@ class SearchView(View):
         search_context['items'] = Item.objects.filter(Q(name__contains=search) | Q(description__contains=search))
 
         up_dict = extract_us_up(request)
-        if up_dict:
+        print("views - 700 - log : up dict :", up_dict)
+        if not up_dict['up'] is None:
             post_code = up_dict['up'].hood.nh_post_code
             search_context['items'].filter(item_post_code=post_code)
 
+        if search_context['category'].exists() or search_context['sub_category'].exists() or search_context['items'].exists():
+            search_context['results'] = True
+
+        print(search_context)
         return render(request, 'sharespace/search_result_page.html', context=search_context)
 
     def post(self, request):
@@ -799,7 +807,16 @@ class SubmitReportView(View):
             else:
                 report.content_object = subject
                 report.save()
-                return HttpResponse("your report was submitted correctly")
+                return render(request, 'sharespace/waiting_page.html', context = {'message': "your report was "
+                                                                                             "submitted correctly. "
+                                                                                             "Admin will review and "
+                                                                                             "take  appropriate "
+                                                                                             "action. We may need to "
+                                                                                             "contact you to get more "
+                                                                                             "information, "
+                                                                                             "so please keep an eye "
+                                                                                             "out for any emails from "
+                                                                                             "us! "})
         else:
             print("there are report form errors: ", form.errors)
 

@@ -290,8 +290,7 @@ function cancel_booking(){
                 alert(data['msg']);
                 setTimeout(function(){
                     window.location.href = data.redirect_url;
-
-                }, 3000);
+                }, 1000);
 
         }
 
@@ -354,6 +353,7 @@ function subscribe_to_proposal(){
                  $('#subs-count').html(data.subs_count);
                  $('#price-per-person').html(data.price_per_person);
                  console.log("subs request complete");
+                 location.reload();
 
             }
         });
@@ -381,6 +381,7 @@ function comment_proposal(proposal_slug){
             let comment_section = document.getElementById("comment-list")
             comment_section.append(elem);
             $('#proposal-comment').text("");
+            $('#proposal-comment').val("");
 
         }
     });
