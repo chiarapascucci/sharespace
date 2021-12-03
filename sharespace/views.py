@@ -9,7 +9,7 @@ from django.views.generic import FormView
 
 from sharespace.form_validation import validate_borrowing_form, validate_add_item_form
 from sharespace.models import Image, Item, Category, Sub_Category, CustomUser, UserProfile, Neighbourhood, Loan, \
-    Address, PurchaseProposal, Notification
+    Address, PurchaseProposal, Notification, CommentToProposal
 from sharespace.forms import AddItemForm, ImageForm, UserForm, UserProfileForm, \
     SubmitReportForm, EditUserProfileBasicForm, SubmitPurchaseProposalForm
 from django.contrib.auth.decorators import login_required
@@ -843,13 +843,14 @@ def purchase_proposal_list_view(request):
 
 
 class PurchaseProposalPage(View):
+    #need to open this view to non-logged in?
     @method_decorator(login_required)
     def get(self, request, proposal_slug):
         print("for some reason this is getting called")
         proposal = PurchaseProposal.objects.get(proposal_slug=proposal_slug)
         up_dict = extract_us_up(request)
         submitter_flag = up_dict['up'] == proposal.proposal_submitter
-
+        proposal_comments = proposal.comments.all()
         subscriber_flag = proposal.proposal_subscribers.filter(user_slug=up_dict['up'].user_slug).exists()
         if proposal.proposal_subs_count > 0:
             price_per_person = round(float(proposal.proposal_price / proposal.proposal_subs_count))
@@ -857,10 +858,12 @@ class PurchaseProposalPage(View):
             return render(request, 'sharespace/purchase_proposal_page.html', {'proposal': proposal,
                                                                               'subs_flag': subscriber_flag,
                                                                               'subm_flag': submitter_flag,
-                                                                              'price_per_person': price_per_person})
+                                                                              'price_per_person': price_per_person,
+                                                                              'comments': proposal_comments})
         return render(request, 'sharespace/purchase_proposal_page.html', {'proposal': proposal,
                                                                           'subs_flag': subscriber_flag,
-                                                                          'subm_flag': submitter_flag})
+                                                                          'subm_flag': submitter_flag,
+                                                                          'comments': proposal_comments})
 
 
 def ajax_sub_prop_view(request):
@@ -887,8 +890,35 @@ def ajax_sub_prop_view(request):
     except CustomUser.DoesNotExist:
         return HttpResponse("user not found")
 
-    return HttpResponse("all done")
 
+
+
+def ajax_post_comment(request):
+    if request.method == 'POST':
+        prop_slug = request.POST['prop_slug']
+        up = extract_us_up(request)['up']
+        comment_text = request.POST['comment_text']
+        date_logged = datetime.now()
+        print(comment_text)
+        try:
+            proposal = PurchaseProposal.objects.get(proposal_slug = prop_slug)
+            comment = CommentToProposal.objects.get_or_create(comment_author = up, comment_text=comment_text,
+                                                      comment_date = date_logged, comment_subject = proposal)[0]
+
+            print(comment)
+            context= {
+                'comment_text': comment_text,
+                'comment_author' : up,
+                'date' : date_logged,
+            }
+
+            return render(request, 'sharespace/comment_body.html', context=context)
+
+        except PurchaseProposal.DoesNotExist:
+            print("no purchase proposal found")
+            return HttpResponse("no proposal found")
+    else:
+        return HttpResponse("wrong request type")
 
 def ajax_unsub_prop_view(request):
     print("in UNsub ajax view")

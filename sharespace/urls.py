@@ -52,4 +52,5 @@ urlpatterns = [
     path('ajax/request_loan/', views.ajax_borrow_item_view, name = 'ajax_request_loan'),
     path('ajax/unsub_proposal/', views.ajax_unsub_prop_view, name = 'ajax_unsub_from_prop'),
     path('ajax/cancel_booking/', views.ajax_cancel_booking, name ='ajax_cancel_booking'),
+    path('ajax/post-comment/', views.ajax_post_comment, name='ajax_post_comment'),
 ]

@@ -29,18 +29,19 @@
       </a>
     </header>
 
-    <div class="p-5 mb-4 bg-light rounded-3">
-      <div class="container-fluid py-5">
-        <h1 class="display-5 fw-bold">ShareSpace</h1>
-        <p class="col-md-8 fs-4">Bah balha blah blah ablha blha</p>
-          {% if user.is_authenticated %}
-              <a href= "{% url 'sharespace:add_item' %}" class="btn btn-outline-secondary" type="button">Add an Item</a>
-          {% else %}
-              <a href = "{% url 'registration_register' %}" class="btn btn-primary btn-lg" type="button">Sign-up</a>
-          {%  endif %}
-
+      <div class="p-5 mb-4 bg-light rounded-3">
+          <div class="row-cols-1">
+              <div class="container-fluid py-5">
+                  <h1 class="display-5 fw-bold">ShareSpace</h1>
+                  <p class="col-md-8 fs-4">Bah balha blah blah ablha blha</p>
+                  {% if user.is_authenticated %}
+                      <a href= "{% url 'sharespace:add_item' %}" class="btn btn-outline-secondary" type="button">Add an Item</a>
+                  {% else %}
+                      <a href = "{% url 'registration_register' %}" class="btn btn-primary btn-lg" type="button">Sign-up</a>
+                  {%  endif %}
+              </div>
+          </div>
       </div>
-    </div>
 
     <div class="row align-items-md-stretch">
       <div class="col-md-6">
@@ -62,24 +63,39 @@
         </div>
       </div>
     </div>
-    <br>
+        <br>
       <div class="row align-items-md-stretch">
-      <div class="col-md-6">
-        <div class="h-100 p-5 bg-light border rounded-3">
-          <h2>Categories</h2>
-          <p>Blah bahah blhahh</p>
-          <a href ="{% url 'sharespace:category_list' %}" class="btn btn-outline-secondary" type="button">Categories List</a>
-        </div>
-      </div>
-      <div class="col-md-6">
-        <div class="h-100 p-5 bg-light border rounded-3">
-          <h2>Submit a Proposal</h2>
-          <p>Blahbhhdhb agfohjdsvjbsvbsjbv</p>
-            <a href="{% url 'sharespace:submit_proposal' %}" class="btn btn-outline-secondary">Submit a Purchase Proposal</a>
-        </div>
-      </div>
-    </div>
+          <div class="col-md-6">
+              <div class="h-100 p-5 bg-light border rounded-3">
+                  <h2>Categories</h2>
+                  <p>Blah bahah blhahh</p>
+                  <a href ="{% url 'sharespace:category_list' %}" class="btn btn-outline-secondary" type="button">Categories List</a>
+              </div>
+          </div>
+        {% if user.is_authenticated %}
+          <div class="col-md-6">
+              <div class="h-100 p-5 bg-light border rounded-3">
+                  <h2>Submit a Proposal</h2>
+                  <p>Blahbhhdhb agfohjdsvjbsvbsjbv</p>
+                  <a href="{% url 'sharespace:submit_proposal' %}" class="btn btn-outline-secondary">Submit a Purchase Proposal</a>
+              </div>
+          </div>
+            <div class="row align-items-md-stretch">
+                <div class="col-md-6">
+                    <div class="h-100 p-5 bg-light border rounded-3">
+                        <h2>See the Proposals in your Neighbourhood</h2>
+                        <p>Blah bahah blhahh</p>
 
+                            <a href= "{% url 'sharespace:proposal_list' %}" class="btn btn-outline-secondary" type="button">Proposal List</a>
+
+                    </div>
+                </div>
+                <!-- could add another div here -->
+            </div>
+        {% else %}
+
+        {% endif %}
+      </div>
   </div>
 </main>
 {% endblock %}

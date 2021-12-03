@@ -18,6 +18,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 TEMPLATE_DIR = os.path.join(BASE_DIR, 'templates')
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
 MEDIA_DIR = os.path.join(BASE_DIR, 'media')
+SITE_ASSETS_DIR = os.path.join(STATIC_DIR, 'site_assets')
 
 
 # Quick-start development settings - unsuitable for production
@@ -144,9 +145,10 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
-
-STATICFILES_DIRS = [STATIC_DIR, ]
 STATIC_URL = '/static/'
+STATICFILES_DIRS = [STATIC_DIR, SITE_ASSETS_DIR]
+
+
 
 #non-static media files
 

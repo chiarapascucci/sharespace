@@ -51,9 +51,41 @@
             <p id="price-per-person"><strong>{{ price_per_person }}</strong></p>
           {% endif %}
       </div>
-      <div class="col-md-4 themed-grid-col"></div>
+      <div class="col-md-4 themed-grid-col">
+
+      </div>
       <div class="col-md-4 themed-grid-col"></div>
     </div>
 
+    <div class="b-example-divider"></div>
 
+    <div id ="comment-list" class="list-group" style="overflow-y: scroll; height:400px;">
+        {% if comments %}
+            {% for comment in comments %}
+             <!--   <img src='{{ comment.comment_author.picture }}' alt="author_picture" width="32" height="32" class="rounded-circle flex-shrink-0"> -->
+                <div class="d-flex gap-2 w-100 justify-content-between">
+                    <div>
+                        <h6 class="mb-0">{{ comment.comment_author }} commented </h6>
+                        <p class="mb-0 opacity-75">{{ comment.comment_text }}</p>
+                    </div>
+                    <small class="opacity-50 text-nowrap">on {{ comment.comment_date }}</small>
+                </div>
+                <br>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+     <br>
+
+        {% if subs_flag or subm_flag %}
+            <div>
+                <textarea  id="proposal-comment" >
+
+                </textarea>
+            </div>
+            <button id="post-comment-btn" onclick="comment_proposal('{{ proposal.proposal_slug }}')" btn-data='{% url 'sharespace:ajax_post_comment' %}'>Submit Comment </button>
+        {% endif %}
+    <br>
+    <br>
+    <br>
 {% endblock %}

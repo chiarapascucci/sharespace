@@ -463,6 +463,7 @@ class Loan(models.Model):
         }
         return full_status
 
+
 def upload_gallery_image(instance, filename):
     return f"images/{instance.item.name}/gallery/{filename}"
 
@@ -476,7 +477,7 @@ class PurchaseProposal(models.Model):
     proposal_submitter = models.ForeignKey(UserProfile, blank=False, on_delete=models.CASCADE, related_name="proposals")
     proposal_contact = models.CharField(max_length=MAX_LENGTH_TITLES, blank=False)
     proposal_subscribers = models.ManyToManyField(UserProfile, blank=True, default=None, related_name="interested")
-    proposal_item_name = models.TextField(blank=False, max_length=MAX_LENGTH_TITLES)
+    proposal_item_name = models.CharField(blank=False, max_length=MAX_LENGTH_TITLES)
     proposal_cat = models.ForeignKey(Category, null=False, on_delete=models.CASCADE)
     proposal_sub_cat = models.ForeignKey(Sub_Category, null=True, on_delete=models.SET_NULL)
     proposal_item_description = models.TextField(blank=False, max_length=MAX_LENGTH_TEXT)
@@ -501,55 +502,18 @@ class PurchaseProposal(models.Model):
     def __str__(self):
         return "this is a proposal to buy : {}".format(self.proposal_item_name)
 
-"""
-class BaseNotification(models.Model):
-    date_sent = models.DateField(default=default_time)
-    read_status = models.BooleanField(default=False)
-    complete_status = models.BooleanField(default=False)
-    notification_slug = models.SlugField(unique=True, default=uuid.uuid4)
 
-    title = models.CharField(max_length=MAX_LENGTH_TITLES)
-    body = models.CharField(editable=False, max_length=400)
-    subject = None
+class CommentToProposal(models.Model):
+    comment_text = models.TextField(max_length=MAX_LENGTH_TEXT)
+    comment_author = models.ForeignKey(UserProfile, on_delete=models.CASCADE, null=False, related_name="commented")
+    comment_subject = models.ForeignKey(PurchaseProposal, on_delete=models.CASCADE, null=False, related_name="comments")
+    comment_date = models.DateTimeField(default=default_time)
 
     class Meta:
-        abstract = True
-
-
-
-class LoanCompleteNotification(BaseNotification):
-    from_user = models.ForeignKey(UserProfile, null=True, on_delete=models.SET_NULL, related_name="sent_loan_comp_notifications")
-    to_user = models.ForeignKey(UserProfile, null=False, on_delete=models.CASCADE,
-                                related_name="received_loan_comp_notifications")
-    title = models.CharField(max_length=MAX_LENGTH_TITLES, default="Your item has been returned")
-    body = models.CharField(editable=False, max_length=400,
-                            default="Please ensure that you action this notification: your item has been marked as returned")
-    subject = models.ForeignKey(Loan, null=False, on_delete=models.CASCADE)
-
-    def complete_notification(self):
-        self.complete = True
-        self.read = True
-        self.subject.mark_as_compelete_by_lender(self.subject)
-        self.save()
-
+        ordering = ['comment_date']
 
     def __str__(self):
-        return "noticication: {} was returned".format(self.subject.item_on_loan)
-
-
-class LoanActiveNotification(BaseNotification):
-    from_user = models.ForeignKey(UserProfile, null=True, on_delete=models.SET_NULL,
-                                  related_name="sent_loan_act_notifications")
-    to_user = models.ForeignKey(UserProfile, null=False, on_delete=models.CASCADE,
-                                related_name="received_loan_act_notifications")
-    title = models.CharField(max_length=MAX_LENGTH_TITLES, default="Your item has been booked")
-    body = models.CharField(editable=False, max_length=400,
-                            default="Please ensure that your item is ready for collection")
-    subject = models.ForeignKey(Loan, null=False, on_delete=models.CASCADE)
-
-
-"""
-
+        return f'{self.comment_author} commented on {self.comment_date} : {self.comment_text}'
 
 class UserToUserItemReport(models.Model):
     pass

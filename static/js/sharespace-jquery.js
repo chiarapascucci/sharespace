@@ -351,8 +351,8 @@ function subscribe_to_proposal(){
                      btn.attr("data-url-action","/sharespace/ajax/unsub_proposal/");
                  }
                  console.log("updating subs count:");
-                 $('#subs-count').html(json.subs_count);
-                 $('#price-per-person').html(json.price_per_person);
+                 $('#subs-count').html(data.subs_count);
+                 $('#price-per-person').html(data.price_per_person);
                  console.log("subs request complete");
 
             }
@@ -360,3 +360,30 @@ function subscribe_to_proposal(){
 
 
 }
+
+function comment_proposal(proposal_slug){
+    const csrftoken = getCookie('csrftoken');
+    const url = $('#post-comment-btn').attr('btn-data');
+    const comment_text = $('#proposal-comment').val();
+    console.log(comment_text)
+
+    $.ajax({
+        url : url,
+        type : 'POST',
+        headers : {'X-CSRFToken' : csrftoken},
+        data : {'prop_slug': proposal_slug,
+                'comment_text': comment_text},
+        success: function (data){
+            console.log(data);
+            let elem = document.createElement("div");
+            elem.setAttribute("class", "d-flex gap-2 w-100 justify-content-between");
+            elem.innerHTML = data;
+            let comment_section = document.getElementById("comment-list")
+            comment_section.append(elem);
+            $('#proposal-comment').text("");
+
+        }
+    });
+
+}
+
