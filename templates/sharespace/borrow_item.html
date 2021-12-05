@@ -7,34 +7,54 @@
 
 {% block body_block %}
 
-    {% if cal_list %}
-        {% for month in cal_list %}
-             <div class="container" id="cont-for-cal">{{ month | safe }}</div>
-        {% endfor %}
-    {% endif %}
+    <h1>Borrow {{ item.name }}</h1>
+    <h3>In just a few clicks let us know when you want to borrow this item when you need it</h3>
+    <p><strong>Once you have submitted your booking, we will let you know where to pick up the item and who to contact</strong></p>
+
+    <br>
+    <br>
+    <h3>Here is this item availability for this month and the two month after</h3>
+    <p>THE ITEM IS NOT AVAILABLE ON DAYS MARKED IN RED</p>
+    <p>Please note that this item can be borrowed for a maximum of {{ item.max_loan_len }} week(s)</p>
+
+    <div class="row">
+        {% if cal_list %}
+            {% for month in cal_list %}
+                <div class="form-group col-md-4"> {{ month | safe }} </div>
+            {% endfor %}
+        {% endif %}
+    </div>
 
 
-    <p>Max length of loan for this item: {{ item.max_loan_len }} weeks </p>
+        <div id="error-msg-div" class="container-sm" style="background-color: #f5c2c7" hidden>
+            <p id="msg-p"> <strong>{</strong></p>
+        </div>
 
-    {% if msg %}
-        <p>!!! {{ msg }} !!!</p>
-    {% endif %}
-    <p id="msg-p"></p>
+
     <form id="borrow-item-form" method="post" data-req-url="{% url 'sharespace:ajax_request_loan' %}"  enctype = 'multipart/form-data'>
         {% csrf_token %}
         <div class="form-group">
-            <label for="item-to-borrow">Item</label>
-            <input type="text" class="form-control" id="item-to-borrow" data-item= "{{ item.item_slug }}" name="item-to-borrow" value="{{ item.name }}" readonly>
-            <small id="item-to-borrow" class="form-text text-muted">You are borrowing this item:</small>
+            <div class="form-row">
+                <div class="col-sm-4">
+                    <label for="item-to-borrow">Item</label>
+                    <input type="text" class="form-control" id="item-to-borrow" data-item= "{{ item.item_slug }}" name="item-to-borrow" value="{{ item.name }}" readonly>
+                    <small id="item-to-borrow" class="form-text text-muted">You are borrowing this item:</small>
+                </div>
+            </div>
         </div>
-        <div class="form-group">
-            <label for="date-borrow-from">From</label>
-            <input type="date" class="form-control" id="date-borrow-from" name="date-borrow-from" placeholder="Start date of booking" required>
+        <div class="form-row">
+            <div class="col-md-4">
+                <label for="date-borrow-from">From</label>
+                <input type="date" class="form-control" id="date-borrow-from" name="date-borrow-from" placeholder="Start date of booking" required>
+            </div>
+            <div class="col-md-4">
+                <label for="date-borrow-until">Until</label>
+                <input type="date" class="form-control" id="date-borrow-until" name="date-borrow-until" placeholder="End date of booking" required>
+            </div>
         </div>
-        <div class="form-group">
-            <label for="date-borrow-until">Until</label>
-            <input type="date" class="form-control" id="date-borrow-until" name="date-borrow-until" placeholder="End date of booking" required>
-        </div>
-        <buttton id="submit-loan-btn" name = "submit-loan-btn" type ="submit" value="Borrow Item">Submit</buttton>
+        <br><br>
+        <buttton id="submit-loan-btn" class="btn-primary" name = "submit-loan-btn" type ="submit" value="Borrow Item">Submit</buttton>
     </form>
+    <br><br>
+    <br><br>
 {% endblock %}

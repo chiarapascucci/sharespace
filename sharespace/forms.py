@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.forms.widgets import EmailInput, HiddenInput, SelectMultiple, SelectDateWidget
+from phonenumber_field.formfields import PhoneNumberField
 from registration.forms import RegistrationForm
 from sharespace.models import Image, Item, Loan, CustomUser, UserProfile, Category, Sub_Category, \
     UserToAdminReportNotAboutUser, PurchaseProposal
@@ -94,6 +95,7 @@ class SubmitReportForm(forms.ModelForm):
 
 
 class SubmitPurchaseProposalForm(forms.ModelForm):
+    proposal_contact = PhoneNumberField()
 
     class Meta:
         model = PurchaseProposal

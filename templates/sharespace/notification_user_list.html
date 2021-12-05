@@ -1,0 +1,42 @@
+{% extends 'sharespace/base.html' %}
+{%  load static %}
+
+{% block title_block %}
+Your Notifications
+{% endblock %}
+
+{% block body_block %}
+<h3>Here is the full list of your received notifications</h3>
+    <h5>They are listed in chronological order and in bold are notifications that require your attention</h5>
+<br><br>
+    {% if results %}
+        {% if action %}
+            <ul class="list-group list-group-flush">
+            {% for notif in action.all %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <a href="{% url 'sharespace:notification_page' notif.notif_slug %}"><strong>{{ notif.notif_title }}</strong></a>
+                    <span class="badge badge-primary badge-pill">{{ notif.notif_time_stamp }}</span>
+                </li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+<hr>
+        {% if read %}
+            <ul class="list-group list-group-flush">
+            {% for notif in read.all %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <a href="{% url 'sharespace:notification_page' notif.notif_slug %}">{{ notif.notif_title }}</a>
+                    <span class="badge badge-primary badge-pill">{{ notif.notif_time_stamp }}</span>
+                </li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+
+    {% else %}
+
+    {% endif %}
+
+
+
+
+{% endblock %}

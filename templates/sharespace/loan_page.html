@@ -24,9 +24,13 @@
 
     {% if return_flag %}
         <button id = "returned-item-btn" data-loanslug = "{{ loan.loan_slug }}" class = "btn btn-primary btn-sm" type="button" >Item Returned</button>
-    {% elif del_flag %}
+    {% endif %}
+    {%  if del_flag %}
         <button id = "cancel-booking-btn" data-loanslug="{{ loan.loan_slug }}" data-ajax-url="{% url 'sharespace:ajax_cancel_booking' %}" class = "btn btn-primary btn-sm" type="button" onclick="cancel_booking()">Cancel Booking</button>
-    {% elif up_flag %}
+    {% endif %}
+    {% if up_flag %}
+        <p>Above you can see the address of the location where you can pick up this item</p>
+        <p>To arrange a convenient delivery you can contact the owner of this item on: {{ loan.item_on_loan.guardian.contact_details }}</p>
         <button id = "confirm-pickup-btn" data-loanslug="{{ loan.loan_slug }}" data-ajax-url="" class = "btn btn-primary btn-sm" type="button" onclick="">Confirm Pick-up</button>
 
         Something wrong with this loan? You went to pick up the object and it wasn't there? Report it to admin

@@ -1,0 +1,69 @@
+{% extends 'sharespace/base.html' %}
+{%  load static %}
+
+{% block title_block %}
+    Purchase Proposal
+{% endblock %}
+
+{% block body_block %}
+<h1> Purchase Proposal </h1>
+<h3> Get Rich... or Try Sharing! </h3>
+    <br><br><br>
+
+
+<form id="purchase_proposal_form" method="post" action="{% url 'sharespace:submit_proposal' %}" enctype = 'multipart/form-data' data-sub-cat-url = "{% url 'sharespace:ajax_load_sub_cat' %}">
+{% csrf_token %}
+
+    <h6>Let your neighbour know about the item you'd like to jointly own</h6>
+    <br>
+    <div class="form-row">
+        <div class="col">
+            <label for="{{ form.proposal_item_name.id_for_label }}">Name of Item</label>
+            {{ form.proposal_item_name }}
+        </div>
+        <div class="col">
+            <label for="{{ form.proposal_item_description.id_for_label }}">Item Description</label>
+            {{ form.proposal_item_description }}
+        </div>
+    </div>
+    <br><br>
+    <div class="form-row">
+        <div class="col">
+            <label for="{{ form.proposal_cat.id_for_label }}">Select a category for this item</label><br>
+            {{ form.proposal_cat }}
+        </div>
+        <div class="col">
+            <label for="{{ form.proposal_sub_cat.id_for_label }}">Select a secondary category for this item</label><br>
+            {{ form.proposal_sub_cat }}
+        </div>
+    </div>
+    <br>
+    <hr>
+    <br>
+    <h6>That sounds like a great proposal! Please provide as accurate an estimate as possible of home much it would cost</h6>
+    <div class="form-row">
+        <div class="col">
+            <label for="{{ form.proposal_price.id_for_label }}">Price of item in £ (GBP): </label><br>
+            {{ form.proposal_price }}
+        </div>
+    </div>
+    <br>
+    <hr>
+    <br>
+     <h6>When you post this proposal, your neighbours will be able to subscribe to it and comment. To facilitate communications and organising this purchase, please provide a phone number on which you are happy to be contacted</h6>
+    <div class="form-row">
+        <div class="col">
+            <p>Please ensure that you include '+' followed by your area code <br>
+
+            <small>Example: +447745632745 </small></p>
+
+            <label for="{{ form.proposal_contact_for_label }}">Your phone number </label><br>
+            {{ form.proposal_contact }}</div>
+
+    </div>
+    <p><small> <strong>We will only make this number visible to users that have subscribed to this proposal</strong></small></p>
+<input type="submit" value="submit" />
+</form>
+
+    <br><br><br>
+{% endblock %}

@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'sharespace.apps.SharespaceConfig',
+    'phonenumber_field',
 
 ]
 

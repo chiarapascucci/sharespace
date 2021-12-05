@@ -16,6 +16,7 @@ from datetime import datetime, date, time, timedelta
 from django.core.validators import MaxValueValidator
 from django.utils.timezone import now as default_time
 from collections import namedtuple
+from phonenumber_field.modelfields import PhoneNumberField
 
 
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -147,6 +148,7 @@ class UserProfile(models.Model):
     can_borrow = models.BooleanField(default=True)
     hood = models.ForeignKey(Neighbourhood,
                              on_delete=models.CASCADE)  # will need to manage or prevent situation where a neighbourhood is deleted
+    contact_details = PhoneNumberField(blank=True, null = True)
 
     def set_hood(self, user_post_code):
         f_user_post_code = user_post_code.strip().replace(' ', '').lower()
@@ -205,8 +207,12 @@ class Notification(models.Model):
         self.notif_read=True
         self.save()
         self.notif_target.save()
+
+    class Meta:
+        ordering = ['notif_time_stamp']
+
     def __str__(self):
-        return "notification: from {} to {}, title: {}".format(self.notif_origin, self.notif_target, self.notif_title)
+        return "notification: {} - {}".format(self.notif_title, self.content_object)
 
 
 # helpef function (factory)
@@ -310,7 +316,7 @@ class Item(models.Model):
         delta = monthrange(year, month)[1]-1
         last_day = first_day + timedelta(days=delta)
         print("models - 300 - log: month {}, year {}, first day {}, last day {}".format(month, year, first_day, last_day))
-        loan_q_set = self.on_loan.filter(out_date__lte=last_day, due_date__gte=first_day, status__in=['act', 'fut'])
+        loan_q_set = self.on_loan.filter(out_date__lte=last_day, due_date__gte=first_day, status__in=['act', 'fut', 'pen'])
         loans_list = list(loan_q_set)
         print("models - 300 - log : printing list of loans retrieved for {} on month {}".format(self, month))
         pprint(loans_list)
@@ -444,8 +450,7 @@ class Loan(models.Model):
         self.save()
 
     def get_list_of_days(self):
-        day_list = []
-        day_list.append(self.out_date)
+        day_list = [self.out_date]
         delta = int((self.due_date - self.out_date).days)
         print("models - 400 - log: delta = {}".format(delta))
         for i in range(1, delta+1):

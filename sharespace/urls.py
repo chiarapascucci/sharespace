@@ -32,14 +32,14 @@ urlpatterns = [
     path('submit-report/<slug:subject_slug>', views.SubmitReportView.as_view(), name = 'submit_report'),
 
     path('purchase/', views.purchase_proposal_list_view, name = 'proposal_list'),
-
     path('purchase/submit/', views.SubmitPurchaseProposal.as_view(), name = 'submit_proposal'),
-
     path('purchase/<slug:proposal_slug>/', views.PurchaseProposalPage.as_view(), name='proposal_page'),
+    path('purchase/<slug:proposal_slug>/confirm-purchased/', views.PurchasedProposalView.as_view(), name='pp-purchased'),
 
     path('loan/return/', views.MarkItemAsReturnedPendingApproval.as_view(), name ='return_item'),
     path('loan/<slug:loan_slug>/', views.LoanView.as_view(), name ='loan_page'),
 
+    path('notifications/', views.notification_list_view, name='notifications_list'),
     path('notifications/<slug:notification_slug>/', views.LoanCompleteNotificationView.as_view(), name = 'notification_page'),
 
     path('hood/<slug:nh_slug>/', views.hood_page_view, name  ='hood_page'),
@@ -53,4 +53,5 @@ urlpatterns = [
     path('ajax/unsub_proposal/', views.ajax_unsub_prop_view, name = 'ajax_unsub_from_prop'),
     path('ajax/cancel_booking/', views.ajax_cancel_booking, name ='ajax_cancel_booking'),
     path('ajax/post-comment/', views.ajax_post_comment, name='ajax_post_comment'),
+    path('ajax/delete_purchase_proposal/', views.ajax_delete_purchase_proposal, name='ajax_del_prop'),
 ]

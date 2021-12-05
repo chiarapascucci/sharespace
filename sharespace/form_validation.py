@@ -43,7 +43,7 @@ def validate_borrowing_form(item, up, out_date, due_date):
 
 
 def validate_dates_loan(out_date, due_date, max_len):
-    if out_date < now():
+    if out_date.day < now().day:
         return False
     if timedelta(days=0) <  due_date - out_date  <= max_len and due_date<= (now()+timedelta(days=90)):
         print(f"form validation - 40 - log : out on {out_date}, back on {due_date}, delta (loan duration) {(due_date - out_date)}, max len {max_len}")
@@ -117,6 +117,10 @@ def validate_add_item_form(dict):
     if not validate_location(up_list=dict['owners'], address=dict['address']):
         return {'validation': False, 'msg': 'one or more of the owners are not part of the right hood'}
 
+    print(dict['phone'], len(dict['phone']))
+    if not validate_phone(dict['phone']):
+        return {'validation': False, 'msg': 'Please enter a valid phone number'}
+
     return {'validation': True, 'msg': 'all good'}
 
 
@@ -139,4 +143,17 @@ def validate_location(up_list, address=None):
             if not (up.hood == hood):
                 return False
 
+    return True
+
+def validate_phone(phone):
+    print(len(phone))
+    if len(phone) < 7:
+        print("phone number too short")
+        return False
+    if not phone[0] == '+':
+        print("not including +")
+        return False
+    if phone == '+00000000' or phone == '+12345678':
+        print("bad number")
+        return False
     return True

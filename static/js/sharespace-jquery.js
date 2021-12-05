@@ -68,7 +68,10 @@ $(document).ready(function() {
                 console.log("printing data received (if any)");
                 console.log(data);
                 $('#msg-p').html(data);
+                let msg_section = $('#error-msg-div');
+                msg_section.removeAttr('hidden');
                 if (data==="loan created"){
+                    msg_section.css('background-color', "green");
                     $('#borrow-item-form').toggle();
                 }
 
@@ -288,15 +291,11 @@ function cancel_booking(){
             data : {'loan_slug' : loanSlugVar},
             success: function (data){
                 alert(data['msg']);
-                setTimeout(function(){
-                    window.location.href = data.redirect_url;
-                }, 1000);
-
-        }
-
-        })
-
+                window.location.href = data.redirect_url;
+            }
+        });
 }
+
 function delete_item(str_url){
     console.log(str_url);
     const csrftoken = getCookie('csrftoken');
@@ -362,7 +361,7 @@ function subscribe_to_proposal(){
 }
 
 function comment_proposal(proposal_slug){
-    const csrftoken = getCookie('csrftoken');
+
     const url = $('#post-comment-btn').attr('btn-data');
     const comment_text = $('#proposal-comment').val();
     console.log(comment_text)
@@ -385,6 +384,28 @@ function comment_proposal(proposal_slug){
 
         }
     });
+}
+
+function delete_purchase_proposal(prop_slug){
+    console.log("request for deleting purchase proposal");
+    const csrftoken = getCookie('csrftoken');
+    const url = $('#delete-prop-btn').attr('btn-data');
+    console.log(prop_slug)
+
+    $.ajax({
+        url : url,
+        type : 'POST',
+        headers : {'X-CSRFToken' : csrftoken},
+        data :{
+            'prop_slug': prop_slug
+        },
+        success: function (data){
+            console.log(data);
+            alert(data['msg']);
+            window.location.href = data['redirect_url'];
+        }
+    });
+
 
 }
 

@@ -1,0 +1,157 @@
+{% extends 'sharespace/base.html' %}
+{%  load static %}
+
+{% block title_block %}
+    Add Item
+{% endblock %}
+
+{% block body_block %}
+    <h1> You have completed your purchase proposal</h1>
+    <h3>Well done on getting the item together with your neighbours. To help you manage it and share the love please add it to the site</h3>
+    <p><strong>we have pre-populated the form with some of the information from your proposal page, please read through and ensure this is correct and provide any extra information required</strong></p>
+    <br><br><br>
+    <form id="add_item_form" method="post" action="{% url 'sharespace:add_item' %}" enctype = 'multipart/form-data' data-sub-cat-url = "{% url 'sharespace:ajax_load_sub_cat' %}">
+        {% csrf_token %}
+
+        <h3>Let your neighbours know a bit about your item</h3>
+        <div class="form-row">
+            <div class="col-md-6">
+                <label for="id_name">Item Name</label>
+                <input type="text" class="form-control" id="id_name" name="name" maxlength="55" required placeholder="Type a name for your item" value="{{ item_name }}">
+            </div>
+            <div class="col-md-6">
+                <label for="id_description">Description:</label>
+                <input type="text" class="form-control" name="description" maxlength="240" id="id_description" placeholder="Provide a short description for this item" value="{{ item_description }}">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-4">
+                <label for="main_category">Main category:</label>
+                <select id="main_category" name="main_category" class="form-control" required >
+                    <option value="{{ item_cat }}" selected>{{ item_cat }}</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.pk }}">{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group col-md-4">
+                <label for="sec_category">Secondary category:</label>
+                <select id="sec_category" class="form-control" name="sec_category" required>
+                    <option value="{{ item_sub_cat }}" selected>{{ item_sub_cat }}</option>
+                </select>
+
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-4">
+                <label for="id_max_loan_len">Please select a maximum length of time you are willing to lend this item for:</label>
+                <select name="max_loan_len" id="id_max_loan_len" class="form-control">
+                    <option value="1" selected>1 week</option>
+                    <option value="2">2 weeks</option>
+                    <option value="3">3 weeks</option>
+                    <option value="4">4 weeks</option>
+                </select>
+            </div>
+        </div>
+    <hr>
+        <h4>Your neighbours will need to know where the item is located to come and pick it up when they borrow it</h4>
+        <small>Do not worry, we will only share this information when there is an active loan. It will not otherwise be visible to other users</small>
+    <br>
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label for="add_item_postcode">Postcode:</label>
+                <input id="add_item_postcode" type="text" name="postcode" value = "{{ item_postcode }}" required readonly class="form-control">
+            </div>
+            <div class="form-group col-md-6">
+                <label for="address_list">Look Up Address</label>
+                <select id="address_list" class="form-control" name = "address_list"  onclick="lookup_func()" onchange="populate_address()">
+                <option selected>Click on this dropdown to search an address based on your postcode</option></select><br>
+            </div>
+        </div>
+        <div class="form-row">
+            <label for="id_adr_line_1">Address*</label> <input type="text" name="adr_line_1" required id="id_adr_line_1" placeholder="123 Main Street" class="form-control">
+            <label for="id_adr_line_2">Address line 2:</label> <input type="text" name="adr_line_2"  id="id_adr_line_2" class="form-control">
+            <label for="id_adr_line_3">Address line 3:</label> <input type="text" name="adr_line_3"  id="id_adr_line_3" class="form-control">
+            <label for="id_adr_line_4">Address line 4:</label> <input type="text" name="adr_line_4"  id="id_adr_line_4" class="form-control">
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-4">
+                <label for="id_locality">Locality:</label>
+                <input type="text" name="locality" id="id_locality" class="form-control">
+            </div>
+            <div class="form-group col-md-4">
+                <label for="id_city">City:</label>
+                <input type="text" name="city"   id="id_city" class="form-control">
+            </div>
+            <div class="form-group col-md-4">
+                 <label for="id_county">County:</label>
+                <input type="text" name="county"  id="id_county" class="form-control">
+            </div>
+        </div>
+    <br> <hr><br>
+    <h4>Please take some picture of your item and upload them here. It is a lot easier for users to see the item on here before they borrow it</h4>
+        <div class="form-row">
+            {{ formset.management_form }}
+            {% for form in formset %}
+            <div class="form-group col-md-4">
+                {{ form.as_p }}
+
+            </div>
+            {% endfor %}
+        </div>
+        <br><hr>
+    <h4>We are almost there... Please let us know who owns the item and who is going to be looking after it</h4>
+
+        <div class="form-row">
+            {% if owners %}
+
+                <div class="form-group col-md-6">
+                    <p>Do your share ownership of this item with any of your neighbours? If so, select their name</p>
+                <p><strong>We have already selected those users that subscribed to the proposal, if any, please double check this</strong></p>
+                    {% for o in owners %}
+                        {% if selected_owners %}
+                            {% if o in selected_owners %}
+                                <input type="checkbox" class="owner-selector" id="{{ o.user.username }}" name="owner-selector" value = "{{ o.user.username }}" checked>
+                                <label for="{{ o.user.username }}">{{ o.user.username }}</label><br>
+                            {% else %}
+                                <input type="checkbox" class="owner-selector" id="{{ o.user.username }}" name="owner-selector" value = "{{ o.user.username }}" >
+                                <label for="{{ o.user.username }}">{{ o.user.username }}</label><br>
+                            {% endif %}
+                        {% else %}
+                            <input type="checkbox" class="owner-selector" id="{{ o.user.username }}" name="owner-selector" value = "{{ o.user.username }}" >
+                            <label for="{{ o.user.username }}">{{ o.user.username }}</label><br>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <br>
+                <div class="form-group col-md-6">
+                    <p>We have assumed that you are going to look after this item... please change the selection below if that's not the case</p>
+                    <input type="radio" class="guardian-selector" id="guardian--{{ user.username }}" value="{{ user.username }}" name="guardian-selector-nm" checked>
+                    <label for="guardian--{{ user.username }}">{{ user.username }}</label><br>
+
+                    {% for o in owners %}
+                        <input type="radio" class= "guardian-selector" id="guardian--{{ o.user.username }}" value ="{{o.user.username}}" name="guardian-selector-nm" >
+                        <label for="guardian--{{ o.user.username }}">{{ o.user.username }}</label><br>
+                    {% endfor %}
+
+
+                </div>
+            {% else %}
+
+            {% endif %}
+                <div class="form-group col-md-8">
+                    <p>Please provide a contact phone number where you or the guardian of this item can be contacted, for when the item is due to be lent out</p>
+                    <small><strong>We will only share this information with other users in the event that they borrow this item and need to pick it up</strong></small>
+                    <br><br>
+                    <label for="phone">Enter your phone number starting with +44 or other country codes:</label>
+                    <input type="tel" id="phone" name="phone" required>
+                </div>
+            <br><br>
+        </div>
+    <br>
+    <input type ="submit" class="btn-primary" name="submit" value="Add Item"/>
+<br><br><br><br>
+
+    </form>
+
+{% endblock %}

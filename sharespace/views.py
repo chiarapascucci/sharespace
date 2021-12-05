@@ -46,6 +46,42 @@ def info_view(request):
     return render(request, 'sharespace/information.html', context={'fill': fill})
 
 
+class PurchasedProposalView(View):
+    @method_decorator(login_required)
+    def get(self, request, proposal_slug):
+        print(request.GET)
+        up = extract_us_up(request)['up']
+        owners_set = set()
+        if up is not None:
+            item_guardian = up
+            owners_set.add(up)
+            item_post_code = up.hood.nh_post_code
+            try:
+                proposal = PurchaseProposal.objects.get(proposal_slug=proposal_slug)
+                owners_set.update(proposal.proposal_subscribers.all())
+                poss_coowners = UserProfile.objects.filter(hood=up.hood).exclude(user=up.user)
+                ImageFormSet = modelformset_factory(Image, form=ImageForm, extra=3)
+                context = {
+                    'formset': ImageFormSet(queryset=Image.objects.none()),
+                    'item_name' : proposal.proposal_item_name,
+                    'item_description' : proposal.proposal_item_description,
+                    'item_price' : proposal.proposal_price,
+                    'item_cat' : proposal.proposal_cat,
+                    'item_sub_cat' : proposal.proposal_sub_cat,
+                    'item_postcode': item_post_code,
+                    'item_guardian': item_guardian,
+                    'owners' : poss_coowners,
+                    'selected_owners' : owners_set
+                }
+
+                return render(request, 'sharespace/purchase_proposal_purchased.html', context=context)
+
+            except PurchaseProposal.DoesNotExist:
+                print("no pp found")
+                return HttpResponse("something went wrong, no purchase proposal found, please try again")
+
+        else:
+            return HttpResponse("something went wrong, user not found, try again")
 
 
 class AddItemView(View):
@@ -67,14 +103,14 @@ class AddItemView(View):
 
         item_context['categories'] = Category.objects.all()
 
-        return render(request, 'sharespace/add_item.html', context=item_context)
+        return render(request, 'sharespace/add_item_formatted.html', context=item_context)
 
     @method_decorator(login_required)
     def post(self, request):
         ImageFormSet = modelformset_factory(Image, form=ImageForm, extra=3)
         dict_form = process_add_item_form(request)
         if not dict_form['form_valid']:
-            return HttpResponse(f"data entered in form is not correct: {dict_form['msg']} please try again")
+            return HttpResponse(f"data entered in form is not correct: {dict_form['msg']} please go back and try again")
         else:
             item_added = Item.objects.create(name=dict_form['name'], description=dict_form['description'],
                                              main_category=dict_form['main_cat'],
@@ -98,6 +134,24 @@ class AddItemView(View):
 
         return redirect(reverse('sharespace:item_page', kwargs={'item_slug': item_added.item_slug}))
 
+
+@login_required
+def notification_list_view(request):
+    up = extract_us_up(request)['up']
+    if up is not None:
+        notif_list_action = up.received.filter(notif_action_needed= True)
+        notif_list_no_action_unread = up.received.filter(notif_action_needed = False, notif_read=False)
+        results = False
+        if notif_list_action.exists() or notif_list_no_action_unread.exists():
+            results = True
+        context = {
+            'results' : results,
+            'action' : notif_list_action,
+            'read' : notif_list_no_action_unread
+        }
+        return render(request, 'sharespace/notification_user_list.html', context=context)
+    else:
+        return render(request, 'sharespace/notification_user_list.html', {})
 
 
 def ajax_cancel_booking(request):
@@ -614,10 +668,12 @@ def ajax_borrow_item_view(request):
             form_is_valid = validate_borrowing_form(item, up, out_date, due_date)
             if form_is_valid['form_valid']:
                 due_date = f"{due_date}-19:00"
+                out_date = F"{out_date}-09:00"
                 due_date = datetime.strptime(due_date, "%Y-%m-%d-%H:%M").replace(tzinfo=utc)
-                out_date = datetime.strptime(out_date, "%Y-%m-%d").replace(tzinfo=utc)
+                out_date = datetime.strptime(out_date, "%Y-%m-%d-%H:%M").replace(tzinfo=utc)
                 print(f"views - 500 - log: printing requested out date: {out_date} - and due date: {due_date}")
                 loan = Loan.objects.create(requestor=up, item_on_loan=item, due_date=due_date, out_date=out_date)
+                loan.update_loan()
                 print("views - 500 - log : printing loan - ", loan)
                 return HttpResponse("loan created")
             else:
@@ -653,7 +709,8 @@ class LoanView(View):
                 up_flag = True
         else:
             pass
-        loan_context = {'loan': loan, 'del_flag': del_flag, 'return_flag': return_flag, 'fut_flag': fut_flag}
+        loan_context = {'loan': loan, 'del_flag': del_flag, 'return_flag': return_flag, 'fut_flag': fut_flag, 'up_flag': up_flag}
+        print("views - 660 - log printing context to loan view: ", loan_context)
 
         return render(request, 'sharespace/loan_page.html', context=loan_context)
 
@@ -825,7 +882,7 @@ class SubmitPurchaseProposal(View):
     @method_decorator(login_required)
     def get(self, request):
         form = SubmitPurchaseProposalForm()
-        return render(request, 'sharespace/submit_purchase_proposal.html', {'form': form})
+        return render(request, 'sharespace/purchase_proposal_submit.html', {'form': form})
 
     @method_decorator(login_required)
     def post(self, request):
@@ -835,12 +892,14 @@ class SubmitPurchaseProposal(View):
             up_dict = extract_us_up(request)
             submitter = up_dict['up']
             proposal.proposal_submitter = submitter
+            submitter.contact_details = str(form['proposal_contact'])
+            submitter.save()
             print("in submit purch prop view: ", submitter)
             kwargs = {'submitter': submitter}
             print("still in views ", kwargs)
             proposal.save()
 
-            # return HttpResponse("proposal created")
+
 
             return redirect(reverse('sharespace:proposal_page', kwargs={'proposal_slug': proposal.proposal_slug}))
 
@@ -908,8 +967,6 @@ def ajax_sub_prop_view(request):
         return HttpResponse("user not found")
 
 
-
-
 def ajax_post_comment(request):
     if request.method == 'POST':
         prop_slug = request.POST['prop_slug']
@@ -936,6 +993,7 @@ def ajax_post_comment(request):
             return HttpResponse("no proposal found")
     else:
         return HttpResponse("wrong request type")
+
 
 def ajax_unsub_prop_view(request):
     print("in UNsub ajax view")
@@ -970,7 +1028,32 @@ def ajax_unsub_prop_view(request):
         return HttpResponse("user not found")
 
 
-# return HttpResponse("all done")
+def ajax_delete_purchase_proposal(request):
+    up = extract_us_up(request)['up']
+    if up is None:
+        redirect_url = reverse('sharespace:index')
+    else:
+
+        redirect_url = reverse('sharespace:user_profile',  kwargs={'user_slug': up.user_slug})
+
+    if request.method == 'POST':
+
+        try:
+            proposal_slug = request.POST['prop_slug']
+            print("views - 990 - log: proposal slug: ", proposal_slug)
+            try:
+                proposal = PurchaseProposal.objects.get(proposal_slug=proposal_slug)
+                print("view - 990 - log: found proposal: ", proposal)
+                proposal.delete()
+                return JsonResponse({'prop_deleted': True, 'msg':"Your purchase proposal has been deleted", 'redirect_url': redirect_url})
+            except PurchaseProposal.DoesNotExist:
+                return JsonResponse({'prop_deleted': False, 'msg':"No proposal was found, please try again", 'redirect_url': redirect_url})
+
+        except KeyError:
+            return JsonResponse({'prop_deleted': False, 'msg':"No proposal was found, please try again", 'redirect_url': redirect_url})
+    else:
+        return JsonResponse({'prop_deleted': False, 'msg':"Wrong request type, please try again", 'redirect_url': redirect_url})
+
 # ---------------- HELPER FUNCTIONS --------------
 
 
@@ -1021,18 +1104,25 @@ def process_add_item_form(request):
 
     owner_usernames_list = []
     for k,v in request.POST.items():
-        print(f"view - 60 - log : printin k v pairs in request.post : {k} - {v}")
+        print(f"view - 1000 - log : printin k v pairs in request.post : {k} - {v}")
         if request.POST[k] == k or k == 'owner-selector':
             owner_usernames_list.append(v)
+        print(owner_usernames_list)
+    up_dict = extract_us_up(request)
+    owners_set = set()
 
-    owners_list = []
+    if up_dict['up'] is None:
+        return {'form_valid': False, 'msg': 'no user found'}
+    else:
+        owners_set.add(up_dict['up'])
+
     if owner_usernames_list:
         for o in owner_usernames_list:
             try:
                 user = CustomUser.objects.get(username=o)
                 try:
                     up = UserProfile.objects.get(user=user)
-                    owners_list.append(up)
+                    owners_set.add(up)
                 except UserProfile.DoesNotExist:
                     print("no up")
                     return {'form_valid': False, 'msg': 'no user profile found'}
@@ -1040,15 +1130,16 @@ def process_add_item_form(request):
                 print("no user")
                 return {'form_valid': False, 'msg': 'no user found'}
 
-        print("views - 70 - log: compiled list of owners for this item: ", owners_list)
+        print("views - 70 - log: compiled list of owners for this item: ", owners_set)
     item_guardian = None
     if 'guardian-selector-nm' in request.POST:
         try:
             user = CustomUser.objects.get(username=request.POST['guardian-selector-nm'])
             try:
                 item_guardian = UserProfile.objects.get(user=user)
-                owners_list.append(item_guardian)
-
+                owners_set.add(item_guardian)
+                item_guardian.contact_details = request.POST['phone']
+                item_guardian.save()
             except UserProfile.DoesNotExist:
                 print("no up")
                 return {'form_valid': False, 'msg': f"no user profile found for item guardian. selected was: {request.POST['guardian-selector-nm']}"}
@@ -1061,7 +1152,7 @@ def process_add_item_form(request):
             return {'form_valid': False, 'msg': 'no user found'}
         else:
             item_guardian = up_dict['up']
-            owners_list.append(up_dict['up'])
+            owners_set.add(up_dict['up'])
 
     item_name = request.POST['name']
     item_description = request.POST['description']
@@ -1071,13 +1162,15 @@ def process_add_item_form(request):
     sec_cat = Sub_Category.objects.get(name=sub_cat_name)
     max_loan_len = int(request.POST['max_loan_len'])
     item_address = create_address(request)
+    guardian_phone = request.POST['phone']
 
     form_dict = {
-        'owners' : owners_list,
+        'owners' : owners_set,
         'guardian' : item_guardian,
         'address' : item_address,
         'main_cat':main_cat,
         'sec_cat': sec_cat,
+        'phone':guardian_phone
     }
 
     validation = validate_add_item_form(form_dict)

@@ -26,14 +26,13 @@
           {% else %}
           {% endif %}
       </div>
-      <div class="col-md-4 themed-grid-col">
+      <div class="col-md-4 themed-grid-col" >
           <p>Available actions</p>
           {% if subm_flag %}
-              <button id="edit-prop-btn" onclick="" value="Edit proposal">Edit Proposal</button>
+
+              <button id="delete-prop-btn" class="btn-danger" btn-data="{% url 'sharespace:ajax_del_prop' %}" onclick="delete_purchase_proposal('{{ proposal.proposal_slug }}')"  value="Delete proposal">Delete Proposal</button>
               <br>
-              <button id="delete-prop-btn" onclick="" value="Delete proposal">Delete Proposal</button>
-              <br>
-              <button id="purchased-prop-btn" onclick="" value="Purchased">Purchased</button>
+              <a id="purchased-prop-btn"  class="btn-primary" href="{% url 'sharespace:pp-purchased' proposal.proposal_slug %}">Purchased</a>
           {% else %}
               {% if subs_flag %}
                    <button id="subscribe-btn" onclick="subscribe_to_proposal()"  data-url-action="{% url 'sharespace:ajax_unsub_from_prop' %}" value="Unsubscribe" data-prop-slug = "{{ proposal.proposal_slug }}">Unsubscribe</button>
