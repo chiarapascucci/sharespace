@@ -364,6 +364,7 @@ function comment_proposal(proposal_slug){
 
     const url = $('#post-comment-btn').attr('btn-data');
     const comment_text = $('#proposal-comment').val();
+    const csrftoken = getCookie('csrftoken');
     console.log(comment_text)
 
     $.ajax({

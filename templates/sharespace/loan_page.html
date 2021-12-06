@@ -31,10 +31,10 @@
     {% if up_flag %}
         <p>Above you can see the address of the location where you can pick up this item</p>
         <p>To arrange a convenient delivery you can contact the owner of this item on: {{ loan.item_on_loan.guardian.contact_details }}</p>
-        <button id = "confirm-pickup-btn" data-loanslug="{{ loan.loan_slug }}" data-ajax-url="" class = "btn btn-primary btn-sm" type="button" onclick="">Confirm Pick-up</button>
+        <button id = "confirm-pickup-btn" data-loanslug="{{ loan.loan_slug }}" data-ajax-url="" class = "btn btn-primary btn-sm" type="button" onclick="">Confirm Pick-up</button><br><br>
 
         Something wrong with this loan? You went to pick up the object and it wasn't there? Report it to admin
-        <a id = "report-loan" href="{% url 'sharespace:submit_report' loan.loan_slug %}" class = "btn btn-primary btn-sm" type="button" onclick="">Report</a>
+        <a id = "report-loan" class="btn btn-danger btn-sm" href="{% url 'sharespace:submit_report' loan.loan_slug %}">Report</a>
     {% else %}
     {% endif %}
            <p id="display-result"></p>

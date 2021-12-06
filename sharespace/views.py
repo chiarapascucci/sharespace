@@ -907,13 +907,16 @@ class SubmitPurchaseProposal(View):
             print(form.errors, "there are errors in proposal form")
 
 
-@login_required
+
 def purchase_proposal_list_view(request):
     context = {}
     up_dict = extract_us_up(request)
     if up_dict['up'] is not None:
         hood = up_dict['up'].hood
         purch_prop_list = PurchaseProposal.objects.filter(proposal_hood=hood)
+        context['list'] = purch_prop_list
+    else:
+        purch_prop_list = PurchaseProposal.objects.all()[:50]
         context['list'] = purch_prop_list
     return render(request, 'sharespace/purchase_proposal_list.html', context=context)
 

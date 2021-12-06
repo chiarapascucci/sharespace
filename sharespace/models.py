@@ -399,6 +399,7 @@ class Loan(models.Model):
             else:
                 self.status = self.PENDING
                 self.apply_loan_effects()
+                self.applied_effects_flag = True
                 self.save()
                 return 1
         else:
@@ -415,6 +416,7 @@ class Loan(models.Model):
                 if default_time() > self.out_date:
                     self.status = self.PENDING
                     self.apply_loan_effects()
+                    self.applied_effects_flag = True
                     self.save()
                     return 1
 
