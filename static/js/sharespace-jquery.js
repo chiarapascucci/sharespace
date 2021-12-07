@@ -20,6 +20,34 @@ $(document).ready(function() {
 		});
 	});
 
+    $("#id_user_post_code").keyup(function(){
+        let btn = $('#complete-profile-btn').attr('disabled', true)
+        let post_code = $('#id_user_post_code').val();
+        console.log(post_code)
+        const api_url = "https://api.postcodes.io/postcodes/"
+        let full_url = api_url + post_code + "/validate"
+        console.log(full_url)
+        if (post_code.length >= 6){
+            let request = new XMLHttpRequest();
+            request.onreadystatechange = function() {
+                if (this.readyState === 4 && this.status === 200) {
+                    let myData = JSON.parse(this.responseText);
+                    console.log(myData);
+                    if (myData['status']=== 200 && ! myData['result']){
+                        alert("Please enter a valid postcode to continue");
+                    }
+                    else if (myData['status']=== 200 && myData['result']){
+                        btn.removeAttr('disabled');
+                    }
+                } else {
+                    console.log("error at request point" + request.status);
+                }
+            }
+            request.open("GET", full_url);
+            request.send();
+        }
+
+    });
 
     $("#id_proposal_cat").change(function (){
         const url = $("#purchase_proposal_form").attr("data-sub-cat-url");
@@ -114,7 +142,7 @@ $(document).ready(function() {
 
      $('p').hover(
         function() {
-            $(this).css('color', 'red');
+            $(this).css('color', 'blue');
         },
         function() {
             $(this).css('color', 'black');
@@ -380,8 +408,9 @@ function comment_proposal(proposal_slug){
             elem.innerHTML = data;
             let comment_section = document.getElementById("comment-list")
             comment_section.append(elem);
-            $('#proposal-comment').text("");
-            $('#proposal-comment').val("");
+            let comment= $('#proposal-comment')
+            comment.text("");
+            comment.val("");
 
         }
     });

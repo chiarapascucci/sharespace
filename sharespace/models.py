@@ -1,31 +1,23 @@
 import uuid
-from operator import attrgetter
 from calendar import monthrange
+from datetime import datetime, timedelta
 from pprint import pprint
 
-import django.utils.timezone
-from django.core.exceptions import ValidationError
-from django.db import models
-from django.db.models import Q
-
-from django.db.models.fields import CharField
-from django.db.models.fields.related import ForeignKey, OneToOneField
-from django.template.defaultfilters import slugify
 from django.contrib.auth.models import AbstractUser
-from datetime import datetime, date, time, timedelta
-from django.core.validators import MaxValueValidator
-from django.utils.timezone import now as default_time
-from collections import namedtuple
-from phonenumber_field.modelfields import PhoneNumberField
-
-
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
+from django.core.validators import MaxValueValidator
+from django.db import models
+from django.db.models import Q
+from django.db.models.fields import CharField
+from django.db.models.fields.related import OneToOneField
+from django.template.defaultfilters import slugify
+from django.utils.timezone import now as default_time
+
+from phonenumber_field.modelfields import PhoneNumberField
 
 from sharespace.managers import MyUserManager
-
 from sharespace.model_fields import EmailFieldLowerCase
-
 
 MAX_LENGTH_TITLES = 55
 MAX_LENGTH_TEXT = 500
@@ -33,9 +25,7 @@ AVAILABILITY_RANGE = 90
 
 
 class Neighbourhood(models.Model):
-    # name = models.CharField(max_length=MAX_LENGTH_TITLES, blank = False)
-    nh_post_code = models.CharField(primary_key=True,
-                                    max_length=8)  # need to devise something to enforce valid postcodes
+    nh_post_code = models.CharField(primary_key=True, max_length=8)
     description = models.CharField(max_length=MAX_LENGTH_TEXT, blank=True)
     nh_slug = models.SlugField()
 
@@ -65,17 +55,12 @@ class Address(models.Model):
         return address_str
 
 
-# class Reportable(models.Model):
-#   pass
-
-
 class Category(models.Model):
     name = models.CharField(primary_key=True, max_length=MAX_LENGTH_TITLES)
     description = models.TextField(max_length=MAX_LENGTH_TEXT, blank=True)
     point_value = models.IntegerField(default=1)
     cat_slug = models.SlugField(unique=True)
     cat_img = models.URLField(blank=True)
-
 
     def save(self, *args, **kwargs):
         self.cat_slug = slugify(self.name)
@@ -88,7 +73,7 @@ class Category(models.Model):
         return self.name
 
 
-class Sub_Category(models.Model):
+class SubCategory(models.Model):
     name = models.CharField(primary_key=True, max_length=MAX_LENGTH_TITLES)
     description = models.TextField(max_length=MAX_LENGTH_TEXT)
     point_value = models.IntegerField(default=1)
@@ -97,14 +82,13 @@ class Sub_Category(models.Model):
 
     def save(self, *args, **kwargs):
         self.sub_cat_slug = slugify(self.name)
-        super(Sub_Category, self).save(*args, **kwargs)
+        super(SubCategory, self).save(*args, **kwargs)
 
     class Meta:
         verbose_name_plural = 'Secondary Categories'
 
     def __str__(self):
         return self.name
-
 
 
 def get_list_of_days_as_dates(date_from, date_to):
@@ -116,11 +100,13 @@ def get_list_of_days_as_dates(date_from, date_to):
         day_list.append(day)
     return day_list
 
+
 def get_list_of_days_as_ints(date_from, date_to):
     day_list = get_list_of_days_as_dates(date_from, date_to)
     day_int_list = []
     for d in day_list:
         day_int_list.append(d.days)
+
 
 class CustomUser(AbstractUser):
     username = models.CharField(max_length=MAX_LENGTH_TITLES, unique=True)
@@ -146,8 +132,7 @@ class UserProfile(models.Model):
     max_no_of_items = models.PositiveIntegerField(default=1)
     curr_no_of_items = models.PositiveIntegerField(default=0)
     can_borrow = models.BooleanField(default=True)
-    hood = models.ForeignKey(Neighbourhood,
-                             on_delete=models.CASCADE)  # will need to manage or prevent situation where a neighbourhood is deleted
+    hood = models.ForeignKey(Neighbourhood, on_delete=models.CASCADE)
     contact_details = PhoneNumberField(blank=True, null = True)
 
     def set_hood(self, user_post_code):
@@ -170,7 +155,6 @@ class UserProfile(models.Model):
 
         return flags
 
-
     def save(self, *args, **kwargs):
         self.user_slug = slugify(self.user.username)
         self.user_post_code = self.user_post_code.strip().replace(' ', '').lower()
@@ -179,7 +163,6 @@ class UserProfile(models.Model):
         self.can_borrow = not (flags['unactioned_notif'] or flags['max_no_of_items'])
         self.has_unactioned_notif = flags['unactioned_notif']
         super(UserProfile, self).save(*args, **kwargs)
-
 
     def __str__(self):
         return self.user.username
@@ -196,7 +179,6 @@ class Notification(models.Model):
     notif_title = models.CharField(max_length=MAX_LENGTH_TITLES, default="you have a notification")
     notif_body = models.TextField(max_length=MAX_LENGTH_TEXT,
                                   default="please ensure you action this notification if necessary")
-
     # content type relation
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.CharField(max_length=200)
@@ -213,11 +195,6 @@ class Notification(models.Model):
 
     def __str__(self):
         return "notification: {} - {}".format(self.notif_title, self.content_object)
-
-
-# helpef function (factory)
-
-
 
 
 class UserToAdminReportNotAboutUser(models.Model):
@@ -262,11 +239,10 @@ class Item(models.Model):
     description = models.CharField(max_length=MAX_LENGTH_TEXT, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=10.00)
     main_category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    sec_category = models.ForeignKey(Sub_Category, on_delete=models.SET_NULL, null=True)
+    sec_category = models.ForeignKey(SubCategory, on_delete=models.SET_NULL, null=True)
     available = models.BooleanField(default=True)
     owner = models.ManyToManyField(UserProfile, related_name="owned", blank=False)
     guardian = models.ForeignKey(UserProfile, related_name="manages", null=False, on_delete=models.CASCADE)
-    # borrowed_by = models.ForeignKey(UserProfile, related_name = "borrowed", blank = True,  on_delete=models.SET_NULL, null = True)
     item_slug = models.SlugField(unique=True)
     location = models.ForeignKey(Address, on_delete=models.CASCADE, blank=False)
     max_loan_len = models.PositiveIntegerField(choices=max_len_of_loan_choices, default=4,
@@ -275,9 +251,7 @@ class Item(models.Model):
     item_reported_to_admin = GenericRelation(UserToAdminReportNotAboutUser)
 
     def save(self, *args, **kwargs):
-        # self.id = uuid.uuid4()
         self.item_slug = slugify("item--{self.item_id}".format(self=self))
-        # print(self.owner)
         self.item_post_code = self.location.adr_hood.nh_post_code
         for o in self.owner.all():
             o.max_no_of_items +=1
@@ -289,8 +263,6 @@ class Item(models.Model):
 
     def __str__(self):
         return self.name
-
-
 
     # checking that the item is currently available
     # if not checking status of the loan
@@ -366,7 +338,6 @@ class Loan(models.Model):
     item_loan_pick_up = models.BooleanField(default=False)
     overdue = models.BooleanField(default=False)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, null = True)
-    # active = models.BooleanField(default = True)
     out_date = models.DateTimeField(null=False)
     due_date = models.DateTimeField(null=False)
     len_of_loan = models.PositiveIntegerField(default=1)
@@ -485,7 +456,7 @@ class PurchaseProposal(models.Model):
     proposal_subscribers = models.ManyToManyField(UserProfile, blank=True, default=None, related_name="interested")
     proposal_item_name = models.CharField(blank=False, max_length=MAX_LENGTH_TITLES)
     proposal_cat = models.ForeignKey(Category, null=False, on_delete=models.CASCADE)
-    proposal_sub_cat = models.ForeignKey(Sub_Category, null=True, on_delete=models.SET_NULL)
+    proposal_sub_cat = models.ForeignKey(SubCategory, null=True, on_delete=models.SET_NULL)
     proposal_item_description = models.TextField(blank=False, max_length=MAX_LENGTH_TEXT)
     proposal_price = models.DecimalField(max_digits=10, decimal_places=2, blank=False)
     proposal_hood = models.ForeignKey(Neighbourhood, null=False, on_delete=models.CASCADE)
@@ -494,11 +465,9 @@ class PurchaseProposal(models.Model):
     proposal_purchased = models.BooleanField(default=False)
     proposal_timestamp = models.DateTimeField(blank=False, default=default_time)
     proposal_subs_count = models.PositiveIntegerField(default=1)
-    # proposal_postcode = models.CharField(max_length=8)
     proposal_reported = GenericRelation(UserToAdminReportNotAboutUser)
 
     def save(self, *args, **kwargs):
-        # self.proposal_submitter = kwargs['submitter']
         self.proposal_hood = self.proposal_submitter.hood
         self.proposal_postcode = self.proposal_hood.nh_post_code
         self.proposal_slug = slugify("{self.proposal_item_name}-{self.proposal_hood.nh_post_code}-"
@@ -521,29 +490,3 @@ class CommentToProposal(models.Model):
     def __str__(self):
         return f'{self.comment_author} commented on {self.comment_date} : {self.comment_text}'
 
-class UserToUserItemReport(models.Model):
-    pass
-
-
-class UserToAdminReportAboutUser(models.Model):
-    pass
-
-
-class UserProfileReport(UserToAdminReportNotAboutUser):
-    pass
-
-
-class ItemReportToAdmin(UserToAdminReportNotAboutUser):
-    pass
-
-
-class ItemReportToOwner(UserToAdminReportNotAboutUser):
-    pass
-
-
-class GeneralReport(UserToAdminReportNotAboutUser):
-    pass
-
-
-class PurchaseProposalReport(UserToAdminReportNotAboutUser):
-    pass

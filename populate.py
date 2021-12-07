@@ -6,7 +6,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sharespace_project.settings')
 import django
 django.setup()
 from django.contrib.auth.hashers import PBKDF2PasswordHasher, make_password
-from sharespace.models import Item, UserProfile, Category, Sub_Category, Neighbourhood, Address, Notification, \
+from sharespace.models import Item, UserProfile, Category, SubCategory, Neighbourhood, Address, Notification, \
     PurchaseProposal
 import random
 from sharespace.models import CustomUser as User
@@ -22,7 +22,7 @@ def add_category(name):
 
 
 def add_sub_cat(name, category):
-    sc = Sub_Category.objects.get_or_create(parent=category, name=name)[0]
+    sc = SubCategory.objects.get_or_create(parent=category, name=name)[0]
     sc.save()
     return sc
 
@@ -58,7 +58,7 @@ def add_user_profile(user,  hood, post_code, contact):
 
 def get_cat_sub_cat():
     cat = Category.objects.order_by('?').first()
-    sub_cat = Sub_Category.objects.filter(parent=cat).first()
+    sub_cat = SubCategory.objects.filter(parent=cat).first()
     return [cat, sub_cat]
 
 
@@ -230,7 +230,7 @@ def populate():
         cat = Category.objects.get(name=k)
         sub_cat_dict = v
         for key,val in sub_cat_dict.items():
-            sub_cat= Sub_Category.objects.get(name=key)
+            sub_cat= SubCategory.objects.get(name=key)
 
             for item_name in val:
                 owner = user_profile_list[random.randint(0, len(user_profile_list)-1)]

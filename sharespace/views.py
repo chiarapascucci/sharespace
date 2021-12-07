@@ -8,7 +8,7 @@ from django.template.defaultfilters import slugify
 from django.views.generic import FormView
 
 from sharespace.form_validation import validate_borrowing_form, validate_add_item_form
-from sharespace.models import Image, Item, Category, Sub_Category, CustomUser, UserProfile, Neighbourhood, Loan, \
+from sharespace.models import Image, Item, Category, SubCategory, CustomUser, UserProfile, Neighbourhood, Loan, \
     Address, PurchaseProposal, Notification, CommentToProposal
 from sharespace.forms import AddItemForm, ImageForm, UserForm, UserProfileForm, \
     SubmitReportForm, EditUserProfileBasicForm, SubmitPurchaseProposalForm
@@ -276,7 +276,7 @@ def category_page_view(request, cat_slug):
     print("in category page view, trying to extract users")
     cat = Category.objects.get(cat_slug=cat_slug)
     cat_context = {'name': cat.name}
-    sub_cat_list = Sub_Category.objects.filter(parent=cat).all()
+    sub_cat_list = SubCategory.objects.filter(parent=cat).all()
     sub_cat_dict = {}
 
     up_dict = extract_us_up(request)
@@ -375,7 +375,7 @@ def load_sub_cat_view(request):
     print("ajax request for sub cat")
     cat = request.GET.get('main_category_id')
     print(cat)
-    sub_cat_qset = Sub_Category.objects.filter(parent=cat).all()
+    sub_cat_qset = SubCategory.objects.filter(parent=cat).all()
     sub_cat_list = list(sub_cat_qset)
     print(type(sub_cat_list))
     print(sub_cat_list)
@@ -772,7 +772,7 @@ class SearchView(View):
         print("in views - 700 - log : search term = ", search)
         search_context['search'] = search
         search_context['category'] = Category.objects.filter(Q(name__contains=search) | Q(description__contains=search))
-        search_context['sub_category'] = Sub_Category.objects.filter(
+        search_context['sub_category'] = SubCategory.objects.filter(
             Q(name__contains=search) | Q(description__contains=search))
         search_context['pp'] = PurchaseProposal.objects.filter(
             Q(proposal_item_name__contains=search) | Q(proposal_item_description__contains=search))
@@ -1191,7 +1191,7 @@ def process_add_item_form(request):
     main_cat_name = request.POST['main_category']
     main_cat = Category.objects.get(name=main_cat_name)
     sub_cat_name = request.POST['sec_category']
-    sec_cat = Sub_Category.objects.get(name=sub_cat_name)
+    sec_cat = SubCategory.objects.get(name=sub_cat_name)
     max_loan_len = int(request.POST['max_loan_len'])
     item_address = create_address(request)
     guardian_phone = request.POST['phone']

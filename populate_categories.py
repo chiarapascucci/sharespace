@@ -7,7 +7,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sharespace_project.settings')
 
 import django
 django.setup()
-from sharespace.models import Category, Sub_Category
+from sharespace.models import Category, SubCategory
 import sharespace_project.settings as Psettings
 
 """
@@ -123,7 +123,7 @@ def create_categories():
         sub_cat_list = []
         sub_cat_list_names = sec_cat[cat]
         for sc in sub_cat_list_names:
-            sub_category = Sub_Category.objects.create(name = sc, description = default_desc, parent=category)
+            sub_category = SubCategory.objects.create(name = sc, description = default_desc, parent=category)
             sub_cat_list.append(sub_category)
             print(f" - {sub_category}")
         cats_dict[f'{cat}'] = sub_cat_list

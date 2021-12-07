@@ -3,7 +3,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.forms.widgets import EmailInput, HiddenInput, SelectMultiple, SelectDateWidget
 from phonenumber_field.formfields import PhoneNumberField
 from registration.forms import RegistrationForm
-from sharespace.models import Image, Item, Loan, CustomUser, UserProfile, Category, Sub_Category, \
+from sharespace.models import Image, Item, Loan, CustomUser, UserProfile, Category, SubCategory, \
     UserToAdminReportNotAboutUser, PurchaseProposal
 from sharespace.utils import get_booking_calendar_for_item_for_month
 
@@ -52,17 +52,17 @@ class AddItemForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
-        self.fields['sec_category'].queryset = Sub_Category.objects.none()
+        self.fields['sec_category'].queryset = SubCategory.objects.none()
 
         if 'main_category' in self.data:
             try:
                 main_cat_id = int(self.data.get('main_category'))
                 print(main_cat_id)
-                self.fields['sec_category'].queryset = Sub_Category.objects.filter(parent_id = main_cat_id)
+                self.fields['sec_category'].queryset = SubCategory.objects.filter(parent_id = main_cat_id)
             except (ValueError, TypeError):
                 pass
         elif self.instance.pk:
-            self.fields['sec_category'].queryset = Sub_Category.objects.all()
+            self.fields['sec_category'].queryset = SubCategory.objects.all()
 
 
 class AddItemFormWithAddress(AddItemForm):
