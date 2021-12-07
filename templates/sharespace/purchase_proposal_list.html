@@ -6,17 +6,33 @@
 {% endblock %}
 
 {% block body_block %}
-<h1> Purchase Proposals in your Hood </h1>
-<h3> Get Rich... or Try Sharing! </h3>
 
 
-{% if list %}
-    {% for prop in list %}
-        <p><a href="{% url 'sharespace:proposal_page' prop.proposal_slug %}">{{ prop }}</a></p>
-    {% endfor %}
-{% else %}
-    There are no purchase proposal in your neighbourhood yet
-    why not add one <a href="{% url 'sharespace:submit_proposal' %}">here</a>?
 
-{% endif %}
+    <div class="d-flex justify-content-around">
+        <h1> Purchase Proposals in your Hood </h1>
+
+    </div>
+    <div class="d-flex justify-content-around">
+        <h3> Get Rich... or Try Sharing! </h3>
+    </div>
+
+    <hr>
+
+
+        {% if list %}
+            {% for prop in list %}
+                <p class="d-flex justify-content-center"><a href="{% url 'sharespace:proposal_page' prop.proposal_slug %}">{{ prop }}</a></p>
+            {% endfor %}
+
+        {% else %}
+            <p>There are no purchase proposal in your neighbourhood yet</p>
+
+        {% endif %}
+
+
+    <div class="d-flex justify-content-around" style="padding-top: 100px">
+     <p>Do not see what you you are looking for? You can add a new purchase proposal <a href="{% url 'sharespace:submit_proposal' %}">here</a></p>
+    </div>
+
 {% endblock %}

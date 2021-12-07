@@ -40,6 +40,17 @@
                   <button id="subscribe-btn" onclick="subscribe_to_proposal()"  data-url-action="{% url 'sharespace:ajax_sub_to_prop' %}" value="Subscribe" data-prop-slug = "{{ proposal.proposal_slug }}">Subscribe</button>
               {% endif %}
           {% endif %}
+         <br>
+        <br><br>
+        {% if subs_flag or subm_flag %}
+            <div>
+                <textarea  id="proposal-comment" >
+
+                </textarea>
+            </div>
+            <button id="post-comment-btn" onclick="comment_proposal('{{ proposal.proposal_slug }}')" btn-data='{% url 'sharespace:ajax_post_comment' %}'>Submit Comment </button>
+        {% endif %}
+    <br>
       </div>
     </div>
     <div class="row mb-3">
@@ -58,7 +69,10 @@
 
     <div class="b-example-divider"></div>
 
-    <div id ="comment-list" class="list-group" style="overflow-y: scroll; height:400px;">
+
+
+    <div id ="comment-list" class="list-group" style="overflow-y: scroll; height:200px; border-width: thick">
+
         {% if comments %}
             {% for comment in comments %}
              <!--   <img src='{{ comment.comment_author.picture }}' alt="author_picture" width="32" height="32" class="rounded-circle flex-shrink-0"> -->
@@ -74,17 +88,7 @@
         {% endif %}
     </div>
 
-     <br>
 
-        {% if subs_flag or subm_flag %}
-            <div>
-                <textarea  id="proposal-comment" >
-
-                </textarea>
-            </div>
-            <button id="post-comment-btn" onclick="comment_proposal('{{ proposal.proposal_slug }}')" btn-data='{% url 'sharespace:ajax_post_comment' %}'>Submit Comment </button>
-        {% endif %}
-    <br>
     <br>
     <br>
 {% endblock %}

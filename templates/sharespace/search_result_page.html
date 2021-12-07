@@ -6,47 +6,64 @@
 {% endblock %}
 
 {% block body_block %}
+<style>
+.d-flex {
+    background-color: white;
+}
+</style>
 
-<br>
-<br>
-<br>
-<br>
-<br>
-<h1> Your Results </h1>
-{% if search %}
-you searched for {{ search }}
-{% endif %}
-<br>
-    {% if results %}
-<ul>
-    <br>
-    {% if category %}
-        <p>Here are the category results for your search </p>
-    {% for cat in category %}
-    <li> <a href="{% url 'sharespace:category_page' cat.cat_slug %} ">{{ cat.name }}</a>  </li>
-    {% endfor %}
-        <hr>
-    {% endif %}
+    <div class="d-flex justify-content-around">
+        <h1> Your Results </h1>
 
-    {% if sub_category %}
-        <p>Here are some subcategory that match with your search</p>
-    {% for sub in sub_category %}
-    <li>  {{ sub.name }} - this subcategory is part of <a href="{% url 'sharespace:category_page' sub.parent.cat_slug  %}"> {{ sub.parent }} </a> </li>
-    {% endfor %}
-        <hr>
-    {% endif %}
+    </div>
+    <div class="d-flex justify-content-around">
+        {% if search %}
+            <h3> you searched for {{ search }}</h3>
+        {% endif %}
 
-    {% if items %}
-        <p>Here are some items that match your search</p>
-    {% for i in items %}
-    <li>  <a href="{% url 'sharespace:item_page' i.item_slug %}">{{ i.name }}</a> </li>
-    {% endfor %}
-    {% endif %}
-</ul>
-    {% else %}
-        <br>
-        <br>
-        <strong>No results found</strong>
-    {% endif %}
+    </div>
+    <div class="d-flex justify-content-around" style="padding-bottom: 100px">
+        {% if results %}
+            <ul>
+                <br>
+                {% if category %}
+                    <p>Here are the category results for your search </p>
+                    {% for cat in category %}
+                        <li> <a href="{% url 'sharespace:category_page' cat.cat_slug %} ">{{ cat.name }}</a>  </li>
+                    {% endfor %}
+                    <hr>
+                {% endif %}
+
+                {% if sub_category %}
+                    <p>Here are some subcategory that match with your search</p>
+                    {% for sub in sub_category %}
+                        <li>  {{ sub.name }} - this subcategory is part of <a href="{% url 'sharespace:category_page' sub.parent.cat_slug  %}"> {{ sub.parent }} </a> </li>
+                    {% endfor %}
+                    <hr>
+                {% endif %}
+
+                {% if items %}
+                    <p>Here are some items that match your search</p>
+                    {% for i in items %}
+                        <li>  <a href="{% url 'sharespace:item_page' i.item_slug %}">{{ i.name }}</a> </li>
+                    {% endfor %}
+                    <hr>
+                {% endif %}
+
+                {% if pp %}
+                    <p>Here are some purchase proposals that match your search</p>
+                    {% for i in pp %}
+                        <li>  <a href="{% url 'sharespace:proposal_page' i.proposal_slug %}">{{ i.proposal_item_name }}</a> </li>
+                    {% endfor %}
+                {% endif %}
+            </ul>
+        {% else %}
+            <br>
+            <br>
+            <strong>No results found</strong>
+        {% endif %}
+    </div>
+
+
 
 {% endblock %}

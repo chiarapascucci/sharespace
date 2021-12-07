@@ -34,7 +34,7 @@
 
         {% if user.is_authenticated %}
             {% if owner_flag %}
-                this if your own item - you can manage this item here
+                this if your own item - you can manage this item <a href="{% url 'sharespace:your_items_list' up.user_slug %}">here</a>
             {% else %}
                 {% if notif_flag or max_item_flag %}
                     {% if notif_flag %}
@@ -48,14 +48,11 @@
                     {% if not up.can_borrow %}
                         you cannot borrow this item - please contact the admin for further information
                     {% else %}
-                        {% if item.available %}
+
                             <a href="{% url 'sharespace:borrow_item' item.item_slug %}" class="btn-outline-primary">Borrow this item</a>
                             <br>
-                            something wrong with this item?
-                            Report it <a href="{% url 'sharespace:submit_report' item.item_slug %}" class="btn-outline-danger">Report this item</a>
-                        {% else %}
-                            this item is currently not available
-                        {% endif %}
+                            something wrong with this item? <a href="{% url 'sharespace:submit_report' item.item_slug %}" class="btn-outline-primary">Report</a>
+
                     {% endif %}
                 {% endif %}
             {% endif %}

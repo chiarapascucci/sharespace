@@ -18,6 +18,7 @@
         <p>Due Date: {{ loan.due_date }}</p>
         <p>Overdue status: {{ loan.overdue }}</p>
         <p>Status: {{ loan.status }}</p>
+        <p>item owner {{ loan.item_on_loan.owner.all }}</p>
         <p> Where to pick up your item: </p>
         <p> {{loan.item_on_loan.location}}</p>
     {% endif %}
@@ -30,8 +31,8 @@
     {% endif %}
     {% if up_flag %}
         <p>Above you can see the address of the location where you can pick up this item</p>
-        <p>To arrange a convenient delivery you can contact the owner of this item on: {{ loan.item_on_loan.guardian.contact_details }}</p>
-        <button id = "confirm-pickup-btn" data-loanslug="{{ loan.loan_slug }}" data-ajax-url="" class = "btn btn-primary btn-sm" type="button" onclick="">Confirm Pick-up</button><br><br>
+        <p>To arrange a convenient pick-up you can contact the owner of this item on: {{ loan.item_on_loan.guardian.contact_details }}</p>
+        <button id = "confirm-pickup-btn" data-ajax-url="{% url 'sharespace:confirm_pick_up' %}" class = "btn btn-primary btn-sm" type="button" onclick="confirm_item_pick_up('{{ loan.loan_slug }}')">Confirm Pick-up</button><br><br>
 
         Something wrong with this loan? You went to pick up the object and it wasn't there? Report it to admin
         <a id = "report-loan" class="btn btn-danger btn-sm" href="{% url 'sharespace:submit_report' loan.loan_slug %}">Report</a>

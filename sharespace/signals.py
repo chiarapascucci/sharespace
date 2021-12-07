@@ -8,7 +8,8 @@ from sharespace.models import Notification, Loan, Item
 def notify_owners(sender, instance, created, **kwargs):
     print("signals - 10 - log: item post save signal")
     if created == False:
-        item_updated_notif_factory(instance)
+        #item_updated_notif_factory(instance)
+        pass
     else:
         pass
 
@@ -18,16 +19,20 @@ def notify_owners(sender, instance, created, **kwargs):
 def create_notification_to_guardian(sender, instance, created, **kwargs):
     print("in signal, printing created: ", created)
     if created:
+        pass
+    else:
         if instance.status == instance.PENDING and not instance.item_loan_pick_up:
             notif = loan_prepare_item_for_pick_up(instance)
             print("signals - 20 - log: created notification for newly created loan, booked from today: \n", notif)
+
+        elif instance.status == instance.PENDING and instance.item_loan_pick_up:
+            notif = loan_item_returned_notif_factory(instance)
+            print("signals - 30 - log: new notif: your item has been returned: \n", notif)
+
         elif instance.status == instance.FUTURE:
             notif = loan_item_has_been_booked_notif_factory(instance)
             print("signals - 25 - log: created notification for newly created loan, booked in the future: \n", notif)
-    else:
-        if instance.status == instance.PENDING and instance.item_loan_pick_up:
-            notif = loan_item_returned_notif_factory(instance)
-            print("signals - 30 - log: new notif: your item has been returned: \n", notif)
+
         else:
             pass
 

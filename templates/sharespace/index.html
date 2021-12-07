@@ -25,20 +25,38 @@
     <header class="pb-3 mb-4 border-bottom">
       <a href="/" class="d-flex align-items-center text-dark text-decoration-none">
 
-        <span class="fs-4">Welcome To ShareSpace</span>
+        <span class="fs-4" style="font-size: xx-large">Welcome To ShareSpace</span>
       </a>
     </header>
 
       <div class="p-5 mb-4 bg-light rounded-3">
-          <div class="row-cols-1">
+          <div class="row">
               <div class="container-fluid py-5">
                   <h1 class="display-5 fw-bold">ShareSpace</h1>
-                  <p class="col-md-8 fs-4">Bah balha blah blah ablha blha</p>
-                  {% if user.is_authenticated %}
-                      <a href= "{% url 'sharespace:add_item' %}" class="btn btn-outline-secondary" type="button">Add an Item</a>
-                  {% else %}
-                      <a href = "{% url 'registration_register' %}" class="btn btn-primary btn-lg" type="button">Sign-up</a>
-                  {%  endif %}
+                  <div class="row">
+                      <div class="col-md-6">
+                      <br>
+                      <p>Welcome to Sharespace where you can share items with your neighbours</p>
+                      <p><strong>It's easy</strong></p>
+                      <ol>
+                          <li style="padding-bottom: 20px">Signup and create an account</li>
+
+                          <li style="padding-bottom: 20px">Add any item you are happy to share</li>
+
+                          <li style="padding-bottom: 20px">Search and book items you need</li>
+                          <li style="padding-bottom: 20px">Cannot find what you are looking for? Post a <strong>Purchase Proposal</strong> and jointly buy cool gadgets with your neighbours</li>
+                      </ol>
+                      <hr>
+                      <p>Sounds interesting? Get started here:</p>
+                      {% if user.is_authenticated %}
+                          <a href= "{% url 'sharespace:add_item' %}" class="btn btn-primary btn-lg" type="button">Add an Item</a>
+                      {% else %}
+                          <a href = "{% url 'registration_register' %}" class="btn btn-primary btn-lg" type="button">Sign-up</a>
+                      {%  endif %}
+                      </div>
+                      <div class="col-md-6"><img  src="{% static 'site_assets/sharespace_logo.png' %}" alt="sharespace+logo" ></div>
+                  </div>
+
               </div>
           </div>
       </div>

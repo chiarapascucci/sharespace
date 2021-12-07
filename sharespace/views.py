@@ -45,6 +45,9 @@ def info_view(request):
     fill = get_filler_paragraph()
     return render(request, 'sharespace/information.html', context={'fill': fill})
 
+def privacy_view(request):
+    print("in privacy page")
+    return render(request, 'sharespace/privacy.html', {})
 
 class PurchasedProposalView(View):
     @method_decorator(login_required)
@@ -140,14 +143,16 @@ def notification_list_view(request):
     up = extract_us_up(request)['up']
     if up is not None:
         notif_list_action = up.received.filter(notif_action_needed= True)
-        notif_list_no_action_unread = up.received.filter(notif_action_needed = False, notif_read=False)
+        notif_list_no_action_unread = up.received.filter(notif_action_needed = False, notif_read=False)[:10]
+        notif_list_no_action_read = up.received.filter(notif_action_needed = False, notif_read=True)[:10]
         results = False
         if notif_list_action.exists() or notif_list_no_action_unread.exists():
             results = True
         context = {
             'results' : results,
             'action' : notif_list_action,
-            'read' : notif_list_no_action_unread
+            'unread' : notif_list_no_action_unread,
+            'read': notif_list_no_action_read
         }
         return render(request, 'sharespace/notification_user_list.html', context=context)
     else:
@@ -175,6 +180,20 @@ def ajax_cancel_booking(request):
         return JsonResponse({'loan_deleted': False, 'msg': "wrong request type", 'redirect_url': redirect_url})
 
 
+def ajax_confirm_item_pickup(request):
+    if request.method == "POST":
+        loan_slug = request.POST['loan_slug']
+        try:
+            loan = Loan.objects.get(loan_slug=loan_slug)
+            loan.confirm_item_picked_up()
+            return HttpResponse("Thank you for confirming pick up of this item \n remember it is due back on {}".format(loan.due_date))
+        except Loan.DoesNotExist:
+            print("no loan found")
+            return HttpResponse("no loan found")
+    else:
+        return HttpResponse("bad req")
+
+
 def ajax_delete_item(request, item_slug):
     if request.method == 'POST':
         print("views - 130 - log : printing post request for item deletion")
@@ -197,7 +216,8 @@ def ajax_delete_item(request, item_slug):
                                                                        "notifications"})
 
         else:
-            item.owner.remove(user_slug=up.user_slug)
+
+            item.owner.remove(up)
             up.max_no_of_items -= 1
             up.save()
             print("item deleted - multiple owners so only removing ownership for specified user")
@@ -238,6 +258,7 @@ class AccountDeletionView(View):
     def post(self, request, user_slug):
         pp(request.POST)
         return HttpResponse("your account deletion request has been received. You'll get a confirmation email when the request has been processed")
+
 
 def address_lookup_view(request):
     return render(request, 'sharespace/post_code_lookup.html', {})
@@ -753,6 +774,8 @@ class SearchView(View):
         search_context['category'] = Category.objects.filter(Q(name__contains=search) | Q(description__contains=search))
         search_context['sub_category'] = Sub_Category.objects.filter(
             Q(name__contains=search) | Q(description__contains=search))
+        search_context['pp'] = PurchaseProposal.objects.filter(
+            Q(proposal_item_name__contains=search) | Q(proposal_item_description__contains=search))
         search_context['items'] = Item.objects.filter(Q(name__contains=search) | Q(description__contains=search))
 
         up_dict = extract_us_up(request)
@@ -761,7 +784,8 @@ class SearchView(View):
             post_code = up_dict['up'].hood.nh_post_code
             search_context['items'].filter(item_post_code=post_code)
 
-        if search_context['category'].exists() or search_context['sub_category'].exists() or search_context['items'].exists():
+        if search_context['category'].exists() or search_context['sub_category'].exists() \
+                or search_context['items'].exists() or search_context['pp'].exists():
             search_context['results'] = True
 
         print(search_context)
@@ -826,8 +850,9 @@ class LoanCompleteNotificationView(View):
 
             return render(request, 'sharespace/waiting_page.html', context)
         else:
-            slug = slugify("_".join(("loan", notification.subject.loan_slug)))
-            return redirect(reverse('sharespace:submit_report', kwargs={'subject_slug': slug}))
+            notification.complete_notif()
+            notification.content_object.mark_as_complete_by_lender()
+            return redirect(reverse('sharespace:submit_report', kwargs={'subject_slug': notification.content_object.loan_slug}))
 
 
 class SubmitReportView(View):
@@ -852,6 +877,7 @@ class SubmitReportView(View):
 
         return render(request, 'sharespace/report.html', context=context)
 
+    @method_decorator(login_required)
     def post(self, request, subject_slug):
 
         print(request.POST)
@@ -864,7 +890,10 @@ class SubmitReportView(View):
             else:
                 report.content_object = subject
                 report.save()
-                return render(request, 'sharespace/waiting_page.html', context = {'message': "your report was "
+                up = extract_us_up(request)['up']
+
+                return render(request, 'sharespace/waiting_page.html', context = {'profile_slug': up.user_slug,
+                                                                                  'message': "your report was "
                                                                                              "submitted correctly. "
                                                                                              "Admin will review and "
                                                                                              "take  appropriate "

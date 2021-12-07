@@ -6,7 +6,8 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sharespace_project.settings')
 import django
 django.setup()
 from django.contrib.auth.hashers import PBKDF2PasswordHasher, make_password
-from sharespace.models import Item, UserProfile, Category, Sub_Category, Neighbourhood, Address, Notification
+from sharespace.models import Item, UserProfile, Category, Sub_Category, Neighbourhood, Address, Notification, \
+    PurchaseProposal
 import random
 from sharespace.models import CustomUser as User
 from django.core.files import File
@@ -44,17 +45,39 @@ def add_hood(post_code):
 
 def add_user(username, email, password):
     user = User.objects.get_or_create(username=username, email=email)[0]
-
     user.password = make_password(password, salt=None, hasher='default')
     user.save()
     return user
 
 
-def add_user_profile(user,  hood, post_code):
-
-    up = UserProfile.objects.get_or_create(user = user, hood = hood, user_post_code = post_code)[0]
+def add_user_profile(user,  hood, post_code, contact):
+    up = UserProfile.objects.get_or_create(user = user, hood = hood, user_post_code = post_code, contact_details=contact)[0]
     up.save()
     return up
+
+
+def get_cat_sub_cat():
+    cat = Category.objects.order_by('?').first()
+    sub_cat = Sub_Category.objects.filter(parent=cat).first()
+    return [cat, sub_cat]
+
+
+def add_purchase_proposal(name, description, price, submitter, subs):
+    cat_sub_cat = get_cat_sub_cat()
+    cat = cat_sub_cat[0]
+    sub_cat = cat_sub_cat[1]
+
+    contact = submitter.contact_details
+    pp = PurchaseProposal.objects.get_or_create(proposal_submitter=submitter, proposal_contact=contact,
+                                                proposal_item_name=name, proposal_item_description=description,
+                                                proposal_cat=cat, proposal_sub_cat=sub_cat, proposal_price=price)[0]
+    print("purchase proposal created: ", pp)
+    for s in subs:
+        pp.proposal_subscribers.add(s)
+        pp.proposal_subs_count += 1
+
+    pp.save()
+    return pp
 
 
 def populate():
@@ -68,14 +91,6 @@ def populate():
             'adr_line_1': 'fancy villa',
             'post_code': 'sw96tq',
         },
-        3: {
-            'adr_line_1': 'my house',
-            'post_code': 'gl73ay',
-        },
-        4: {
-            'adr_line_1': 'none of your buz',
-            'post_code': 'gl73ay',
-        }
     }
 
     items_dict = {
@@ -149,15 +164,16 @@ def populate():
 
 
     users = {
-       'chp': {'username' : 'chp', 'email':'g1@mail.com', 'password': 'helloyou123'},
-       'chpa': {'username' : 'chpa', 'email':'GG2@mail.com', 'password': 'helloyou123'},
-       'chpas1' : {'username' : 'chpas1', 'email':'g3@mail.com', 'password': 'helloyou123'},
-        'chpi': {'username' : 'chpi', 'email':'gG4@mail.com', 'password': 'helloyou123'},
-        'chpic' : {'username' : 'chpic', 'email':'g5@MAIL.com', 'password': 'helloyou123'},
+       'chp': {'username' : 'chp', 'email':'g1@mail.com', 'password': 'helloyou123', 'contact': '+4407743562738'},
+       'chpa': {'username' : 'chpa', 'email':'GG2@mail.com', 'password': 'helloyou123', 'contact': '+4407743562739'},
+       'chpas1' : {'username' : 'chpas1', 'email':'g3@mail.com', 'password': 'helloyou123', 'contact': '+4407743562731'},
+        'chpi': {'username' : 'chpi', 'email':'gG4@mail.com', 'password': 'helloyou123', 'contact': '+4407743562732'},
+        'chpic' : {'username' : 'chpic', 'email':'g5@MAIL.com', 'password': 'helloyou123', 'contact': '+4407743562733'},
     }
 
+    contact_list = ['+4407743562738', '+4407743562739', '+4407743562731', '+4407743562732', '+4407743562733']
 
-    hoods = ['gl73ay', 'sw96tq']
+    hoods = ['sw96tq']
 
 
     #defining add functions for each type
@@ -198,11 +214,11 @@ def populate():
     # use created users to create user profiles
     # user profiles creation should automatically create hoods
     user_profile_list = []
-
-    for user in user_list:
+    assert (len(user_list) == len(contact_list))
+    for i in range(0, len(user_list)):
         hood = hood_entity_list[random.randint(0, len(hood_entity_list)-1)]
         user_postcode = hood.nh_post_code
-        up = add_user_profile(user, hood, user_postcode)
+        up = add_user_profile(user_list[i], hood, user_postcode, contact_list[i])
         user_profile_list.append(up)
         print("user profile {} in hood {}".format(up, user_postcode))
     print("total user profile created: ", len(user_profile_list))
@@ -224,6 +240,26 @@ def populate():
                 item_list.append(item)
 
     print(len(item_list))
+
+    purchase_proposals = [
+        ['cement mixer', 'machine to mix cement', 2500],
+        ['outdoor gym', 'jungle gym for kids to play in', 10000],
+        ['pool', 'large inflatable pool perfect for summer', 800],
+        ['hotub', 'inflatable hotub both cold and warm water', 970.50],
+        ['tanning bed', 'we could store this somewhere and all get tanned', 15000],
+        ['car', 'anyone up for car sharing?', 4600],
+        ['event marquee', 'would be cool to have a marque for any event in our neighbourhood', 5700]
+    ]
+    for i in range(0, len(purchase_proposals)):
+        r = random.randint(0, len(user_profile_list)-1)
+        up = user_profile_list[r]
+        up_set = set(user_profile_list)
+        up_set.remove(up)
+        pp = add_purchase_proposal(purchase_proposals[i][0], purchase_proposals[i][1], purchase_proposals[i][2], up, up_set)
+
+
+
+
 
 
 # deleting all notifications

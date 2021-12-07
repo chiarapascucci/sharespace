@@ -7,6 +7,7 @@ app_name = 'sharespace'
 urlpatterns = [
     path('', views.index, name='index'),
     path('about/', views.about_view, name = 'about'),
+    path('privacy/', views.privacy_view, name='privacy_policy'),
     path('register/', views.register_view, name = 'register_profile'),
     path('faq/', views.info_view, name='info_page'),
     path('register/address', views.address_lookup_view, name = 'address_lookup'),
@@ -46,8 +47,9 @@ urlpatterns = [
 
     path('search/', views.SearchView.as_view(), name = 'search'),
 
-    path('ajax/load_sub_cat', views.load_sub_cat_view, name = "ajax_load_sub_cat"),
-    path('ajax/load_user_profile', views.load_user_profile_view, name = 'load_user_profile'),
+    path('ajax/confirm_pick-up/', views.ajax_confirm_item_pickup, name="confirm_pick_up"),
+    path('ajax/load_sub_cat/', views.load_sub_cat_view, name = "ajax_load_sub_cat"),
+    path('ajax/load_user_profile/', views.load_user_profile_view, name = 'load_user_profile'),
     path('ajax/sub_proposal/', views.ajax_sub_prop_view, name = 'ajax_sub_to_prop'),
     path('ajax/request_loan/', views.ajax_borrow_item_view, name = 'ajax_request_loan'),
     path('ajax/unsub_proposal/', views.ajax_unsub_prop_view, name = 'ajax_unsub_from_prop'),

@@ -392,7 +392,6 @@ class Loan(models.Model):
         if self.status is None:
             print("loan status is none")
             if self.out_date > default_time():
-
                 self.status = self.FUTURE
                 self.save()
                 return 1
@@ -401,24 +400,24 @@ class Loan(models.Model):
                 self.apply_loan_effects()
                 self.applied_effects_flag = True
                 self.save()
-                return 1
+                return 2
         else:
             if self.status == self.COMPLETED:
-                return 0
+                return 3
             elif self.status == self.ACTIVE:
                 if default_time() > self.due_date:
                     self.overdue = True
                     self.save()
-                    return 1
+                    return 4
                 else:
-                    return 0
+                    return 5
             elif self.status == self.FUTURE:
                 if default_time() > self.out_date:
                     self.status = self.PENDING
                     self.apply_loan_effects()
                     self.applied_effects_flag = True
                     self.save()
-                    return 1
+                    return 6
 
     def apply_loan_effects(self):
         self.item_on_loan.available = False

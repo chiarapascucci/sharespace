@@ -410,3 +410,25 @@ function delete_purchase_proposal(prop_slug){
 
 }
 
+function confirm_item_pick_up(loan_slug){
+    console.log("in confirm item pick up function");
+    const csrftoken = getCookie('csrftoken');
+    let btn = $('#confirm-pickup-btn');
+    const url = btn.attr('data-ajax-url');
+    console.log(url)
+
+    $.ajax({
+        url : url,
+        type : 'POST',
+        headers : {'X-CSRFToken' : csrftoken},
+        data :{
+            'loan_slug': loan_slug
+        },
+        success: function (data){
+            alert(data)
+            location.reload();
+        }
+    });
+
+
+}
