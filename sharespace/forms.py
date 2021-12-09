@@ -4,7 +4,7 @@ from django.forms.widgets import EmailInput, HiddenInput, SelectMultiple, Select
 from phonenumber_field.formfields import PhoneNumberField
 from registration.forms import RegistrationForm
 from sharespace.models import Image, Item, Loan, CustomUser, UserProfile, Category, SubCategory, \
-    UserToAdminReportNotAboutUser, PurchaseProposal
+    ReportToAdmin, PurchaseProposal
 from sharespace.utils import get_booking_calendar_for_item_for_month
 
 
@@ -86,7 +86,7 @@ class AddItemFormWithAddress(AddItemForm):
 class SubmitReportForm(forms.ModelForm):
 
     class Meta:
-        model = UserToAdminReportNotAboutUser
+        model = ReportToAdmin
         fields = ('report_title', 'report_body', 'report_sender', 'report_date_out')
         widgets = {'report_sender': forms.HiddenInput(),
                    'report_receiver': forms.HiddenInput(),

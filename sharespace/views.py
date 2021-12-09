@@ -1,16 +1,13 @@
 import pytz
-from django.db.models import Subquery, Q
+from django.db.models import Q
 from django.forms.models import modelformset_factory
-from django.http.response import HttpResponse
 from django.shortcuts import render, redirect
-from django.http import HttpRequest, HttpResponse
-from django.template.defaultfilters import slugify
-from django.views.generic import FormView
+from django.http import HttpResponse
 
 from sharespace.form_validation import validate_borrowing_form, validate_add_item_form
 from sharespace.models import Image, Item, Category, SubCategory, CustomUser, UserProfile, Neighbourhood, Loan, \
     Address, PurchaseProposal, Notification, CommentToProposal
-from sharespace.forms import AddItemForm, ImageForm, UserForm, UserProfileForm, \
+from sharespace.forms import ImageForm, UserForm, UserProfileForm, \
     SubmitReportForm, EditUserProfileBasicForm, SubmitPurchaseProposalForm
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
@@ -22,7 +19,7 @@ from pprint import pprint as pp
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
-from datetime import datetime, date, time, timedelta
+from datetime import datetime, date
 from django.http import JsonResponse
 
 from sharespace.text_data import get_filler_paragraph
@@ -30,9 +27,8 @@ from sharespace.utils import get_booking_calendar_for_item_for_month, extract_us
 
 utc = pytz.UTC
 
+# --------------------------- BASIC PAGES VIEWS ------------------------------------------- #
 
-# ------- FUNCTION BASED VIEWS (alph sorted) -------
-# --- most views check if there is a logged in user (server side)
 
 def about_view(request):
     print("in the about view")
@@ -45,9 +41,54 @@ def info_view(request):
     fill = get_filler_paragraph()
     return render(request, 'sharespace/information.html', context={'fill': fill})
 
+
 def privacy_view(request):
     print("in privacy page")
     return render(request, 'sharespace/privacy.html', {})
+
+
+def address_lookup_view(request):
+    return render(request, 'sharespace/post_code_lookup.html', {})
+
+
+def category_list_view(request):
+    print("in cat list view")
+    cat_list_context = {'all_cat': Category.objects.all().order_by('name')}
+    # print(cat_list_context['all_cat'])
+    return render(request, 'sharespace/category_list.html', context=cat_list_context)
+
+
+def gallery_view(request, item_slug):
+    item = Item.objects.get(item_slug=item_slug)
+    return render(request, 'galley.html', {"item": item})
+
+
+def hood_page_view(request):
+    hood_context = {}
+    return render(request, 'sharespace/hood_page.html', context=hood_context)
+
+
+def index(request):
+    up_dict = extract_us_up(request)
+    context_dict = {}
+    if up_dict:
+        context_dict['up'] = up_dict['up']
+
+    else:
+        pass
+
+    return render(request, 'sharespace/index.html', context=context_dict)
+
+
+def sub_cat_page_view(request):
+    return render(request, 'sharespace/sub_cat.html', context={})
+
+
+@login_required
+def user_logout(request):
+    logout(request)
+    return redirect(reverse('sharespace:index'))
+
 
 class PurchasedProposalView(View):
     @method_decorator(login_required)
@@ -260,16 +301,8 @@ class AccountDeletionView(View):
         return HttpResponse("your account deletion request has been received. You'll get a confirmation email when the request has been processed")
 
 
-def address_lookup_view(request):
-    return render(request, 'sharespace/post_code_lookup.html', {})
 
 
-def category_list_view(request):
-    print("in cat list view")
-    cat_list_context = {}
-    cat_list_context['all_cat'] = Category.objects.all().order_by('name')
-    # print(cat_list_context['all_cat'])
-    return render(request, 'sharespace/category_list.html', context=cat_list_context)
 
 
 def category_page_view(request, cat_slug):
@@ -315,32 +348,6 @@ def change_password_view(request):
     })
 
 
-def gallery_view(request, item_slug):
-    item = Item.objects.get(item_slug=item_slug)
-    return render(request, 'galley.html', {"item": item})
-
-
-def hood_page_view(request):
-    hood_context = {}
-    return render(request, 'sharespace/hood_page.html', context=hood_context)
-
-
-# index view
-def index(request):
-    up_dict = extract_us_up(request)
-    context_dict = {}
-    if up_dict:
-        context_dict['up'] = up_dict['up']
-
-    else:
-        pass
-
-    return render(request, 'sharespace/index.html', context=context_dict)
-
-
-# item list view - not sure where this is used???
-def item_list_view(request):
-    return render(request)
 
 
 def item_page_view(request, item_slug):
@@ -511,14 +518,6 @@ class CompleteProfileView(View):
                 return render(request, 'sharespace/complete_profile.html', {})
 
 
-def sub_cat_page_view(request):
-    return render(request, 'sharespace/sub_cat.html', context={})
-
-
-@login_required
-def user_logout(request):
-    logout(request)
-    return redirect(reverse('sharespace:index'))
 
 # need to convert this to a class based view
 def user_profile_view(request, user_slug):

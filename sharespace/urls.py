@@ -18,7 +18,6 @@ urlpatterns = [
     path('category/<slug:cat_slug>/', views.category_page_view, name = 'category_page'),
     path('category/<slug:cat_slug>/<slug:sub_cat_slug>/', views.sub_cat_page_view, name = 'sub_cat_page'),
 
-    path('item/', views.item_list_view, name = 'item_list'),
     path('add_item/', views.AddItemView.as_view(), name = 'add_item'),
     path('item/<slug:item_slug>/', views.item_page_view, name = 'item_page'),
     path('item/<slug:item_slug>/borrow/', BorrowItemView.as_view(), name='borrow_item'),

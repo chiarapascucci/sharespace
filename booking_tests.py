@@ -6,7 +6,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sharespace_project.settings')
 import django
 django.setup()
 from django.contrib.auth.hashers import PBKDF2PasswordHasher, make_password
-from sharespace.models import Item, UserProfile, Category, SubCategory, Neighbourhood, Loan, UserToAdminReportNotAboutUser, Notification, ItemBooking, range_overlap_check_true_false, bookings_overlap_check_and_count
+from sharespace.models import Item, UserProfile, Category, SubCategory, Neighbourhood, Loan, ReportToAdmin, Notification, ItemBooking, range_overlap_check_true_false, bookings_overlap_check_and_count
 import random
 from django.utils.timezone import now
 from django.contrib.auth.models import User

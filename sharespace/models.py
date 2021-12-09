@@ -197,7 +197,7 @@ class Notification(models.Model):
         return "notification: {} - {}".format(self.notif_title, self.content_object)
 
 
-class UserToAdminReportNotAboutUser(models.Model):
+class ReportToAdmin(models.Model):
     report_date_out = models.DateField(default=default_time)
     # report_subject = models.ForeignKey(Reportable, null=False, on_delete=models.CASCADE, related_name='target')
     report_sender = models.ForeignKey(UserProfile, null=False, on_delete=models.CASCADE, related_name='submitter')
@@ -220,7 +220,7 @@ class HoodGroup(models.Model):
     group_members = models.ManyToManyField(UserProfile, blank=True, related_name='member_of')
     group_hood = models.ForeignKey(Neighbourhood, blank=False, null=False, on_delete=models.CASCADE)
     group_slug = models.SlugField(null=False)
-    group_reported = GenericRelation(UserToAdminReportNotAboutUser)
+    group_reported = GenericRelation(ReportToAdmin)
 
     def save(self, *args, **kwargs):
         self.group_slug = slugify(self.group_name)
@@ -248,7 +248,7 @@ class Item(models.Model):
     max_loan_len = models.PositiveIntegerField(choices=max_len_of_loan_choices, default=4,
                                                validators=[MaxValueValidator(4)])
     item_post_code = CharField(max_length=8)
-    item_reported_to_admin = GenericRelation(UserToAdminReportNotAboutUser)
+    item_reported_to_admin = GenericRelation(ReportToAdmin)
 
     def save(self, *args, **kwargs):
         self.item_slug = slugify("item--{self.item_id}".format(self=self))
@@ -342,7 +342,7 @@ class Loan(models.Model):
     due_date = models.DateTimeField(null=False)
     len_of_loan = models.PositiveIntegerField(default=1)
     loan_slug = models.SlugField(unique=True)
-    loan_reported = GenericRelation(UserToAdminReportNotAboutUser)
+    loan_reported = GenericRelation(ReportToAdmin)
     applied_effects_flag = models.BooleanField(default=False)
 
     loan_notification = GenericRelation(Notification)
@@ -465,7 +465,7 @@ class PurchaseProposal(models.Model):
     proposal_purchased = models.BooleanField(default=False)
     proposal_timestamp = models.DateTimeField(blank=False, default=default_time)
     proposal_subs_count = models.PositiveIntegerField(default=1)
-    proposal_reported = GenericRelation(UserToAdminReportNotAboutUser)
+    proposal_reported = GenericRelation(ReportToAdmin)
 
     def save(self, *args, **kwargs):
         self.proposal_hood = self.proposal_submitter.hood
