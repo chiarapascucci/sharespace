@@ -60,15 +60,15 @@
                             <a class="dropdown-item" href="{% url 'sharespace:notifications_list' %}">Your Notifications</a>
                             <a id="profile-link" class="dropdown-item"  data-username-url="{% url 'sharespace:load_user_profile' %}-{{user.username}}" href="#">My Profile</a>
                             <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="{% url 'auth_logout' %}?next={% url 'sharespace:index'%}">Sign out</a>
+                            <a class="dropdown-item" href="{% url 'auth_logout' %}?next={% url 'sharespace:index'%}" id="logout-link">Sign out</a>
                         </div>
                     </li>
                 {% else %}
                     <li class="nav-item">
-                         <a href="{% url 'auth_login' %}" class="nav-link px-2 link-secondary" style="padding-left: 10px; padding-right: 50px; padding-top: 50px">Login</a>
+                         <a href="{% url 'auth_login' %}" class="nav-link px-2 link-secondary" style="padding-left: 10px; padding-right: 50px; padding-top: 50px" id="login-link">Login</a>
                     </li>
                     <li class="nav-item">
-                        <a href="{% url 'registration_register' %}" class="nav-link px-2 link-secondary" style="padding-left: 10px; padding-right: 50px; padding-top: 50px">Sign-up</a>
+                        <a href="{% url 'registration_register' %}" class="nav-link px-2 link-secondary" style="padding-left: 10px; padding-right: 50px; padding-top: 50px" id="signup-link">Sign-up</a>
                     </li>
                 {% endif %}
 
@@ -76,7 +76,7 @@
             </ul>
             <form action = "{% url 'sharespace:search' %}" class="form-inline my-2 my-lg-0" method="GET" id ="search_form" name="search_form">
                 <input class="form-control mr-sm-2" id="search_input" name = "search_input" type="search" placeholder="Search" aria-label="Search">
-                <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+                <button class="btn btn-outline-success my-2 my-sm-0" type="submit" id="search-btn">Search</button>
             </form>
         </div>
     </nav>
@@ -108,7 +108,7 @@
     </body>
 
 
-        <footer class="navbar fixed-bottom" style="height: 10%; background-color: #badbcc">
+        <footer class="navbar" style="height: 10%; background-color: #badbcc">
             <p class="col-md-4 mb-0 text-muted">Sharespace 2021</p>
 
             <a href="/" class="col-md-4 d-flex align-items-center justify-content-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
@@ -116,10 +116,10 @@
             </a>
 
             <ul class="nav col-md-4 justify-content-end">
-                <li class="nav-item"><a href="{% url 'sharespace:index' %}" class="nav-link px-2 text-muted">Home</a></li>
-                <li class="nav-item"><a href="{% url 'sharespace:about' %}" class="nav-link px-2 text-muted">About</a></li>
-                <li class="nav-item"><a href="{% url 'sharespace:info_page' %}" class="nav-link px-2 text-muted">FAQs</a></li>
-                <li class="nav-item"><a href="{% url 'sharespace:privacy_policy' %}" class="nav-link px-2 text-muted">Privacy Policy</a></li>
+                <li class="nav-item"><a href="{% url 'sharespace:index' %}" class="nav-link px-2 text-muted" id="home-link">Home</a></li>
+                <li class="nav-item"><a href="{% url 'sharespace:about' %}" class="nav-link px-2 text-muted" id="about-link">About</a></li>
+                <li class="nav-item"><a href="{% url 'sharespace:info_page' %}" class="nav-link px-2 text-muted" id="faq-link">FAQs</a></li>
+                <li class="nav-item"><a href="{% url 'sharespace:privacy_policy' %}" class="nav-link px-2 text-muted" id="privacy-link">Privacy Policy</a></li>
             </ul>
         </footer>
 </html>

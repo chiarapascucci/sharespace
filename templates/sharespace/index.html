@@ -67,7 +67,7 @@
           <h2>Sharing is Caring</h2>
           <p>Blah bahah blhahh</p>
           {% if user.is_authenticated %}
-              <a href= "{% url 'sharespace:add_item' %}" class="btn btn-outline-secondary" type="button">Add an Item</a>
+              <a href= "{% url 'sharespace:add_item' %}" class="btn btn-outline-secondary" type="button" id="home-add-item-btn">Add an Item</a>
           {% else %}
               <a href = "{% url 'registration_register' %}" class="btn btn-primary btn-lg" type="button">Sign-up</a>
           {%  endif %}
@@ -95,7 +95,7 @@
               <div class="h-100 p-5 bg-light border rounded-3">
                   <h2>Submit a Proposal</h2>
                   <p>Blahbhhdhb agfohjdsvjbsvbsjbv</p>
-                  <a href="{% url 'sharespace:submit_proposal' %}" class="btn btn-outline-secondary">Submit a Purchase Proposal</a>
+                  <a href="{% url 'sharespace:submit_proposal' %}" class="btn btn-outline-secondary" type="button" id="home-pp-btn">Submit a Purchase Proposal</a>
               </div>
           </div>
 {#            <div class="row align-items-md-stretch">#}

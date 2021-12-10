@@ -37,7 +37,7 @@
                 {% if sub_category %}
                     <p>Here are some subcategory that match with your search</p>
                     {% for sub in sub_category %}
-                        <li>  {{ sub.name }} - this subcategory is part of <a href="{% url 'sharespace:category_page' sub.parent.cat_slug  %}"> {{ sub.parent }} </a> </li>
+                        <li>  {{ sub.name }} - this subcategory is part of <a href="{% url 'sharespace:category_page' sub.parent.cat_slug  %}" class="src-result"> {{ sub.parent }} </a> </li>
                     {% endfor %}
                     <hr>
                 {% endif %}
@@ -45,7 +45,7 @@
                 {% if items %}
                     <p>Here are some items that match your search</p>
                     {% for i in items %}
-                        <li>  <a href="{% url 'sharespace:item_page' i.item_slug %}">{{ i.name }}</a> </li>
+                        <li>  <a href="{% url 'sharespace:item_page' i.item_slug %}" class="src-result">{{ i.name }}</a> </li>
                     {% endfor %}
                     <hr>
                 {% endif %}
@@ -53,7 +53,7 @@
                 {% if pp %}
                     <p>Here are some purchase proposals that match your search</p>
                     {% for i in pp %}
-                        <li>  <a href="{% url 'sharespace:proposal_page' i.proposal_slug %}">{{ i.proposal_item_name }}</a> </li>
+                        <li>  <a href="{% url 'sharespace:proposal_page' i.proposal_slug %}" class="src-result">{{ i.proposal_item_name }}</a> </li>
                     {% endfor %}
                 {% endif %}
             </ul>

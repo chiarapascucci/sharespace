@@ -1,6 +1,6 @@
 from django.contrib import admin
 from sharespace.models import Item, Category, SubCategory, UserProfile, Neighbourhood, Image, \
-    ReportToAdmin, UserProfileReport, CustomUser, PurchaseProposal, Loan, Notification, \
+    ReportToAdmin, CustomUser, PurchaseProposal, Loan, Notification, \
     CommentToProposal
 
 
@@ -41,7 +41,7 @@ admin.site.register(PurchaseProposal)
 admin.site.register(Loan)
 admin.site.register(Notification)
 admin.site.register(ReportToAdmin)
-admin.site.register(UserProfileReport)
+
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(SubCategory, SubCatAdmin)
 admin.site.register(CommentToProposal)

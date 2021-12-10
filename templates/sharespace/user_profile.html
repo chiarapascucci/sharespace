@@ -53,7 +53,7 @@
 
                           {% if borrowing_items %}
                               {% for loan in borrowing_items.all %}
-                                  <li><a href="{% url 'sharespace:loan_page' loan.loan_slug %}"> {{ loan.item_on_loan }} </a></li>
+                                  <li><a href="{% url 'sharespace:loan_page' loan.loan_slug %}" class="user-loan"> {{ loan.item_on_loan }} </a></li>
                               {% endfor %}
                           {% else %}
                               no items on loan atm
@@ -71,7 +71,7 @@
                           Purchase Proposal You Suscribe To:
                           {% if subscriptions %}
                               {% for s in subscriptions %}
-                                  <li> <a href="{% url 'sharespace:proposal_page' s.proposal_slug %}">{{ s }}</a></li>
+                                  <li> <a href="{% url 'sharespace:proposal_page' s.proposal_slug %}" class="user-subs">{{ s }}</a></li>
                               {% endfor %}
                           {% else %}
 
@@ -91,7 +91,7 @@
                           {% if notifications %}
                               {% for n in notifications %}
 
-                                  <li> <a href="{% url 'sharespace:notification_page' n.notif_slug %}">{{ n }}</a></li>
+                                  <li> <a href="{% url 'sharespace:notification_page' n.notif_slug %}" class="user-notification">{{ n }}</a></li>
                               {% endfor %}
                           {% else %}
 
