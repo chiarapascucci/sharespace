@@ -108,7 +108,7 @@
                       {% if proposals %}
                           <ul>
                           {% for p in proposals.all %}
-                              <li>{{ p }}</li>
+                              <li><a href="{% url 'sharespace:proposal_page' p.proposal_slug %}" class="user-pp">{{ p }}</a></li>
                           {% endfor %}
                           </ul>
                      {% endif %}

@@ -227,11 +227,8 @@ class TestDriverChrome():
             sub_cat_sel = Select(driver.find_element(By.ID, 'id_proposal_sub_cat'))
             sub_cat_sel.select_by_visible_text(pp_info['sub_cat'])
 
-
             btn = driver.find_element(By.ID, 'submit-pp-btn')
             btn.click()
-
-
 
             driver.implicitly_wait(10)
 
@@ -242,10 +239,97 @@ class TestDriverChrome():
 
             return {'pp_created': True, 'pp_id': prop_slug}
 
-
         except selenium.common.exceptions:
             return {'pp_created': False, 'pp_id': None}
 
+    def sub_to_pp_test(self):
+        try:
+            driver = self.driver
+            self.go_home()
+            link = driver.find_element(By.ID, 'pp-base-link')
+            link.click()
+            pp_list = driver.find_elements(By.CLASS_NAME, 'pp-list-elem')
+            pp = pp_list[-1]
+            pp.click()
+            driver.implicitly_wait(5)
+            btn = driver.find_element(By.ID, 'subscribe-btn')
+            btn.click()
+            driver.implicitly_wait(5)
+            tokens = driver.current_url.split("/")
+            prop_slug = tokens[-2]
+            return {'subed': True, 'prop_slug': prop_slug}
+        except selenium.common.exceptions:
+            return {'subed': False, 'prop_slug': None}
+
+    def unsub_pp_test(self, username):
+        try:
+            driver = self.driver
+            driver.get(go_to_profile(username))
+            subs_list = driver.find_elements(By.CLASS_NAME, 'user-subs')
+            pp = subs_list[-1]
+            pp.click()
+            driver.implicitly_wait(5)
+            btn = driver.find_element(By.ID, 'subscribe-btn')
+            btn.click()
+            driver.implicitly_wait(5)
+            tokens = driver.current_url.split("/")
+            prop_slug = tokens[-2]
+            return {'unsubed': True, 'prop_slug': prop_slug}
+
+        except selenium.common.exceptions:
+            return {'unsubed': False, 'prop_slug': None}
+
+    def delete_pp(self, username):
+        try:
+            driver = self.driver
+            driver.get(go_to_profile(username))
+            pp_list = driver.find_elements(By.CLASS_NAME, 'user-pp')
+            pp = pp_list[-1]
+            pp.click()
+            driver.implicitly_wait(5)
+            tokens = driver.current_url.split("/")
+            prop_slug = tokens[-2]
+            btn = driver.find_element(By.ID, 'delete-prop-btn')
+            btn.click()
+            driver.implicitly_wait(1)
+            alert = driver.switch_to.alert
+            alert.accept()
+            return {'pp_del' :True, 'pp_slug': prop_slug}
+        except selenium.common.exceptions:
+            return {'pp_del' :False, 'pp_slug': None}
+
+    def loan_confirm_lender_report(self, username):
+        try:
+            driver_1 = self.driver
+            driver_1.get(go_to_profile(username))
+            notif = driver_1.find_elements(By.CLASS_NAME, 'user-notification')
+            notif[-1].click()
+            driver_1.implicitly_wait(5)
+            select = Select(driver_1.find_element(By.ID, 'action-desired-selection'))
+            select.select_by_index(1)
+            curr_url = driver_1.current_url
+            tokens = curr_url.split("/")
+            print(tokens)
+            notif_slug = tokens[-2]
+            print(notif_slug)
+            btn = driver_1.find_element(By.ID, 'action-notif')
+            btn.click()
+            driver_1.implicitly_wait(5)
+            title = driver_1.find_element(By.ID, 'id_report_title')
+            title.send_keys("testreport")
+            body = driver_1.find_element(By.ID, 'id_report_body')
+            body.send_keys('testreportbody')
+            btn = driver_1.find_element(By.ID, 'submit-report-btn')
+            btn.click()
+            driver_1.implicitly_wait(5)
+            msg_p = driver_1.find_element(By.ID, 'outcome-msg-p')
+            text = msg_p.text
+            print(text)
+
+            return {'confirm': True, 'reported': True, 'notif_slug': notif_slug, 'text': text}
+
+        except selenium.common.exceptions:
+            return {'confirm': False, 'notif_slug': None}
 
     def close_driver(self):
         self.driver.close()

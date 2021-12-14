@@ -22,7 +22,7 @@
 
         {% if list %}
             {% for prop in list %}
-                <p class="d-flex justify-content-center"><a href="{% url 'sharespace:proposal_page' prop.proposal_slug %}">{{ prop }}</a></p>
+                <p class="d-flex justify-content-center"><a href="{% url 'sharespace:proposal_page' prop.proposal_slug %}" class="pp-list-elem">{{ prop }}</a></p>
             {% endfor %}
 
         {% else %}

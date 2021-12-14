@@ -1,4 +1,4 @@
-from sharespace.models import Item, Loan, Notification
+from sharespace.models import Item, Loan, Notification, PurchaseProposal
 import unittest
 
 
@@ -118,4 +118,34 @@ def test_cancel_booking(loan_id):
         print(loan)
         return False
     except Loan.DoesNotExist:
+        return True
+
+
+def test_add_pp(pp_slug, pp_data):
+    try:
+        proposal = PurchaseProposal.objects.get(proposal_slug=pp_slug)
+        result = {
+            'subs' : len(proposal.proposal_subscribers.all()) == 0,
+            'description': proposal.proposal_item_description == pp_data['descr'],
+            'price' : proposal.proposal_price == int(pp_data['price']),
+            'cat' : proposal.proposal_cat.name == pp_data['cat'],
+            'sub_cat': proposal.proposal_sub_cat.name == pp_data['sub_cat'],
+            'contact' : proposal.proposal_submitter.contact_details == pp_data['phone']
+        }
+        print("prop_contact: ", pp_data['phone'])
+        print("submitter contact: ", proposal.proposal_submitter.contact_details)
+        print("subs_list: ", proposal.proposal_subscribers.all(), "\n subs count: ", len(proposal.proposal_subscribers.all()))
+
+        return {'proposal_created': True, 'result': result}
+
+    except PurchaseProposal.DoesNotExist:
+        return {'proposal_created': False, 'result': None}
+
+
+def test_cancel_proposal(prop_slug):
+    try:
+        proposal = PurchaseProposal.objects.get(proposal_slug=prop_slug)
+        print(proposal)
+        return False
+    except PurchaseProposal.DoesNotExist:
         return True

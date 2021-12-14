@@ -920,7 +920,8 @@ class SubmitPurchaseProposal(View):
             up_dict = extract_us_up(request)
             submitter = up_dict['up']
             proposal.proposal_submitter = submitter
-            submitter.contact_details = str(form['proposal_contact'])
+
+            submitter.contact_details = form.cleaned_data['proposal_contact']
             submitter.save()
             print("in submit purch prop view: ", submitter)
             kwargs = {'submitter': submitter}
