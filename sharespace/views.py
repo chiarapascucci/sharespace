@@ -213,7 +213,7 @@ def ajax_cancel_booking(request):
 
         try:
             loan = Loan.objects.get(loan_slug=loan_slug)
-            loan.mark_as_complete_by_lender()
+            loan.cancel_fut_loan()
             loan.delete()
             return JsonResponse({'loan_deleted': True, 'msg': "your booking has been deleted", 'redirect_url': redirect_url})
         except Loan.DoesNotExist:

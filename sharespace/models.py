@@ -172,9 +172,7 @@ class UserProfile(models.Model):
         self.user_slug = slugify(self.user.username)
         self.user_post_code = self.user_post_code.strip().replace(' ', '').lower()
         print("in profile save method curr no of items", self.curr_no_of_items)
-        flags = self.can_borrow_check()
-        self.can_borrow = not (flags['unactioned_notif'] or flags['max_no_of_items'])
-        self.has_unactioned_notif = flags['unactioned_notif']
+
         super(UserProfile, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -420,6 +418,17 @@ class Loan(models.Model):
         """
         self.status = self.PENDING
         self.save()
+
+    def cancel_fut_loan(self):
+        if self.status == self.COMPLETED or self.status == self.ACTIVE:
+            pass
+        else:
+            if self.applied_effects_flag:
+                self.mark_as_complete_by_lender()
+            else:
+                pass
+
+
 
 # need to consider where to have the item available and change to curr no of item for lender
 
