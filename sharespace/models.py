@@ -129,7 +129,7 @@ class UserProfile(models.Model):
     user_slug = models.SlugField(unique=True)
     user_post_code = CharField(max_length=8)
     has_unactioned_notif = models.BooleanField(default=False)
-    max_no_of_items = models.PositiveIntegerField(default=1)
+    max_no_of_items = models.PositiveIntegerField(default=0)
     curr_no_of_items = models.PositiveIntegerField(default=0)
     can_borrow = models.BooleanField(default=True)
     hood = models.ForeignKey(Neighbourhood, on_delete=models.CASCADE)
@@ -144,14 +144,27 @@ class UserProfile(models.Model):
         flags = {}
         if self.curr_no_of_items >= self.max_no_of_items:
             flags['max_no_of_items'] = True
+            self.can_borrow = False
         else:
             flags['max_no_of_items'] = False
 
         notif_list = self.received.filter(notif_action_needed=True, notif_complete=False)
         if notif_list.exists():
             flags['unactioned_notif'] = True
+            self.has_unactioned_notif = True
+            self.can_borrow = False
         else:
             flags['unactioned_notif'] = False
+
+        overdue_loan_list = self.loans.filter(overdue=True)
+
+        if overdue_loan_list.exists():
+            flags['overdue_loan'] = True
+            self.can_borrow = False
+        else:
+            flags['overdue_loan'] = False
+
+        self.save()
 
         return flags
 

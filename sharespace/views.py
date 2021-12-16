@@ -213,6 +213,7 @@ def ajax_cancel_booking(request):
 
         try:
             loan = Loan.objects.get(loan_slug=loan_slug)
+            loan.mark_as_complete_by_lender()
             loan.delete()
             return JsonResponse({'loan_deleted': True, 'msg': "your booking has been deleted", 'redirect_url': redirect_url})
         except Loan.DoesNotExist:
@@ -367,6 +368,7 @@ def item_page_view(request, item_slug):
                 flags = up_dict['up'].can_borrow_check()
                 item_page_context['notif_flag'] = flags['unactioned_notif']
                 item_page_context['max_item_flag'] = flags['max_no_of_items']
+                item_page_context['overdue_loan'] = flags['overdue_loan']
 
                 if item.owner.filter(user_slug=up_dict['up'].user_slug).exists():
                     item_page_context['owner_flag'] = True

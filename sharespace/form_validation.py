@@ -22,6 +22,10 @@ def validate_borrowing_form(item, up, out_date, due_date):
 
     outcome = {'form_valid': False}
 
+    if not validate_user(up, date_out, date_due):
+        outcome['msg'] = "you cannot borrow any item at moment. Please ensure that you do not have unactioned notifications or overdue loans"
+        return outcome
+
     # validate dates
     if not validate_dates_loan(date_out, date_due, max_loan_len):
         # raise error
@@ -56,21 +60,26 @@ def validate_item(item, date_from, date_to):
 
     if date_from.date() == now().date():
         if not item.available:
+            print("form validation - 60 - log: item not available from today")
             return False
         item_q_set = item.on_loan.filter(Q(status = 'pen') | Q(status = 'act'))
         if item_q_set.exists():
+            print("form validation - 60 - log: there are pending or active loans on this item")
             return False
     else:
-        item_q_set = item.on_loan.filter(Q(out_date__lte = date_to, due_date__gte = date_from))
+        item_q_set = item.on_loan.filter(Q(out_date__lte = date_to, due_date__gte = date_from, status__in=['act', 'fut', 'pen']))
         if item_q_set.exists():
+            print("form validation - 70 - log: other loans overlap with this request")
             return False
 
     return True
 
 
 def validate_user(up, date_out, date_due):
-    status_dict = up.can_book_check
+    status_dict = up.can_borrow_check()
     if status_dict['unactioned_notif']:
+        return False
+    elif status_dict['overdue_loan']:
         return False
 
     if date_out.date() == now().date():

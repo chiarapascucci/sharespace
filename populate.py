@@ -164,11 +164,11 @@ def populate():
 
 
     users = {
-       'chp': {'username' : 'chp', 'email':'g1@mail.com', 'password': 'helloyou123', 'contact': '+4407743562738'},
-       'chpa': {'username' : 'chpa', 'email':'GG2@mail.com', 'password': 'helloyou123', 'contact': '+4407743562739'},
-       'chpas1' : {'username' : 'chpas1', 'email':'g3@mail.com', 'password': 'helloyou123', 'contact': '+4407743562731'},
-        'chpi': {'username' : 'chpi', 'email':'gG4@mail.com', 'password': 'helloyou123', 'contact': '+4407743562732'},
-        'chpic' : {'username' : 'chpic', 'email':'g5@MAIL.com', 'password': 'helloyou123', 'contact': '+4407743562733'},
+       'chiara': {'username' : 'chiara', 'email':'g1@mail.com', 'password': 'helloyou123', 'contact': '+4407743562738'},
+       'bob': {'username' : 'bob', 'email':'GG2@mail.com', 'password': 'helloyou123', 'contact': '+4407743562739'},
+       'aba' : {'username' : 'aba', 'email':'g3@mail.com', 'password': 'helloyou123', 'contact': '+4407743562731'},
+        'chris': {'username' : 'chris', 'email':'gG4@mail.com', 'password': 'helloyou123', 'contact': '+4407743562732'},
+        'dan' : {'username' : 'dan', 'email':'g5@MAIL.com', 'password': 'helloyou123', 'contact': '+4407743562733'},
     }
 
     contact_list = ['+4407743562738', '+4407743562739', '+4407743562731', '+4407743562732', '+4407743562733']
