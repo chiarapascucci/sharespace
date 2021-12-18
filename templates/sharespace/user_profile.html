@@ -12,19 +12,19 @@
               <div class="container-fluid py-5">
                   <div class="row">
                       <div class="col-md-4">
-                          <h1 class="display-5 fw-bold">Hi {{ slug }}</h1>
+                          <h1 class="display-5 fw-bold">Hi {{ username }}</h1>
                           <p class="col-md-8 fs-4"><img src = "{{MEDIA_URL}}{{ picture }}" style="height:300px; width:300px" alt="user profile picture" class="rounded-circle" ></p>
 
                       </div>
                       <div class="col-md-4">
                           <h2 class="display-5 fw-bold">Your Info</h2>
-                          <p class="col-md-8 fs-4">user name: {{ slug }}</p>
+                          <p class="col-md-8 fs-4">user name: {{ username }}</p>
                           <p class="col-md-8 fs-4">email: {{ email }}</p>
                           <p class="col-md-8 fs-4">bio: {{ bio }}</p>
                           <p class="col-md-8 fs-4">your neighbourhood: {{ post_code }}</p>
-                          <p> <a href="{% url 'sharespace:edit_user_info' slug %}" class="btn-outline-primary"> Edit your info </a></p>
+                          <p> <a href="{% url 'sharespace:edit_user_info'  %}" class="btn-outline-primary"> Edit your info </a></p>
                           <p><a href = "{% url 'sharespace:change_password'  %}" class="btn-outline-primary" >Change Password</a></p>
-                          <p><a href = "{% url 'sharespace:delete_account' slug %}" class="btn-danger" >Delete Account</a></p>
+                          <p><a href = "{% url 'sharespace:delete_account'  %}" class="btn-danger" >Delete Account</a></p>
                       </div>
                       <div class="col-md-4">
                           <h2 class="display-5 fw-bold">Your Items</h2>
@@ -38,7 +38,7 @@
                                   you do not own any items
                               {% endif %}
                           </ul>
-                          <p><a href = "{% url 'sharespace:your_items_list' slug %}" >Manage Your Items</a></p>
+                          <p><a href = "{% url 'sharespace:your_items_list'%}" >Manage Your Items</a></p>
                       </div>
                   </div>
               </div>

@@ -34,7 +34,7 @@
 
         {% if user.is_authenticated %}
             {% if owner_flag %}
-                this if your own item - you can manage this item <a href="{% url 'sharespace:your_items_list' up.user_slug %}">here</a>
+                this if your own item - you can manage this item <a href="{% url 'sharespace:your_items_list' %}">here</a>
             {% else %}
                 {% if notif_flag or max_item_flag or overdue_loan_flag %}
                     {% if notif_flag %}

@@ -1,6 +1,6 @@
 from django.urls import path 
 from sharespace import views
-from sharespace.views import BorrowItemView
+
 
 app_name = 'sharespace'
 
@@ -20,14 +20,14 @@ urlpatterns = [
 
     path('add_item/', views.AddItemView.as_view(), name = 'add_item'),
     path('item/<slug:item_slug>/', views.item_page_view, name = 'item_page'),
-    path('item/<slug:item_slug>/borrow/', BorrowItemView.as_view(), name='borrow_item'),
+    path('item/<slug:item_slug>/borrow/', views.BorrowItemView.as_view(), name='borrow_item'),
     path('item/<slug:item_slug>/edit/', views.EditItemView.as_view(), name='edit_item'),
     path('item/<slug:item_slug>/delete/', views.ajax_delete_item, name='delete_item'),
     path('user/complete-profile/', views.CompleteProfileView.as_view(), name = 'complete_profile'),
-    path('user/<slug:user_slug>/', views.user_profile_view, name='user_profile'),
-    path('user/<slug:user_slug>/edit/', views.edit_profile, name = 'edit_user_info'),
-    path('user/<slug:user_slug>/your-items/', views.your_items_list_view, name = 'your_items_list'),
-    path('user/<slug:user_slug>/delete/', views.AccountDeletionView.as_view(), name = 'delete_account'),
+    path('user/', views.UserProfileView.as_view(), name='user_profile'),
+    path('user/edit/', views.edit_profile, name = 'edit_user_info'),
+    path('user/your-items/', views.your_items_list_view, name = 'your_items_list'),
+    path('user/delete/', views.AccountDeletionView.as_view(), name = 'delete_account'),
 
     path('submit-report/<slug:subject_slug>', views.SubmitReportView.as_view(), name = 'submit_report'),
 

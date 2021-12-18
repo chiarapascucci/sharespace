@@ -23,7 +23,8 @@ from datetime import datetime, date
 from django.http import JsonResponse
 
 from sharespace.text_data import get_filler_paragraph
-from sharespace.utils import get_booking_calendar_for_item_for_month, extract_us_up
+from sharespace.utils import get_booking_calendar_for_item_for_month, extract_us_up, test_item_ownership, \
+    test_loan_ownership, test_notif_ownership
 
 utc = pytz.UTC
 
@@ -203,7 +204,7 @@ def notification_list_view(request):
 def ajax_cancel_booking(request):
     up_dict = extract_us_up(request)
     if up_dict['up'] is not None:
-        redirect_url = reverse('sharespace:user_profile', kwargs={'user_slug': up_dict['up'].user_slug})
+        redirect_url = reverse('sharespace:user_profile')
     else:
         redirect_url = reverse('sharespace:index')
     if request.method == 'POST':
@@ -273,10 +274,10 @@ def ajax_delete_item(request, item_slug):
 
 class AccountDeletionView(View):
     @method_decorator(login_required)
-    def get(self, request, user_slug):
+    def get(self, request):
         context = {}
-        try:
-            up = UserProfile.objects.get(user_slug=user_slug)
+        up = extract_us_up(request)['up']
+        if up is not None:
             items_owned = up.owned.all()
             items_list = []
             if items_owned.exists():
@@ -287,23 +288,18 @@ class AccountDeletionView(View):
                         if not item.guardian == up:
                             pass
                         else:
-                            items_list.append(item)
-                            context['item_list'] = items_list
-
+                                items_list.append(item)
+                                context['item_list'] = items_list
             context['up'] = up
+            return render(request, 'sharespace/delete_account.html', context=context)
+        else:
+            return HttpResponse("Something went wrong, please try again")
 
-        except UserProfile.DoesNotExist:
-            return HttpResponse("something went wrong - no profile retrieved")
-        return render(request, 'sharespace/delete_account.html', context=context)
-
+    # NEED TO CHANGE
     @method_decorator(login_required)
-    def post(self, request, user_slug):
+    def post(self, request):
         pp(request.POST)
         return HttpResponse("your account deletion request has been received. You'll get a confirmation email when the request has been processed")
-
-
-
-
 
 
 def category_page_view(request, cat_slug):
@@ -349,8 +345,6 @@ def change_password_view(request):
     })
 
 
-
-
 def item_page_view(request, item_slug):
     item_page_context = {}
 
@@ -361,23 +355,20 @@ def item_page_view(request, item_slug):
         item_page_context['owners'] = item.owner.all()
         item_page_context['gallery'] = item.images.all()
         if not request.user.is_anonymous:
-
             up_dict = extract_us_up(request)
             if not up_dict['up'] is None:
+                item_page_context['owner_flag'] = test_item_ownership(request, item_slug)
                 item_page_context['up'] = up_dict['up']
-                flags = up_dict['up'].can_borrow_check()
-                item_page_context['notif_flag'] = flags['unactioned_notif']
-                item_page_context['max_item_flag'] = flags['max_no_of_items']
-                item_page_context['overdue_loan'] = flags['overdue_loan']
-
-                if item.owner.filter(user_slug=up_dict['up'].user_slug).exists():
-                    item_page_context['owner_flag'] = True
-
+                if item_page_context['owner_flag']:
+                    return render(request, 'sharespace/item_page.html', context=item_page_context)
+                else:
+                    flags = up_dict['up'].can_borrow_check()
+                    item_page_context['notif_flag'] = flags['unactioned_notif']
+                    item_page_context['max_item_flag'] = flags['max_no_of_items']
+                    item_page_context['overdue_loan'] = flags['overdue_loan']
+                    return render(request, 'sharespace/item_page.html', context=item_page_context)
     except Item.DoesNotExist:
-        item_page_context['item'] = None
-
-    return render(request, 'sharespace/item_page.html', context=item_page_context)
-
+        return HttpResponse("Something went wrong: No Item Found")
 
 # ajax view
 def load_sub_cat_view(request):
@@ -399,20 +390,14 @@ def load_user_profile_view(request):
         user = CustomUser.objects.get(username=username)
         try:
             user_profile = UserProfile.objects.get(user=user)
-            profile_url = reverse('sharespace:user_profile', kwargs={'user_slug': user_profile.user_slug})
-
-            add_item_url = reverse('sharespace:add_item')
             pic_path = str(user_profile.picture)
             pic_path = "/media/" + pic_path
-            print(type(pic_path), "---", pic_path, "--- type of user url: ", type(profile_url))
-
+            print(type(pic_path), "---", pic_path, "--- type of user url: ")
 
         except UserProfile.DoesNotExist:
-
-            profile_url = reverse('sharespace:complete_profile')
             pic_path = "/media/profile_images/default_profile_image.png"
 
-        return JsonResponse({'user_url': profile_url, 'img_path': pic_path})
+        return JsonResponse({'img_path': pic_path})
     except CustomUser.DoesNotExist:
         print("user does not exist - views 253")
         return JsonResponse({})
@@ -514,42 +499,26 @@ class CompleteProfileView(View):
 
                 profile.save()
 
-                return redirect(reverse('sharespace:user_profile', kwargs={'user_slug': profile.user_slug}))
+                return redirect(reverse('sharespace:user_profile'))
             else:
                 print(profile_form.errors)
                 return render(request, 'sharespace/complete_profile.html', {})
 
 
-
-# need to convert this to a class based view
-def user_profile_view(request, user_slug):
-    print("in user profile view")
-
-    user_profile_context = {}
-
-    try:
-        username = request.user.get_username()
-        name = request.user.get_full_name()
-
-        print(request.GET)
-
-        print('printing username: ', username)
-        print('printin full name:', name)
-
-        user_profile_context['username'] = username
-        user_profile_context['full_name'] = name
-
-        try:
-            user_profile = UserProfile.objects.get(user_slug=user_slug)
-            print("user is borrowing: ", user_profile.curr_no_of_items, "\n user can borrow mad:",
-                  user_profile.max_no_of_items, "you can still borrow? ", user_profile.can_borrow)
+class UserProfileView(View):
+    @method_decorator(login_required)
+    def get(self, request):
+        user_profile_context = {}
+        user_profile = extract_us_up(request)['up']
+        if user_profile is not None:
             user_profile_context['bio'] = user_profile.bio
             user_profile_context['post_code'] = user_profile.user_post_code
             user_profile_context['owned_items'] = user_profile.owned.all()[:5]
-            user_profile_context['slug'] = user_profile.user_slug
-            notif_list = get_user_notification(user_profile)[:10]
+            user_profile_context['slug'] = None
+            user_profile_context['email'] = user_profile.user.email
+            user_profile_context['username'] = user_profile.user.username
             user_profile_context['subscriptions'] = user_profile.interested.all()[:10]
-
+            notif_list = get_user_notification(user_profile)[:10]
             if notif_list:
                 user_profile_context['notifications'] = notif_list
             try:
@@ -566,45 +535,48 @@ def user_profile_view(request, user_slug):
             except PurchaseProposal.DoesNotExist:
                 print("no props for this user")
 
-
-
             user_profile_context['picture'] = user_profile.picture
-            print(user_profile_context)
 
-        except UserProfile.DoesNotExist:
-            print("no user profile")
-    except CustomUser.DoesNotExist:
-        print("no user")
-
-    return render(request, 'sharespace/user_profile.html', context=user_profile_context)
+            return render(request, 'sharespace/user_profile.html', context=user_profile_context)
+        else:
+            return HttpResponse("Something went wrong, please go back to the home page and try again")
 
 
 @login_required
-def edit_profile(request, user_slug):
+def edit_profile(request):
     form = EditUserProfileBasicForm()
-    if request.method == 'POST':
-        print("in edit profile view, post request")
-        print(request.POST)
-        form = EditUserProfileBasicForm(request.POST, request.FILES,
-                                        instance=UserProfile.objects.get(user_slug=user_slug))
-        if form.is_valid():
-            form.save(commit=True)
-            return redirect(reverse('sharespace:user_profile', kwargs={'user_slug': user_slug}))
+    up_instance = extract_us_up(request)['up']
+    if up_instance is not None:
+
+        if request.method == 'POST':
+            print("in edit profile view, post request")
+            print(request.POST)
+            form = EditUserProfileBasicForm(request.POST, request.FILES,
+                                            instance=up_instance)
+            if form.is_valid():
+                form.save(commit=True)
+                return redirect(reverse('sharespace:user_profile'))
+            else:
+                print(form.errors)
+            return redirect(reverse('sharespace:user_profile'))
         else:
-            print(form.errors)
-        return redirect(reverse('sharespace:user_profile', kwargs={'user_slug': user_slug}))
+            form = EditUserProfileBasicForm(instance=up_instance)
+            context_dict = {}
+            context_dict['form'] = form
+            return render(request, ('sharespace/edit_user_info.html'), context=context_dict)
     else:
-        form = EditUserProfileBasicForm(instance=UserProfile.objects.get(user_slug=user_slug))
-        context_dict = {}
-        context_dict['form'] = form
-        return render(request, ('sharespace/edit_user_info.html'), context=context_dict)
+        return HttpResponse("Something went wrong, please go back to the home page and try again")
 
 
-def your_items_list_view(request, user_slug):
-    up = UserProfile.objects.get(user_slug=user_slug)
-    item_list = up.owned.all()
-    context = {'owned_items': item_list}
-    return render(request, 'sharespace/owned_items_list.html', context=context)
+@login_required
+def your_items_list_view(request):
+    up = extract_us_up(request)['up']
+    if up is not None:
+        item_list = up.owned.all()
+        context = {'owned_items': item_list}
+        return render(request, 'sharespace/owned_items_list.html', context=context)
+    else:
+        return HttpResponse("something went wrong, please try again")
 
 
 # ---------- CLASS BASED VIEWS ------------
@@ -612,11 +584,10 @@ class EditItemView(View):
     @method_decorator(login_required)
     def get(self, request, item_slug):
         ImageFormSet = modelformset_factory(Image, form=ImageForm, extra=3)
+        if not test_item_ownership(request, item_slug):
+            return HttpResponse("you do not have permission to edit this item")
         try:
             item = Item.objects.get(item_slug=item_slug)
-            up = extract_us_up(request)['up']
-            if not item.owner.filter(user_slug=up.user_slug).exists():
-                return HttpResponse("you do not have permission to edit this item")
             context = {
                 'categories': Category.objects.all(),
                 'item': item,
@@ -641,25 +612,27 @@ class EditItemView(View):
 
 
 class BorrowItemView(View):
-    print("in borrow item viewp")
-
     @method_decorator(login_required)
     def get(self, request, item_slug):
-        month = datetime.today().month
-        year = datetime.today().year
-        item = Item.objects.get(item_slug=item_slug)
-        cal_list = [get_booking_calendar_for_item_for_month(item, month, year)]
-        for i in range(1, 3):
-            month += 1
-            if month > 12:
-                month = 1
-                year += 1
+        if test_item_ownership(request, item_slug):
+            return HttpResponse("this is your own item")
+        else:
 
-            cal_list.append(get_booking_calendar_for_item_for_month(item, month, year))
+            month = datetime.today().month
+            year = datetime.today().year
+            item = Item.objects.get(item_slug=item_slug)
+            cal_list = [get_booking_calendar_for_item_for_month(item, month, year)]
+            for i in range(1, 3):
+                month += 1
+                if month > 12:
+                    month = 1
+                    year += 1
 
-        context = {'item_slug': item_slug, 'cal_list': cal_list, 'item': item}
+                cal_list.append(get_booking_calendar_for_item_for_month(item, month, year))
 
-        return render(request, 'sharespace/borrow_item.html', context=context)
+            context = {'item_slug': item_slug, 'cal_list': cal_list, 'item': item}
+
+            return render(request, 'sharespace/borrow_item.html', context=context)
 
     @method_decorator(login_required)
     def post(self, request, item_slug):
@@ -676,68 +649,65 @@ def ajax_borrow_item_view(request):
         due_date = request.POST['date_in']
         out_date = request.POST['date_out']
         item_slug = request.POST['item_slug']
-        user_dict = extract_us_up(request)
-        if user_dict:
-            up = user_dict['up']
-            user_slug = up.user_slug
-
+        up = extract_us_up(request)['up']
+        if up is None:
+            return HttpResponse(response)
         else:
-            print("no user found")
-            return HttpResponse(response)
-
-        try:
-            item = Item.objects.get(item_slug=item_slug)
-            form_is_valid = validate_borrowing_form(item, up, out_date, due_date)
-            if form_is_valid['form_valid']:
-                due_date = f"{due_date}-19:00"
-                out_date = F"{out_date}-09:00"
-                due_date = datetime.strptime(due_date, "%Y-%m-%d-%H:%M").replace(tzinfo=utc)
-                out_date = datetime.strptime(out_date, "%Y-%m-%d-%H:%M").replace(tzinfo=utc)
-                print(f"views - 500 - log: printing requested out date: {out_date} - and due date: {due_date}")
-                loan = Loan.objects.create(requestor=up, item_on_loan=item, due_date=due_date, out_date=out_date)
-                loan.update_loan()
-                print("views - 500 - log : printing loan - ", loan)
-                return HttpResponse("loan created")
+            if test_item_ownership(request, item_slug):
+                return HttpResponse("this is your own item")
             else:
-                print(
-                    f"views - 500 - log: borrow item form did no pass validation form valid: {form_is_valid['form_valid']} -- message: {form_is_valid['msg']}")
-                return HttpResponse(form_is_valid['msg'])
+                try:
+                    item = Item.objects.get(item_slug=item_slug)
+                    form_is_valid = validate_borrowing_form(item, up, out_date, due_date)
+                    if form_is_valid['form_valid']:
+                        due_date = f"{due_date}-19:00"
+                        out_date = F"{out_date}-09:00"
+                        due_date = datetime.strptime(due_date, "%Y-%m-%d-%H:%M").replace(tzinfo=utc)
+                        out_date = datetime.strptime(out_date, "%Y-%m-%d-%H:%M").replace(tzinfo=utc)
+                        print(f"views - 500 - log: printing requested out date: {out_date} - and due date: {due_date}")
+                        loan = Loan.objects.create(requestor=up, item_on_loan=item, due_date=due_date, out_date=out_date)
+                        loan.update_loan()
+                        print("views - 500 - log : printing loan - ", loan)
+                        return HttpResponse("loan created")
+                    else:
+                        print(
+                            f"views - 500 - log: borrow item form did no pass validation form valid: {form_is_valid['form_valid']} -- message: {form_is_valid['msg']}")
+                        return HttpResponse(form_is_valid['msg'])
 
-        except Item.DoesNotExist:
-            print("no item retrieved")
-            return HttpResponse(response)
+                except Item.DoesNotExist:
+                    print("no item retrieved")
+                    return HttpResponse(response)
 
 
 class LoanView(View):
     @method_decorator(login_required)
     def get(self, request, loan_slug):
-
-        loan = Loan.objects.get(loan_slug=loan_slug)
-        del_flag = False
-        up_flag = False
-        return_flag = False
-        fut_flag = False
-        status_dict = loan.get_full_status()
-        print(status_dict)
-        if status_dict['status'] == 'fut':
-            del_flag = True
-        elif status_dict['status'] == 'act':
-            return_flag = True
-        elif status_dict['status'] == 'pen':
-            if status_dict['picked_up']:
-                pass
-            else:
+        if test_loan_ownership(request, loan_slug):
+            loan = Loan.objects.get(loan_slug=loan_slug)
+            del_flag = False
+            up_flag = False
+            return_flag = False
+            fut_flag = False
+            status_dict = loan.get_full_status()
+            print(status_dict)
+            if status_dict['status'] == 'fut':
                 del_flag = True
-                up_flag = True
+            elif status_dict['status'] == 'act':
+                return_flag = True
+            elif status_dict['status'] == 'pen':
+                if status_dict['picked_up']:
+                    pass
+                else:
+                    del_flag = True
+                    up_flag = True
+            else:
+                pass
+            loan_context = {'loan': loan, 'del_flag': del_flag, 'return_flag': return_flag, 'fut_flag': fut_flag, 'up_flag': up_flag}
+            print("views - 660 - log printing context to loan view: ", loan_context)
+
+            return render(request, 'sharespace/loan_page.html', context=loan_context)
         else:
-            pass
-        loan_context = {'loan': loan, 'del_flag': del_flag, 'return_flag': return_flag, 'fut_flag': fut_flag, 'up_flag': up_flag}
-        print("views - 660 - log printing context to loan view: ", loan_context)
-
-        return render(request, 'sharespace/loan_page.html', context=loan_context)
-
-    def post(self, request):
-        pass
+            return HttpResponse("you are not the requestor of this loan")
 
 
 class MarkItemAsReturnedPendingApproval(View):
@@ -752,14 +722,12 @@ class MarkItemAsReturnedPendingApproval(View):
             print("trying loan")
             loan = Loan.objects.get(loan_slug=loan_slug)
             loan.mark_as_complete_by_borrower()
-
+            return HttpResponse(loan.status)
         except Loan.DoesNotExist:
             print("no loan")
 
         except ValueError:
             return HttpResponse(-1)
-
-        return HttpResponse(loan.status)
 
 
 class SearchView(View):
@@ -800,37 +768,37 @@ class SearchView(View):
 class LoanCompleteNotificationView(View):
     @method_decorator(login_required)
     def get(self, request, notification_slug):
-        # coded form manually
-        # form = None
+        if test_notif_ownership(request, notification_slug):
+            notif = Notification.objects.get(notif_slug=notification_slug)
+            if not notif.notif_read:
+                notif.notif_read = True
+                notif.save()
+            print(notif)
+            sender = notif.notif_origin
+            receiver = notif.notif_target
+            title = notif.notif_title
+            body = notif.notif_body
+            context = {
+                'notification': notif,
+                'from_user': sender,
+                'to_user': receiver,
+                'title': title,
+                'body': body,
+                'notification_slug': notification_slug,
+                'read': notif.notif_read,
+                'complete': notif.notif_complete,
+            }
 
-        notif = Notification.objects.get(notif_slug=notification_slug)
-        if not notif.notif_read:
-            notif.notif_read = True
-            notif.save()
-        print(notif)
-        sender = notif.notif_origin
-        receiver = notif.notif_target
-        title = notif.notif_title
-        body = notif.notif_body
-        context = {
-            'notification': notif,
-            'from_user': sender,
-            'to_user': receiver,
-            'title': title,
-            'body': body,
-            'notification_slug': notification_slug,
-            'read': notif.notif_read,
-            'complete': notif.notif_complete,
-        }
-        # NEED TO LOOK INTO THIS BETTER - 3 WAY LOGIC
-        if notif.notif_complete or (not notif.notif_action_needed):
-            context['msg'] = "thank you for actioning this notification \n " \
-                             "if you submitted a report please see your reports page for any updates "
-            context['complete'] = True
+            if notif.notif_complete or (not notif.notif_action_needed):
+                context['msg'] = "thank you for actioning this notification \n " \
+                                 "if you submitted a report please see your reports page for any updates "
+                context['complete'] = True
 
+            else:
+                context['msg'] = "please select an action for this notification"
+            return render(request, 'sharespace/notification_page.html', context=context)
         else:
-            context['msg'] = "please select an action for this notification"
-        return render(request, 'sharespace/notification_page.html', context=context)
+            return HttpResponse("you are not the recipient of this notification")
 
     @method_decorator(login_required)
     def post(self, request, notification_slug):
@@ -859,14 +827,16 @@ class LoanCompleteNotificationView(View):
 class SubmitReportView(View):
     @method_decorator(login_required)
     def get(self, request, subject_slug):
-        report_subject = unpack_slug_for_report(subject_slug)
+
         up_dict = extract_us_up(request)
 
         if up_dict['up'] is None:
             return HttpResponse("404 user not found")
 
         up = up_dict['up']
-
+        report_subject = unpack_slug_for_report(subject_slug, up)
+        if report_subject is None:
+            return HttpResponse("Something went wrong, or you cannot submit a report on this")
         bound_form_data = {
             'report_sender': up,
             'report_subject': report_subject,
@@ -883,18 +853,24 @@ class SubmitReportView(View):
 
         print(request.POST)
         form = SubmitReportForm(request.POST)
+
+        up = extract_us_up(request)['up']
+        if up is None:
+            return HttpResponse("no user found")
+        subject = unpack_slug_for_report(subject_slug, up)
+        if subject is None:
+            return HttpResponse("something went wrong or you cannot submit a report on this")
         if form.is_valid():
             report = form.save(commit=False)
-            subject = unpack_slug_for_report(subject_slug)
+
             if subject is None:
                 return HttpResponse("invalid report subject")
             else:
                 report.content_object = subject
                 report.save()
-                up = extract_us_up(request)['up']
 
-                return render(request, 'sharespace/waiting_page.html', context = {'profile_slug': up.user_slug,
-                                                                                  'message': "your report was "
+
+                return render(request, 'sharespace/waiting_page.html', context = {'message': "your report was "
                                                                                              "submitted correctly. "
                                                                                              "Admin will review and "
                                                                                              "take  appropriate "
@@ -906,6 +882,7 @@ class SubmitReportView(View):
                                                                                              "us! "})
         else:
             print("there are report form errors: ", form.errors)
+            return HttpResponse("there are error in the form: ", form.errors)
 
 
 class SubmitPurchaseProposal(View):
@@ -1067,8 +1044,7 @@ def ajax_delete_purchase_proposal(request):
     if up is None:
         redirect_url = reverse('sharespace:index')
     else:
-
-        redirect_url = reverse('sharespace:user_profile',  kwargs={'user_slug': up.user_slug})
+        redirect_url = reverse('sharespace:user_profile')
 
     if request.method == 'POST':
 
@@ -1078,8 +1054,12 @@ def ajax_delete_purchase_proposal(request):
             try:
                 proposal = PurchaseProposal.objects.get(proposal_slug=proposal_slug)
                 print("view - 990 - log: found proposal: ", proposal)
-                proposal.delete()
-                return JsonResponse({'prop_deleted': True, 'msg':"Your purchase proposal has been deleted", 'redirect_url': redirect_url})
+                if proposal.proposal_submitter == up:
+                    proposal.delete()
+                    return JsonResponse({'prop_deleted': True, 'msg':"Your purchase proposal has been deleted", 'redirect_url': redirect_url})
+                else:
+                    return JsonResponse({'prop_deleted': False, 'msg': "this is not your proposal",
+                                         'redirect_url': redirect_url})
             except PurchaseProposal.DoesNotExist:
                 return JsonResponse({'prop_deleted': False, 'msg':"No proposal was found, please try again", 'redirect_url': redirect_url})
 
@@ -1091,19 +1071,39 @@ def ajax_delete_purchase_proposal(request):
 # ---------------- HELPER FUNCTIONS --------------
 
 
-def unpack_slug_for_report(slug):
+def unpack_slug_for_report(slug, up):
     print("views - 900 - log: printing slug ", slug)
 
     if slug.find("loan") >= 0:
-        loan = Loan.objects.get(loan_slug=slug)
+        try:
+            loan = Loan.objects.get(loan_slug=slug)
+            if (loan.requestor == up or loan.item_on_loan.guardian == up) and not (loan.status == loan.COMPLETED or loan.status==loan.FUTURE):
+                return Loan
+            else:
+                return None
+        except Loan.DoesNotExist:
+            return None
 
-        return loan
     elif slug.find("item") >= 0:
-        item = Item.objects.get(item_slug = slug)
-
-        return item
+        try:
+            item = Item.objects.get(item_slug = slug)
+            if not (item.guardian==up or item.owner.filter(user_slug=up.user_slug).exists()):
+                return item
+            else:
+                return False
+        except Item.DoesNotExist:
+            return None
+    elif slug.find("proposal") >= 0:
+        try:
+            prop = PurchaseProposal.objects.get(proposal_slug= slug)
+            if not prop.proposal_submitter == up:
+                return prop
+            else:
+                return None
+        except PurchaseProposal.DoesNotExist:
+            return None
     else:
-        print("submitting report for non-linked enetity")
+        print("submitting report for non-linked entity")
         return None
 
 
@@ -1218,3 +1218,4 @@ def process_add_item_form(request):
         return form_dict
     else:
         return {'form_valid': False, 'msg': validation['msg']}
+

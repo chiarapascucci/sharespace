@@ -39,6 +39,8 @@
               {% else %}
                   <button id="subscribe-btn" onclick="subscribe_to_proposal()"  data-url-action="{% url 'sharespace:ajax_sub_to_prop' %}" value="Subscribe" data-prop-slug = "{{ proposal.proposal_slug }}">Subscribe</button>
               {% endif %}
+              <p>Something wrong with this proposal? Click on the button below to report it</p>
+              <a id="report-proposal" class="btn btn-danger" href="{% url 'sharespace:submit_report'  proposal.proposal_slug %}">Report</a>
           {% endif %}
          <br>
         <br><br>

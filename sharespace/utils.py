@@ -1,6 +1,6 @@
 from calendar import HTMLCalendar
 
-from sharespace.models import UserProfile, CustomUser
+from sharespace.models import UserProfile, CustomUser, Item, Loan, Notification, PurchaseProposal
 
 
 class BookingCalendar(HTMLCalendar):
@@ -87,4 +87,63 @@ def extract_us_up (request):
             print("no user here (views)")
             return {'us': None, 'up': None}
 
+
+def test_item_ownership(request, item_slug):
+    try:
+        item = Item.objects.get(item_slug=item_slug)
+        up = extract_us_up(request)['up']
+        if up is None:
+            return False
+        else:
+            if not item.owner.filter(user_slug=up.user_slug).exists():
+                return False
+            else:
+                return True
+    except Item.DoesNotExist:
+        return False
+
+
+def test_loan_ownership(request, loan_slug):
+    try:
+        loan = Loan.objects.get(loan_slug=loan_slug)
+        up = extract_us_up(request)['up']
+        if up is None:
+            return False
+        else:
+            if not loan.requestor == up:
+                return False
+            else:
+                return True
+    except Loan.DoesNotExist:
+        return False
+
+
+def test_notif_ownership(request, notif_slug):
+    up = extract_us_up(request)['up']
+    if up is not None:
+        try:
+            notif = Notification.objects.get(notif_slug=notif_slug)
+            if notif.notif_target == up:
+                return True
+            else:
+                return False
+        except Notification.DoesNotExist:
+            return False
+    else:
+        return False
+
+
+def test_proposal_ownership(request, prop_slug):
+    up = extract_us_up(request)['up']
+    if up is None:
+        return False
+    else:
+        try:
+            proposal = PurchaseProposal.objects.get(proposal_contact=prop_slug)
+            if proposal.proposal_submitter == up:
+                return True
+            else:
+                return False
+        except PurchaseProposal.DoesNotExist:
+            return False
 

@@ -18,7 +18,7 @@
     </ul>
     <p><strong>Please let us know in the text box below if any of the assumption listed are not correct.</strong> If that's the case we will be in touch via email to process your request</p>
 
-    <form id="delete-account-form" method="post" action="{% url 'sharespace:delete_account' up.user_slug %}" enctype = 'multipart/form-data'>
+    <form id="delete-account-form" method="post" action="{% url 'sharespace:delete_account' %}" enctype = 'multipart/form-data'>
         {% csrf_token %}
         {% if item_list %}
             {% for item in item_list %}

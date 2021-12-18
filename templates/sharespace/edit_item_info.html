@@ -9,7 +9,7 @@
 
 <h1> Edit Your Item </h1>
 
-<form id="edit_item_form" method="post" action="{% url 'sharespace:add_item' %}" enctype = 'multipart/form-data' data-sub-cat-url = "{% url 'sharespace:ajax_load_sub_cat' %}">
+<form id="add_item_form" method="post" action="" enctype = 'multipart/form-data' data-sub-cat-url = "{% url 'sharespace:ajax_load_sub_cat' %}">
     {% csrf_token %}
     <div>
 		<label for="id_name">Name:</label> <input type="text" name="name" maxlength="55"  id="id_name" value="{{ name }}">
@@ -24,7 +24,7 @@
 
         <label for="sec_category">Sec category:</label>
             <select id="sec_category" name="sec_category" > </select>
-                 <option value="{{ sec_cat }}">{{ sec_cat }}</option>
+                 <option value="{{ sec_cat }}" selected>{{ sec_cat }}</option>
 
         <p><label for="id_max_loan_len">Max loan len:</label>
             Currently set at : {{ max_len_loan }} weeks

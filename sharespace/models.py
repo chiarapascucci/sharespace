@@ -1,12 +1,13 @@
 import uuid
 from calendar import monthrange
 from datetime import datetime, timedelta
+from decimal import Decimal
 from pprint import pprint
 
 from django.contrib.auth.models import AbstractUser
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
-from django.core.validators import MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Q
 from django.db.models.fields import CharField
@@ -480,7 +481,7 @@ class PurchaseProposal(models.Model):
     proposal_cat = models.ForeignKey(Category, null=False, on_delete=models.CASCADE)
     proposal_sub_cat = models.ForeignKey(SubCategory, null=True, on_delete=models.SET_NULL)
     proposal_item_description = models.TextField(blank=False, max_length=MAX_LENGTH_TEXT)
-    proposal_price = models.DecimalField(max_digits=10, decimal_places=2, blank=False)
+    proposal_price = models.DecimalField(max_digits=10, decimal_places=2, blank=False, validators=[MinValueValidator(Decimal('0.01'))])
     proposal_hood = models.ForeignKey(Neighbourhood, null=False, on_delete=models.CASCADE)
     proposal_slug = models.SlugField(primary_key=True)
     proposal_active = models.BooleanField(default=True)
@@ -488,12 +489,12 @@ class PurchaseProposal(models.Model):
     proposal_timestamp = models.DateTimeField(blank=False, default=default_time)
     proposal_subs_count = models.PositiveIntegerField(default=1)
     proposal_reported = GenericRelation(ReportToAdmin)
+    proposal_id = models.CharField(default=uuid.uuid4, max_length=70)
 
     def save(self, *args, **kwargs):
         self.proposal_hood = self.proposal_submitter.hood
         self.proposal_postcode = self.proposal_hood.nh_post_code
-        self.proposal_slug = slugify("{self.proposal_item_name}-{self.proposal_hood.nh_post_code}-"
-                                     "{self.proposal_timestamp}-".format(self=self))
+        self.proposal_slug = slugify("proposal--{self.proposal_id}".format(self=self))
         super(PurchaseProposal, self).save(*args, **kwargs)
 
     def __str__(self):

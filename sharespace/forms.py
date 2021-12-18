@@ -96,6 +96,7 @@ class SubmitReportForm(forms.ModelForm):
 
 class SubmitPurchaseProposalForm(forms.ModelForm):
     proposal_contact = PhoneNumberField()
+    proposal_price = forms.DecimalField(required=True, max_digits=10, min_value=0.01)
 
     class Meta:
         model = PurchaseProposal

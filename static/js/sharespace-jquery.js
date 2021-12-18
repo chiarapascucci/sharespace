@@ -8,25 +8,25 @@ $(document).ready(function() {
     $("#main_category").change(function(){
 		const url = $("#add_item_form").attr("data-sub-cat-url");
 		const catID = $(this).val();
-        console.log("main cat selected")
+        console.log("main cat selected");
 		$.ajax({
 			url : url,
 			data: { 'main_category_id' : catID },
 			success : function(data) {
-                console.log("ajax request success (cat)")
-                console.log(data)
+                console.log("ajax request success (cat)");
+                console.log(data);
 				$("#sec_category").html(data);
 			}
 		});
 	});
 
     $("#id_user_post_code").keyup(function(){
-        let btn = $('#complete-profile-btn').attr('disabled', true)
+        let btn = $('#complete-profile-btn').attr('disabled', true);
         let post_code = $('#id_user_post_code').val();
-        console.log(post_code)
-        const api_url = "https://api.postcodes.io/postcodes/"
-        let full_url = api_url + post_code + "/validate"
-        console.log(full_url)
+        console.log(post_code);
+        const api_url = "https://api.postcodes.io/postcodes/";
+        let full_url = api_url + post_code + "/validate";
+        console.log(full_url);
         if (post_code.length >= 6){
             let request = new XMLHttpRequest();
             request.onreadystatechange = function() {
@@ -80,7 +80,6 @@ $(document).ready(function() {
         console.log(dateIn);
         console.log(dateOut);
         console.log(itemSlug);
-        console.log(csrftoken)
 
         $.ajax({
             url : url,
@@ -171,21 +170,20 @@ function isEmpty(obj) {
 }
 
 function ajax_user_query(){
-    console.log("profile link func")
-        const full_data = $("#profile-link").attr("data-username-url");
-        console.log(full_data)
-        const elems = full_data.split('-')
-        console.log(elems[0], elems[1])
-        url = elems[0]
-        username = elems[1]
+    console.log("profile pic func");
+    let link = $('#profile-link');
+    let url = link.attr('url-data');
+    let username = link.attr('username-data');
+    console.log(link)
+    console.log(url)
+    console.log(username)
+
         $.ajax({
             url : url,
             data : {'username': username},
             success : function(data){
                 console.log(data);
-
                 set_elements(data);
-
             }
         });
 }
@@ -205,13 +203,9 @@ function set_elements(data) {
             console.log(data.user_url);
 
             const img_path = data.img_path;
-            const profile_url = data.user_url;
+
 
             console.log(img_path);
-            console.log(profile_url);
-
-            var profile_link = document.getElementById("profile-link");
-            profile_link.setAttribute("href", profile_url);
 
             var profile_icon = document.getElementById("profile-icon");
             console.log(profile_icon)
