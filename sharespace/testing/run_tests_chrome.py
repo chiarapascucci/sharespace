@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta
-
-from sharespace.testing.tests import testcase1, testcase2, testcase3, testcase4, testcase5, testcase6, testcase7, \
+from sharespace.testing.tests_cases import testcase1, testcase2, testcase3, testcase4, testcase5, testcase6, testcase7, \
     testcase8, testcase9, testcase10, testcase11, testcase12
 
 user1 = {'email':'g1@mail.com', 'pwd': 'helloyou123', 'username':'chiara', }
 user2 = {'email':'gg2@mail.com', 'pwd': 'helloyou123', 'username':'bob', }
 user3 = {'email':'g3@mail.com', 'pwd': 'helloyou123', 'username':'aba', }
+
 
 
 class TestAddItem():
@@ -19,17 +19,18 @@ class TestAddItem():
                         'cat': 'Kitchen', 'sub_cat': 'utensils', 'price': '2300'}
 
     def test_add_item_one_owner(self):
-        print("=============== results of test 1: add item with one owner  =================")
+
+        #print("=============== results of test 1: add item with one owner  =================")
         result = testcase1(email=user1['email'], pwd=user1['pwd'], item_info=self.add_item_test1)
         assert result == True
-        print("=============================================================================")
+        #print("=============================================================================")
 
     def test_add_item_mult_owners(self):
-        print("=============== results of test 2: add item with multiple owners owner  =================")
+
+        #print("=============== results of test 2: add item with multiple owners owner  =================")
         result = testcase2(email=user1['email'], pwd=user1['pwd'], item_info=self.add_item_test2)
         assert result == True
-        print("=============================================================================")
-
+        #print("=============================================================================")
 
 class TestBorrowItem():
     today = datetime.now().strftime("%d%m%Y")
@@ -40,38 +41,38 @@ class TestBorrowItem():
     loan3 = {'name': 'test1', 'from': one_week, 'until': two_weeks}
 
     def test_borrow_item_today(self):
-        print("\n=============== results of test 3: borrow item from today  =================")
+        #print("\n=============== results of test 3: borrow item from today  =================")
         result = testcase3(email=user3['email'], pwd=user3['pwd'], username=user3['username'], loan_data=self.loan1)
         assert result == True
-        print("=============================================================================")
+        #print("=============================================================================")
 
     def test_confirm_pickup(self):
-        print("\n=============== results of test 4: confirm pick up  =================")
+       # print("\n=============== results of test 4: confirm pick up  =================")
         result = testcase4(email=user3['email'], pwd=user3['pwd'], username=user3['username'])
         assert result == True
-        print("=============================================================================")
+        #print("=============================================================================")
 
     def test_borrower_return(self):
-        print("\n=============== results of test 5: borrower confirms return  =================")
+        #print("\n=============== results of test 5: borrower confirms return  =================")
         result = testcase5(email=user3['email'], pwd=user3['pwd'], username=user3['username'])
         assert result == True
-        print("=============================================================================")
+        #print("=============================================================================")
 
     def test_lender_return_no_report(self):
-        print("\n=============== results of test 6: lender confirms return  =================")
+        #print("\n=============== results of test 6: lender confirms return  =================")
         result = testcase6(email=user1['email'], pwd=user1['pwd'], username=user1['username'])
         assert result == True
-        print("=============================================================================")
+       # print("=============================================================================")
 
     def test_lender_return_report(self):
-        print("=============== results of test 7: lender confirms return with report  =================")
-        print("user3 borrows item test2 and returns it")
+       # print("=============== results of test 7: lender confirms return with report  =================")
+        #print("user3 borrows item test2 and returns it")
         testcase3(email=user3['email'], pwd=user3['pwd'], username=user3['username'], loan_data=self.loan2)
         testcase4(email=user3['email'], pwd=user3['pwd'], username=user3['username'])
         testcase5(email=user3['email'], pwd=user3['pwd'], username=user3['username'])
         result = testcase7(email=user1['email'], pwd=user1['pwd'], username=user1['username'])
         assert result == True
-        print("=============================================================================")
+        #print("=============================================================================")
 
     def test_borrow_item_future(self):
         print("=============== results of test 8: borrow item in the future  =================")
@@ -80,10 +81,10 @@ class TestBorrowItem():
         print("=============================================================================")
 
     def test_cancel_future_loan(self):
-        print("=============== results of test 9: cancel future loan/booking  =================")
+        #print("=============== results of test 9: cancel future loan/booking  =================")
         result = testcase9(email=user3['email'], pwd=user3['pwd'], username=user3['username'])
         assert result == True
-        print("=============================================================================")
+        #print("=============================================================================")
 
 
 class TestPurchaseProposal():
@@ -102,3 +103,4 @@ class TestPurchaseProposal():
     def test_cancel_proposal(self):
         result = testcase12(email=user2['email'], pwd=user2['pwd'], username= user2['username'])
         assert result == True
+

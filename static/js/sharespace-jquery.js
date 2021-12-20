@@ -312,8 +312,9 @@ function cancel_booking(){
             headers : {'X-CSRFToken' : csrftoken},
             data : {'loan_slug' : loanSlugVar},
             success: function (data){
-                alert(data['msg']);
+
                 window.location.href = data.redirect_url;
+                alert(data['msg']);
             }
         });
 }
@@ -333,7 +334,7 @@ function delete_item(str_url){
         headers : {'X-CSRFToken' : csrftoken},
         data : {'item_slug' : item_slug},
         success: function (data){
-            alert(data.msg);
+
             setTimeout(function(){
                 location.reload();
             }, 1500);
@@ -345,14 +346,12 @@ function subscribe_to_proposal(){
     console.log("you pressed subs button")
     // get the user - same way as in get user ajax function
     console.log("getting user")
-        const full_data = $("#profile-link").attr("data-username-url");
+        const username = $("#profile-link").attr("username-data");
         const btn = $("#subscribe-btn");
         const url = btn.attr("data-url-action");
         console.log("printing url of request");
         console.log(url);
-        const elems = full_data.split('-');
-        // console.log(elems[0], elems[1]);
-        username = elems[1];
+
         const proposal_slug = btn.attr("data-prop-slug");
          $.ajax({
              //type : "POST",
@@ -425,8 +424,8 @@ function delete_purchase_proposal(prop_slug){
         },
         success: function (data){
             console.log(data);
-            alert(data['msg']);
             window.location.href = data['redirect_url'];
+            alert(data['msg']);
         }
     });
 
@@ -448,8 +447,9 @@ function confirm_item_pick_up(loan_slug){
             'loan_slug': loan_slug
         },
         success: function (data){
-            alert(data)
+
             location.reload();
+            alert(data)
         }
     });
 

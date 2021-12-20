@@ -47,12 +47,15 @@ def validate_borrowing_form(item, up, out_date, due_date):
 
 
 def validate_dates_loan(out_date, due_date, max_len):
-    if out_date.day < now().day:
+    if out_date.date() < now().date():
+        print(out_date, "is earlier than today ", now())
         return False
     if timedelta(days=0) <  due_date - out_date  <= max_len and due_date<= (now()+timedelta(days=90)):
         print(f"form validation - 40 - log : out on {out_date}, back on {due_date}, delta (loan duration) {(due_date - out_date)}, max len {max_len}")
         return True
     else:
+        print(
+            f"form validation - 40 - log : DATES VALIDATION NOT PASSED: out on {out_date}, back on {due_date}, delta (loan duration) {(due_date - out_date)}, max len {max_len}")
         return False
 
 
@@ -100,7 +103,7 @@ def count_loans_overlap(loan_list):
     if not loan_list or len(loan_list)==1:
         return 0
 
-    loan_list.sort(key=lambda x : x.out_date, reversed=False)
+    loan_list.sort(key=lambda x : x.out_date)
     print("in form val, booking overlap check and count, printin sorted list: ", loan_list)
 
     num_list=[0]
@@ -108,11 +111,11 @@ def count_loans_overlap(loan_list):
     for i in range(0, len(loan_list)-2):
         overlap_count = 0
         for k in range(1, len(loan_list)-1):
-            if loan_list[i].due_date >= loan_list[k].booking_from:
+            if loan_list[i].due_date >= loan_list[k].out_date:
                 overlap_count +=1
             num_list.append(overlap_count)
 
-    return max(loan_list)
+    return max(num_list)
 
 
 def validate_add_item_form(dict):

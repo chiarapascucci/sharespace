@@ -6,10 +6,12 @@ from selenium.webdriver.support.ui import Select
 from selenium import webdriver
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.firefox import GeckoDriverManager
+from webdriver_manager.microsoft import EdgeChromiumDriverManager
+from selenium.webdriver.chrome.service import Service
 
 
-def go_to_profile(username):
-    return "http://127.0.0.1:8000/sharespace/user/{}/".format(username)
 
 class TestDriver():
 
@@ -17,6 +19,7 @@ class TestDriver():
         self.home = "http://127.0.0.1:8000/sharespace/"
         self.add_item = "http://127.0.0.1:8000/sharespace/add_item/"
         self.add_pp = "http://127.0.0.1:8000/sharespace/purchase/submit/"
+        self.profile = "http://127.0.0.1:8000/sharespace/user/"
         self.driver = driver
 
     def login(self, email: str, psw: str):
@@ -75,16 +78,21 @@ class TestDriver():
             driver_1.implicitly_wait(3)
             result = driver_1.find_elements(By.CLASS_NAME, 'src-result')
 
-            result[0].click()
+            result[-1].click()
             driver_1.implicitly_wait(3)
             btn = driver_1.find_element(By.ID, 'borrow-item-btn')
             btn.click()
             driver_1.implicitly_wait(3)
             date_out = driver_1.find_element(By.ID, 'date-borrow-from')
+
+            print("\nin driver class, date out input: ", now_date, "\n")
             date_out.send_keys(now_date)
             date_in = driver_1.find_element(By.ID, 'date-borrow-until')
+
+            print("\nin driver class, date in input: ", until_date, '\n')
             date_in.send_keys(until_date)
             btn = driver_1.find_element(By.ID, 'submit-loan-btn')
+            print(btn)
             btn.click()
             wait = WebDriverWait(driver_1, 10)
             msg = wait.until(EC.text_to_be_present_in_element((By.ID, 'msg-p'), "loan created"))
@@ -92,13 +100,14 @@ class TestDriver():
                 return {'loan_created': False, 'loan_id': None}
 
             else:
-                self.driver.get(go_to_profile(username))
+                self.go_to_profile()
                 loans = driver_1.find_elements(By.CLASS_NAME, 'user-loan')
-                loans[0].click()
+                loans[-1].click()
                 tokens = driver_1.current_url.split("/")
                 loan_id = tokens[5][5:]
                 return {'loan_created': True, 'loan_id': loan_id}
         except selenium.common.exceptions.NoSuchElementException:
+            print("not finding button")
             return {'loan_created': False, 'loan_id': None}
 
     def item_on_loan_pickup_test(self, username):
@@ -113,11 +122,15 @@ class TestDriver():
             btn.click()
             driver_here.implicitly_wait(5)
             try:
-                alert =driver_here.switch_to.alert
-                alert.accept()
+                driver_here.switch_to.alert.accept()
+                print("accepted alert")
+                return {'loan_picked_up': True, 'loan_id': loan_id}
             except selenium.common.exceptions.NoAlertPresentException:
-                pass
-            return {'loan_picked_up': True, 'loan_id': loan_id}
+                print("cannot find alert")
+                print("trying to refresh page")
+                driver_here.refresh()
+                driver_here.implicitly_wait(5)
+                return {'loan_picked_up': True, 'loan_id': loan_id}
         except selenium.common.exceptions.NoSuchElementException:
             return {'loan_picked_up': False, 'loan_id': None}
 
@@ -167,7 +180,7 @@ class TestDriver():
             loan_id = tokens[5][5:]
             btn = driver.find_element(By.ID, 'cancel-booking-btn')
             btn.click()
-            driver.implicitly_wait(20)
+            driver.implicitly_wait(10)
             try:
                 wait = WebDriverWait(driver, 10)
                 wait.until(EC.alert_is_present())
@@ -241,7 +254,7 @@ class TestDriver():
     def unsub_pp_test(self, username):
         try:
             driver = self.driver
-            driver.get(go_to_profile(username))
+            self.go_to_profile()
             subs_list = driver.find_elements(By.CLASS_NAME, 'user-subs')
             pp = subs_list[-1]
             pp.click()
@@ -259,7 +272,7 @@ class TestDriver():
     def delete_pp(self, username):
         try:
             driver = self.driver
-            driver.get(go_to_profile(username))
+            self.go_to_profile()
             pp_list = driver.find_elements(By.CLASS_NAME, 'user-pp')
             pp = pp_list[-1]
             pp.click()
@@ -316,27 +329,33 @@ class TestDriver():
         self.driver.close()
 
     def go_home(self):
+        self.driver.maximize_window()
         self.driver.get(self.home)
 
     def go_add_item_page(self):
+        self.driver.maximize_window()
         self.driver.get(self.add_item)
 
     def go_add_pp(self):
+        self.driver.maximize_window()
         self.driver.get(self.add_pp)
 
     def get_user_latest_loan(self, username):
+        self.driver.maximize_window()
         driver_here = self.driver
-        driver_here.get(go_to_profile(username))
+        self.go_to_profile()
         loans = driver_here.find_elements(By.CLASS_NAME, 'user-loan')
         loans[-1].click()
 
     def get_user_latest_notification(self, username):
+        self.driver.maximize_window()
         driver_1 = self.driver
-        driver_1.get(go_to_profile(username))
+        self.go_to_profile()
         notif = driver_1.find_elements(By.CLASS_NAME, 'user-notification')
         notif[-1].click()
 
     def add_item_basic(self, info):
+        self.driver.maximize_window()
         self.go_add_item_page()
         driver = self.driver
         driver.implicitly_wait(5)
@@ -356,16 +375,27 @@ class TestDriver():
         phone = driver.find_element(By.ID, 'phone')
         phone.send_keys(info['phone'])
 
+    def go_to_profile(self):
+        self.driver.maximize_window()
+        self.driver.get(self.profile)
+
 
 class TestDriverChrome(TestDriver):
-
-    def __init__(self, path):
-        driver = webdriver.Chrome(executable_path=path)
+    def __init__(self):
+        service = Service(executable_path=ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service)
         super().__init__(driver)
 
 
 class TestDriverFirefox(TestDriver):
+    def __init__(self):
+        service = Service(executable_path=GeckoDriverManager().install())
+        driver = webdriver.Firefox(service=service)
+        super().__init__(driver)
 
-    def __init__(self, path):
-        driver = webdriver.Firefox(executable_path=path)
+
+class TestDriverME(TestDriver):
+    def __init__(self):
+        service = Service(executable_path="C:\\Users\\chpas\\py-workspace\\sharespace_project\\sharespace\\testing\\drivers\\msedgedriver.exe")
+        driver = webdriver.Edge(service=service)
         super().__init__(driver)

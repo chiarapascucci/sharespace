@@ -1077,8 +1077,8 @@ def unpack_slug_for_report(slug, up):
     if slug.find("loan") >= 0:
         try:
             loan = Loan.objects.get(loan_slug=slug)
-            if (loan.requestor == up or loan.item_on_loan.guardian == up) and not (loan.status == loan.COMPLETED or loan.status==loan.FUTURE):
-                return Loan
+            if (loan.requestor == up or loan.item_on_loan.guardian == up) and not (loan.status == loan.ACTIVE or loan.status==loan.FUTURE):
+                return loan
             else:
                 return None
         except Loan.DoesNotExist:

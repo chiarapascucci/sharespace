@@ -84,7 +84,6 @@ def test_borrower_return(loan_id):
             'effects': loan.applied_effects_flag == True,
             'status': loan.status == loan.PENDING
         }
-        print("loan status = ", loan.status)
         return result
 
     except Loan.DoesNotExist:
@@ -116,7 +115,6 @@ def test_confirm_return_lender(notif_id):
 def test_cancel_booking(loan_id):
     try:
         loan = Loan.objects.get(loan_id=loan_id)
-        print(loan)
         return {'cancelled': False}
     except Loan.DoesNotExist:
         return {'cancelled': True}
@@ -134,10 +132,6 @@ def test_add_pp(pp_slug, pp_data):
             'sub_cat': proposal.proposal_sub_cat.name == pp_data['sub_cat'],
             'contact': proposal.proposal_submitter.contact_details == pp_data['phone']
         }
-        print("prop_contact: ", pp_data['phone'])
-        print("submitter contact: ", proposal.proposal_submitter.contact_details)
-        print("subs_list: ", proposal.proposal_subscribers.all(), "\n subs count: ",
-              len(proposal.proposal_subscribers.all()))
 
         return result
 
@@ -148,7 +142,7 @@ def test_add_pp(pp_slug, pp_data):
 def test_cancel_proposal(prop_slug):
     try:
         proposal = PurchaseProposal.objects.get(proposal_slug=prop_slug)
-        print(proposal)
+
         return {'cancelled': False}
     except PurchaseProposal.DoesNotExist:
         return {'cancelled': True}
@@ -164,7 +158,8 @@ def test_subs_proposal(prop_slug, username):
             user = CustomUser.objects.get(username=username)
             try:
                 user_profile = UserProfile.objects.get(user=user)
-
+                print(prop.proposal_subscribers.all())
+                print(user_profile)
                 result = {
                     'subs_count': len(prop.proposal_subscribers.all()) == 1,
                     'sub': user_profile in prop.proposal_subscribers.all()
@@ -227,7 +222,6 @@ def test_report_issue_loan_returned(notif_slug):
 def test_delete_purchase_proposal(pp_slug):
     try:
         proposal = PurchaseProposal.objects.get(proposal_slug=pp_slug)
-        print("proposal found: ", proposal)
         return {'cancelled': False}
     except PurchaseProposal.DoesNotExist:
         return {'cancelled': True}
