@@ -9,6 +9,9 @@ __author__ = "Chiara Pascucci"
 
 import os
 import django
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sharespace_project.settings')
+django.setup()
 from django.contrib.auth.hashers import PBKDF2PasswordHasher, make_password
 from sharespace.models import Item, UserProfile, Category, SubCategory, Neighbourhood, Address, Notification, \
     PurchaseProposal
@@ -16,8 +19,6 @@ import random
 from sharespace.models import CustomUser as User
 from populate_categories import create_categories
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sharespace_project.settings')
-django.setup()
 
 
 def add_category(name):
@@ -186,7 +187,6 @@ def populate():
     contact_list = ['+4407743562738', '+4407743562739', '+4407743562731', '+4407743562732', '+4407743562733']
 
     hoods = ['sw96tq']
-
 
     hood_entity_list = []
     address_list = []

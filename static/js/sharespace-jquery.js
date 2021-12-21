@@ -1,10 +1,20 @@
+
+/**
+    this document contains all the custom made client side scripts for this application
+    the document is made up of both standard JS as well as JQuery syntax
+    both XMLHTTPRequest and AJAX syntax are demonstrated
+
+    author: Chiara Pascucci
+ **/
+
 $(document).ready(function() {
 
+    // this functions allows the user profile picture to be shown in the nav bar when user is logged in
     ajax_user_query();
     console.log("page ready")
 
-
-
+    // this function detects when a category is selected from a drop down menu
+    // and queries the database to display relevant sub categories
     $("#main_category").change(function(){
 		const url = $("#add_item_form").attr("data-sub-cat-url");
 		const catID = $(this).val();
@@ -20,6 +30,9 @@ $(document).ready(function() {
 		});
 	});
 
+    // this function detects when user has input their postcode at registration
+    // and checks the post code provided for validity using an external API
+    // if the post code is not valid the user cannot proceed
     $("#id_user_post_code").keyup(function(){
         let btn = $('#complete-profile-btn').attr('disabled', true);
         let post_code = $('#id_user_post_code').val();
@@ -49,6 +62,7 @@ $(document).ready(function() {
 
     });
 
+    // similar logic to the category function above, this works on the add purchase proposal form
     $("#id_proposal_cat").change(function (){
         const url = $("#purchase_proposal_form").attr("data-sub-cat-url");
         const catID = $(this).val();
@@ -67,6 +81,9 @@ $(document).ready(function() {
 
     });
 
+    // this function send an asyn request to the database to create a loan object
+    // it displays the outcome of this request to the user without needing a page reload
+    // any error message are displayed back to the user
     $('#submit-loan-btn').click(function (){
         console.log("button to submit loan clicked")
         const url = $('#borrow-item-form').attr('data-req-url');
@@ -110,6 +127,7 @@ $(document).ready(function() {
 
     });
 
+    // sends request to the DB to mark loan as returned when button is clicked
 	$('#returned-item-btn').click(function(){
 	    console.log("button in loan page clicked")
 	    var loanSlugVar;
@@ -127,6 +145,7 @@ $(document).ready(function() {
 
 	});
 
+    // toggles guardian selector in add item form based on owner selector input
     $('.owner-selector').click(function (){
         console.log("other owners selected");
         if ($(this).is(':checked')){
@@ -149,6 +168,7 @@ $(document).ready(function() {
     );
 });
 
+// helper function to extract cookies from current request
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -164,11 +184,11 @@ function getCookie(name) {
     }
     return cookieValue;
 }
-
+// helper function to check if a JS object is empty
 function isEmpty(obj) {
     return Object.keys(obj).length === 0;
 }
-
+// helper function called and explained above
 function ajax_user_query(){
     console.log("profile pic func");
     let link = $('#profile-link');
@@ -187,7 +207,7 @@ function ajax_user_query(){
             }
         });
 }
-
+// helper function to function above
 function set_elements(data) {
     console.log("set element function");
     if (isEmpty(data)){
@@ -204,22 +224,24 @@ function set_elements(data) {
 
             const img_path = data.img_path;
 
-
             console.log(img_path);
 
             var profile_icon = document.getElementById("profile-icon");
             console.log(profile_icon)
             profile_icon.setAttribute("src", img_path);
 
-
     }
 }
 
-
+// function to perform address look up when user provides post code in add item form
+// this is done by performing a call to an external API
+// if a list of addresses is returned, it is placed in a drop down menu
+// NOTE: API KEY used has a limited validity to 30 days
+// last updated on 21/12/2021 - it will stop working on 21/01/2022
 function lookup_func() {
 			console.log("post code function exec");
 			var url = "https://api.getAddress.io/find/";
-			var api_key = "IdUvLkdSBki8uOcIoH01EQ33123";
+			var api_key = "IQ9O2kYSRkufx-czxs0cpg33774";
 			var post_code = document.getElementById("add_item_postcode").value;
 			var f_post_code = post_code.toLowerCase().replace(' ', '');
 			console.log(f_post_code);
@@ -249,6 +271,8 @@ function lookup_func() {
 
 }
 
+// helper function to function above
+// it manipulates addresses returned by the API and populates selector
 function populate_list(data) {
     const address_list = data['addresses'];
     var selection = document.getElementById("address_list");
@@ -259,6 +283,8 @@ function populate_list(data) {
     }
 
 }
+
+// populates selected address into the relevant fields in the add item form
 function populate_address(){
     const sel_adr = document.getElementById("address_list");
     console.log(sel_adr.selectedIndex)
@@ -275,25 +301,10 @@ function populate_address(){
     document.getElementById("id_county").value = tokens[6];
 
 }
-function load_calendar() {
-    console.log("load cal called")
-    $(document).ready(function (){
-        const elem = $("#availability-calendar");
-        const url = elem.attr("data-ajax-url");
-        const item_slug = elem.attr("data-item-slug");
-        console.log(url)
-        $.ajax({
-            url : url,
-            data : {'item_slug' : item_slug},
-            success: function (){
 
-            }
-
-        });
-
-    });
-
-}
+// this function is called when the cancel booking button is pressed on a loan page
+// it fires a request to the db to delete the current loan object
+// upon success the user is redirected to their profile
 function cancel_booking(){
         console.log("button to cancel booking clicked");
         let loanSlugVar;
@@ -312,13 +323,13 @@ function cancel_booking(){
             headers : {'X-CSRFToken' : csrftoken},
             data : {'loan_slug' : loanSlugVar},
             success: function (data){
-
                 window.location.href = data.redirect_url;
                 alert(data['msg']);
             }
         });
 }
 
+// similar logic to the above, this is called by the delete item button
 function delete_item(str_url){
     console.log(str_url);
     const csrftoken = getCookie('csrftoken');
@@ -342,6 +353,11 @@ function delete_item(str_url){
         }
     });
 }
+
+// this function is called when a user presses the sub/unsub button on a purchase proposal page
+// depending on teh current value of the button (sub/unsub) the appropriate action is performed
+// the button is toggled
+// and the page is reloaded for changes to take effect
 function subscribe_to_proposal(){
     console.log("you pressed subs button")
     // get the user - same way as in get user ajax function
@@ -381,6 +397,9 @@ function subscribe_to_proposal(){
 
 }
 
+// called when user presses the comment button a proposal page
+// appends the given input text to the comment section on the proposal page
+// as well as sending request to the DB to instantiate comment object
 function comment_proposal(proposal_slug){
 
     const url = $('#post-comment-btn').attr('btn-data');
@@ -409,6 +428,8 @@ function comment_proposal(proposal_slug){
     });
 }
 
+// called when proposal owner presses the delete proposal button
+// if successful user is redirected
 function delete_purchase_proposal(prop_slug){
     console.log("request for deleting purchase proposal");
     const csrftoken = getCookie('csrftoken');
@@ -428,10 +449,10 @@ function delete_purchase_proposal(prop_slug){
             alert(data['msg']);
         }
     });
-
-
 }
 
+// called when borrower presses the returned button a loan page
+// if successful page is reload for changes to take effect
 function confirm_item_pick_up(loan_slug){
     console.log("in confirm item pick up function");
     const csrftoken = getCookie('csrftoken');
@@ -447,7 +468,6 @@ function confirm_item_pick_up(loan_slug){
             'loan_slug': loan_slug
         },
         success: function (data){
-
             location.reload();
             alert(data)
         }
