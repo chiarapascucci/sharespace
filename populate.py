@@ -1,18 +1,23 @@
+"""
+    this file contains a custom population script for the application,
+    which populates the database with some required data (categories and subcategory)
+    as well as with some sample data (users, neighbourhoods, items, and purchase proposals)
+
+"""
+
+__author__ = "Chiara Pascucci"
+
 import os
-from pprint import pprint
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sharespace_project.settings')
-
 import django
-django.setup()
 from django.contrib.auth.hashers import PBKDF2PasswordHasher, make_password
 from sharespace.models import Item, UserProfile, Category, SubCategory, Neighbourhood, Address, Notification, \
     PurchaseProposal
 import random
 from sharespace.models import CustomUser as User
-from django.core.files import File
-import sharespace_project.settings as Psettings
 from populate_categories import create_categories
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sharespace_project.settings')
+django.setup()
 
 
 def add_category(name):
@@ -28,7 +33,8 @@ def add_sub_cat(name, category):
 
 
 def add_item(name, cat, sub_cat, item_owner, address):
-    i = Item.objects.get_or_create(name=name, main_category=cat, sec_category = sub_cat, location=address, guardian=item_owner)[0]
+    i = Item.objects.get_or_create(name=name, main_category=cat, sec_category=sub_cat, location=address,
+                                   guardian=item_owner)[0]
     i.owner.add(item_owner)
     i.save()
     print("creating item - populate - log: ", i)
@@ -50,8 +56,8 @@ def add_user(username, email, password):
     return user
 
 
-def add_user_profile(user,  hood, post_code, contact):
-    up = UserProfile.objects.get_or_create(user = user, hood = hood, user_post_code = post_code, contact_details=contact)[0]
+def add_user_profile(user, hood, post_code, contact):
+    up = UserProfile.objects.get_or_create(user=user, hood=hood, user_post_code=post_code, contact_details=contact)[0]
     up.save()
     return up
 
@@ -81,11 +87,10 @@ def add_purchase_proposal(name, description, price, submitter, subs):
 
 
 def populate():
-
     addresses = {
-        1 : {
-            'adr_line_1' : 'manor house',
-            'post_code' : 'sw96tq',
+        1: {
+            'adr_line_1': 'manor house',
+            'post_code': 'sw96tq',
         },
         2: {
             'adr_line_1': 'fancy villa',
@@ -94,81 +99,88 @@ def populate():
     }
 
     items_dict = {
-    'Kitchen' : {'utensils':['egg beater', 'italian coffee machine'],
-                 'cookware':['50L pot', 'rice cooker', 'wok pan'],
-                 'baking':['stem mixer', 'prooving box', 'bread machine'],
-                 'appliances':['microwave', 'gas fire lamp', 'electric oven']},
-    'Cleaning': {'bathroom cleaning': ['mop', 'anti-limescale liquid', 'toilet brush', 'bleach'],
-                 'carpet':['capert cleaner machine', 'eletric carpet cleaner', 'powerful carpet vacuum cleaner'],
-                 'stains':['stain removal product', 'stain removal brush', 'ink stain removal liquid', 'pre-wash stain removal'],
-                 'upholstery' :['hand vacuum cleaner', 'stain removal for sofas', 'anti-oudour spray', 'sofa leather care product'],
-                 'curtains' : ['curtain iron', 'curtain steamer', 'duster for curtains'],
-                 'deep cleaning': ['steam cleaner', 'water pressure cleaner', 'anti-mould spray', 'anti-mould product'],
-                 'kitchen cleaning': ['mop', 'kitchen sanitising product'] },
-    'Technology': {'laptop': ['mouse with wire', 'wireless mouse', 'wired keyboard', 'wireless keyboard', 'drawing trackpad', 'mouse pad'],
-                   'tablet' : ['tablet cleaning cloth and spray', 'apple tablet charger', 'tablet charger', 'tablet cover', 'tablet stand'],
-                   'PC': ['pressurised air can', 'mouse', 'wireless mouse', 'cd reader', 'headset', 'gaming chair', 'audio system'],
-                    'screens': ['15'' screen', '40 inches screen', '10 inches screen', 'curved screen'],
-                   'cables and wires':['hdmi cable', 'hdmi', 'usb to usb cable', 'apple adaptor'],
-                   'gaming' : ['gaming seat', 'gaming headset', 'gaming keyboard'],
-                   'music' : ['wireless stereo', 'bluetooth music box'],
-                   'video recording': ['tape video camera', 'digital camera', 'go pro camera']},
-    'Health & Beauty': {'blood pressure and heart':['blood pressure measure', 'manual blood pressure pump', 'eletronic blood pressure meter'],
-                        'make-up':['vanity mirror', 'professional brush set'],
-                        'skincare':['steam facial machine', 'fake tan set', ],
-                        'breathing':['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                        'hair care':['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                        'shaving and waxing':['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3']},
-    'Childcare' : {'feeding': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                   'breast feeding': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                   'toys' : ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                   'sleeping' : ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                   'bathing' : ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                   'cribs' : ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                   'other gadgets' : ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3']},
-    'DIY & Home Improvement' : {'tools' :['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                                'painting':['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                                'wall repair':['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                                'ceiling repair':['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                                'floor repair':['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                                'tiling':['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                                'carpet repair':['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                                'carpentry':['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                                'metal working':['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3']},
-    'Garage' : {'air pump' :['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                'tire pressure':['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                'car engine' :['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                'spare parts':['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3']},
-    'Sport' : {'winter sports' :['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-               'cycling' :['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-               'home workout' :['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-               'running':['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-               'water sports':['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-               'gym' :['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-               'other outdoor activities' :['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3']},
-    'Gardening' : {'potting' :['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                   'planting' :['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                   'sowing' :['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                   'plant cutting' :['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                   'irrigation' :['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                   'plant care' :['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3']},
-    'Pet Care' : {'pet beds' :['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                  'pet toys' :['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                  'pet food' :['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                  'pet health':['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                  'pet walking':['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                  'pet training':['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
-                  'pet activity':['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3']},
+        'Kitchen': {'utensils': ['egg beater', 'italian coffee machine'],
+                    'cookware': ['50L pot', 'rice cooker', 'wok pan'],
+                    'baking': ['stem mixer', 'prooving box', 'bread machine'],
+                    'appliances': ['microwave', 'gas fire lamp', 'electric oven']},
+        'Cleaning': {'bathroom cleaning': ['mop', 'anti-limescale liquid', 'toilet brush', 'bleach'],
+                     'carpet': ['capert cleaner machine', 'eletric carpet cleaner', 'powerful carpet vacuum cleaner'],
+                     'stains': ['stain removal product', 'stain removal brush', 'ink stain removal liquid',
+                                'pre-wash stain removal'],
+                     'upholstery': ['hand vacuum cleaner', 'stain removal for sofas', 'anti-oudour spray',
+                                    'sofa leather care product'],
+                     'curtains': ['curtain iron', 'curtain steamer', 'duster for curtains'],
+                     'deep cleaning': ['steam cleaner', 'water pressure cleaner', 'anti-mould spray',
+                                       'anti-mould product'],
+                     'kitchen cleaning': ['mop', 'kitchen sanitising product']},
+        'Technology': {
+            'laptop': ['mouse with wire', 'wireless mouse', 'wired keyboard', 'wireless keyboard', 'drawing trackpad',
+                       'mouse pad'],
+            'tablet': ['tablet cleaning cloth and spray', 'apple tablet charger', 'tablet charger', 'tablet cover',
+                       'tablet stand'],
+            'PC': ['pressurised air can', 'mouse', 'wireless mouse', 'cd reader', 'headset', 'gaming chair',
+                   'audio system'],
+            'screens': ['15'' screen', '40 inches screen', '10 inches screen', 'curved screen'],
+            'cables and wires': ['hdmi cable', 'hdmi', 'usb to usb cable', 'apple adaptor'],
+            'gaming': ['gaming seat', 'gaming headset', 'gaming keyboard'],
+            'music': ['wireless stereo', 'bluetooth music box'],
+            'video recording': ['tape video camera', 'digital camera', 'go pro camera']},
+        'Health & Beauty': {'blood pressure and heart': ['blood pressure measure', 'manual blood pressure pump',
+                                                         'eletronic blood pressure meter'],
+                            'make-up': ['vanity mirror', 'professional brush set'],
+                            'skincare': ['steam facial machine', 'fake tan set', ],
+                            'breathing': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                            'hair care': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                            'shaving and waxing': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3']},
+        'Childcare': {'feeding': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                      'breast feeding': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                      'toys': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                      'sleeping': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                      'bathing': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                      'cribs': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                      'other gadgets': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3']},
+        'DIY & Home Improvement': {'tools': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                                   'painting': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                                   'wall repair': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                                   'ceiling repair': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                                   'floor repair': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                                   'tiling': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                                   'carpet repair': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                                   'carpentry': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                                   'metal working': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3']},
+        'Garage': {'air pump': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                   'tire pressure': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                   'car engine': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                   'spare parts': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3']},
+        'Sport': {'winter sports': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                  'cycling': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                  'home workout': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                  'running': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                  'water sports': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                  'gym': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                  'other outdoor activities': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3']},
+        'Gardening': {'potting': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                      'planting': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                      'sowing': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                      'plant cutting': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                      'irrigation': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                      'plant care': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3']},
+        'Pet Care': {'pet beds': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                     'pet toys': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                     'pet food': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                     'pet health': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                     'pet walking': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                     'pet training': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3'],
+                     'pet activity': ['placeholder_item_1', 'placeholder_item_2', 'placeholder_item_3']},
     }
 
-
-
     users = {
-       'chiara': {'username' : 'chiara', 'email':'g1@mail.com', 'password': 'helloyou123', 'contact': '+4407743562738'},
-       'bob': {'username' : 'bob', 'email':'GG2@mail.com', 'password': 'helloyou123', 'contact': '+4407743562739'},
-       'aba' : {'username' : 'aba', 'email':'g3@mail.com', 'password': 'helloyou123', 'contact': '+4407743562731'},
-        'chris': {'username' : 'chris', 'email':'gG4@mail.com', 'password': 'helloyou123', 'contact': '+4407743562732'},
-        'dan' : {'username' : 'dan', 'email':'g5@MAIL.com', 'password': 'helloyou123', 'contact': '+4407743562733'},
+        'chiara': {'username': 'chiara', 'email': 'g1@mail.com', 'password': 'helloyou123',
+                   'contact': '+4407743562738'},
+        'bob': {'username': 'bob', 'email': 'GG2@mail.com', 'password': 'helloyou123', 'contact': '+4407743562739'},
+        'aba': {'username': 'aba', 'email': 'g3@mail.com', 'password': 'helloyou123', 'contact': '+4407743562731'},
+        'chris': {'username': 'chris', 'email': 'gG4@mail.com', 'password': 'helloyou123', 'contact': '+4407743562732'},
+        'dan': {'username': 'dan', 'email': 'g5@MAIL.com', 'password': 'helloyou123', 'contact': '+4407743562733'},
     }
 
     contact_list = ['+4407743562738', '+4407743562739', '+4407743562731', '+4407743562732', '+4407743562733']
@@ -176,33 +188,18 @@ def populate():
     hoods = ['sw96tq']
 
 
-    #defining add functions for each type
-
-# start with creating the hoods
-    '''
-     
-
-    for post_code in hoods:
-        hood_entity_list.append(add_hood(post_code))
-        print(hood_entity_list[-1])
-    print("total hoods created: ", len(hood_entity_list))
-    '''
     hood_entity_list = []
     address_list = []
 
     for key, data in addresses.items():
-        hood = Neighbourhood.objects.get_or_create(nh_post_code = data['post_code'])[0]
+        hood = Neighbourhood.objects.get_or_create(nh_post_code=data['post_code'])[0]
         adr = Address.objects.get_or_create(address_line_1=data['adr_line_1'], adr_hood=hood)[0]
         hood_entity_list.append(hood)
         address_list.append(adr)
 
-
     cat_dict = create_categories()
 
-
-
     user_list = []
-
 
     for username, user_data in users.items():
         user = add_user(username, user_data['email'], user_data['password'])
@@ -216,24 +213,23 @@ def populate():
     user_profile_list = []
     assert (len(user_list) == len(contact_list))
     for i in range(0, len(user_list)):
-        hood = hood_entity_list[random.randint(0, len(hood_entity_list)-1)]
+        hood = hood_entity_list[random.randint(0, len(hood_entity_list) - 1)]
         user_postcode = hood.nh_post_code
         up = add_user_profile(user_list[i], hood, user_postcode, contact_list[i])
         user_profile_list.append(up)
         print("user profile {} in hood {}".format(up, user_postcode))
     print("total user profile created: ", len(user_profile_list))
 
-
-# having list of user profiles, categories, and addresses - can now create items
+    # having list of user profiles, categories, and addresses - can now create items
     item_list = []
-    for k,v in items_dict.items():
+    for k, v in items_dict.items():
         cat = Category.objects.get(name=k)
         sub_cat_dict = v
-        for key,val in sub_cat_dict.items():
-            sub_cat= SubCategory.objects.get(name=key)
+        for key, val in sub_cat_dict.items():
+            sub_cat = SubCategory.objects.get(name=key)
 
             for item_name in val:
-                owner = user_profile_list[random.randint(0, len(user_profile_list)-1)]
+                owner = user_profile_list[random.randint(0, len(user_profile_list) - 1)]
                 poss_hood = owner.hood
                 poss_address = Address.objects.filter(adr_hood=poss_hood).first()
                 item = add_item(item_name, cat, sub_cat, owner, poss_address)
@@ -251,24 +247,18 @@ def populate():
         ['event marquee', 'would be cool to have a marque for any event in our neighbourhood', 5700]
     ]
     for i in range(0, len(purchase_proposals)):
-        r = random.randint(0, len(user_profile_list)-1)
+        r = random.randint(0, len(user_profile_list) - 1)
         up = user_profile_list[r]
         up_set = set(user_profile_list)
         up_set.remove(up)
-        pp = add_purchase_proposal(purchase_proposals[i][0], purchase_proposals[i][1], purchase_proposals[i][2], up, up_set)
+        pp = add_purchase_proposal(purchase_proposals[i][0], purchase_proposals[i][1], purchase_proposals[i][2], up,
+                                   up_set)
 
-
-
-
-
-
-# deleting all notifications
+    # deleting all notifications
     Notification.objects.all().delete()
 
 
 if __name__ == '__main__':
-    print('running po script')
+    print('running population script')
 
     populate()
-
-

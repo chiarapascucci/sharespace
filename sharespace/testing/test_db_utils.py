@@ -1,5 +1,15 @@
+"""
+    this file contains helper functions to test database changes after certain actions are performed on the
+    application. The take an identifier for a certain DB object and a set of data
+    they retrieve the relevant DB entry and compare its data against the given data
+
+    they return a dictionary that shows the outcome of each comparison made
+
+"""
+
+__author__ = "Chiara Pascucci"
+
 from sharespace.models import Item, Loan, Notification, PurchaseProposal, UserProfile, CustomUser
-import unittest
 
 
 def test_item_creation(item_id: str, item_info: dict):

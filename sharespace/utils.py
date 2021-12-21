@@ -1,8 +1,17 @@
-from calendar import HTMLCalendar
+"""
 
+    file to store custom utils function for this application
+
+"""
+
+__author__ = "Chiara Pascucci"
+
+from calendar import HTMLCalendar
 from sharespace.models import UserProfile, CustomUser, Item, Loan, Notification, PurchaseProposal
 
 
+# this class extends HTMLCalendar python class
+# it is used to create a string in HTML syntax to display an item's availability in a given month
 class BookingCalendar(HTMLCalendar):
 
     def __init__(self, item=None):
@@ -28,9 +37,6 @@ class BookingCalendar(HTMLCalendar):
         else:
             s = ''.join(self.formatday(d, wd, (d in days_unavail_set)) for (d, wd) in theweek)
             return '<tr>%s</tr>' % s
-
-
-
 
     def formatmonth(self, theyear, themonth, withyear=True):
         """
@@ -58,7 +64,6 @@ class BookingCalendar(HTMLCalendar):
         return ''.join(v)
 
 
-# need method that generate the right item - booking set pairing given an item
 # generates calendar for current month + 3 months
 def get_booking_calendar_for_item_for_month(item, month:int, year:int):
     cal = BookingCalendar(item=item)
@@ -87,6 +92,9 @@ def extract_us_up (request):
             print("no user here (views)")
             return {'us': None, 'up': None}
 
+
+# helper functions to views.py
+# they are use to check a user's permission with respect to the page they are trying to access
 
 def test_item_ownership(request, item_slug):
     try:

@@ -1,3 +1,12 @@
+"""
+    please see the doc string of run_tests_chrome.py
+    both classes have the same structure. This was created as a separate class for ease of runnign the tests
+    with pytest and a different driver
+
+"""
+
+__author__ = "Chiara Pascucci"
+
 from datetime import datetime, timedelta
 
 from sharespace.testing.test_driver_utils import TestDriverME

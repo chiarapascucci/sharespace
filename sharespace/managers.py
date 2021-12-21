@@ -1,4 +1,13 @@
+"""
+    custom user manager for customer user class
+    this class handles user object instantiation (including password hashing)
+
+"""
+
+__author__ = "Chiara Pascucci"
+
 from django.contrib.auth.base_user import BaseUserManager
+
 
 class MyUserManager(BaseUserManager):
 

@@ -1,5 +1,10 @@
-from django.db import models
+"""
+    custom model field for user's email
+"""
 
+__author__ = "Chiara Pascucci"
+
+from django.db import models
 
 
 class EmailFieldLowerCase (models.EmailField):

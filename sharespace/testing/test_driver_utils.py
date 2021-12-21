@@ -1,20 +1,27 @@
+"""
+    this file contains a wrapper class for the Selenium webdriver object
+    the class provide a set of convenient method to perform specific actions on Sharespace by using Selenium syntax
+
+    they closely follow the steps which are tested by the testcase functions in the tests_cases.py file
+
+"""
+
+__author__ = "Chiara Pascucci"
+
 import selenium.common.exceptions
-from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
-from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.ui import Select
 from selenium import webdriver
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.firefox import GeckoDriverManager
-from webdriver_manager.microsoft import EdgeChromiumDriverManager
 from selenium.webdriver.chrome.service import Service
-
 
 
 class TestDriver():
 
+    # NOTE: the URLs are hardcoded
     def __init__(self, driver):
         self.home = "http://127.0.0.1:8000/sharespace/"
         self.add_item = "http://127.0.0.1:8000/sharespace/add_item/"
@@ -68,7 +75,7 @@ class TestDriver():
     def borrow_item_test(self, item_name, now_date: str, until_date: str, username: str):
         try:
             driver_1 = self.driver
-            driver_1.get("http://127.0.0.1:8000/")
+            self.go_home()
             driver_1.implicitly_wait(3)
 
             src_box = driver_1.find_element(By.ID, 'search_input')
@@ -85,14 +92,11 @@ class TestDriver():
             driver_1.implicitly_wait(3)
             date_out = driver_1.find_element(By.ID, 'date-borrow-from')
 
-            print("\nin driver class, date out input: ", now_date, "\n")
             date_out.send_keys(now_date)
             date_in = driver_1.find_element(By.ID, 'date-borrow-until')
 
-            print("\nin driver class, date in input: ", until_date, '\n')
             date_in.send_keys(until_date)
             btn = driver_1.find_element(By.ID, 'submit-loan-btn')
-            print(btn)
             btn.click()
             wait = WebDriverWait(driver_1, 10)
             msg = wait.until(EC.text_to_be_present_in_element((By.ID, 'msg-p'), "loan created"))
@@ -107,7 +111,6 @@ class TestDriver():
                 loan_id = tokens[5][5:]
                 return {'loan_created': True, 'loan_id': loan_id}
         except selenium.common.exceptions.NoSuchElementException:
-            print("not finding button")
             return {'loan_created': False, 'loan_id': None}
 
     def item_on_loan_pickup_test(self, username):
@@ -123,11 +126,8 @@ class TestDriver():
             driver_here.implicitly_wait(5)
             try:
                 driver_here.switch_to.alert.accept()
-                print("accepted alert")
                 return {'loan_picked_up': True, 'loan_id': loan_id}
             except selenium.common.exceptions.NoAlertPresentException:
-                print("cannot find alert")
-                print("trying to refresh page")
                 driver_here.refresh()
                 driver_here.implicitly_wait(5)
                 return {'loan_picked_up': True, 'loan_id': loan_id}
@@ -152,10 +152,8 @@ class TestDriver():
         except selenium.common.exceptions.NoSuchElementException:
             return {'loan_returned': False, 'loan_id': None}
 
-
     def loan_confirm_lender(self, username):
         try:
-
             driver_1 = self.driver
             self.get_user_latest_notification(username)
             driver_1.implicitly_wait(5)
@@ -189,12 +187,10 @@ class TestDriver():
                     driver.implicitly_wait(10)
                     return {'cancelled': True, 'loan_id': loan_id}
                 except selenium.common.exceptions.NoAlertPresentException:
-                    print("cannot see alert")
                     return {'cancelled': False, 'loan_id': loan_id}
             except selenium.common.exceptions.TimeoutException:
                 return {'cancelled': False, 'loan_id': loan_id}
         except selenium.common.exceptions.NoSuchElementException:
-            print("cannot find button")
             return {'cancelled': False, 'loan_id': None}
 
     def add_pp_test(self, pp_info: dict):
@@ -281,19 +277,8 @@ class TestDriver():
             prop_slug = tokens[-2]
             btn = driver.find_element(By.ID, 'delete-prop-btn')
             btn.click()
-            driver.implicitly_wait(1)
-            try:
-                wait = WebDriverWait(driver, 10)
-                wait.until(EC.alert_is_present())
-                try:
-                    driver.switch_to.alert.accept()
-                    driver.implicitly_wait(10)
-                    return {'pp_del': True, 'pp_slug': prop_slug}
-                except selenium.common.exceptions.NoAlertPresentException:
-                    print("cannot see alert")
-                    return {'pp_del': False, 'pp_slug': prop_slug}
-            except selenium.common.exceptions.TimeoutException:
-                return {'pp_del': False, 'loan_id': prop_slug}
+            driver.implicitly_wait(10)
+            return {'pp_del': True, 'pp_slug': prop_slug}
         except selenium.common.exceptions.NoSuchElementException:
             print("cannot find button")
             return {'pp_del': False, 'pp_slug': None}
@@ -322,7 +307,7 @@ class TestDriver():
             text = msg_p.text
             return {'confirm': True, 'reported': True, 'notif_slug': notif_slug, 'text': text}
 
-        except selenium.common.exceptions:
+        except selenium.common.exceptions.NoSuchElementException:
             return {'confirm': False, 'notif_slug': None}
 
     def close_driver(self):
@@ -396,6 +381,7 @@ class TestDriverFirefox(TestDriver):
 
 class TestDriverME(TestDriver):
     def __init__(self):
+        # NOTE: as per note in the README file the path to the driver for ME had to be hardcoded
         service = Service(executable_path="C:\\Users\\chpas\\py-workspace\\sharespace_project\\sharespace\\testing\\drivers\\msedgedriver.exe")
         driver = webdriver.Edge(service=service)
         super().__init__(driver)
